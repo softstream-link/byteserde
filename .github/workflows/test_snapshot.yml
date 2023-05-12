@@ -1,0 +1,40 @@
+# samples https://github.com/actions/starter-workflows/blob/main/ci/rust.yml
+name: Test Snapshot
+on:
+  # push:
+  #   branches-ignore:
+  #     - main
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Toolchain Info
+        run: |
+          cargo --version --verbose
+          rustc --version
+      - name: Test
+        run: cargo test
+      - name: Benchmark
+        run: cargo bench
+      - name: Clippy
+        run: |
+          rustup component add clippy 
+          cargo clippy --all-features -- --deny warnings
+          pushd byteserde_derive
+          cargo clippy --all-features -- --deny warnings
+          popd
+      - name: Publish to crates.io
+        run: |
+          pushd byteserde_derive
+          cargo publish --dry-run 
+          popd
+          # cargo publish --dry-run # - this fails on branch since the version of byteserde_derive is likely not published yet.
+
+    
+    
+
+
+

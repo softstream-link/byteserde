@@ -1,0 +1,30 @@
+[package]
+name = "byteserde"
+version = "0.2.0"
+edition = "2021"
+license-file = "LICENSE"
+description = "Collection of functions aimed to achieve byte serializing and deserializing of structs to and from bytes with focus on performance"
+repository = "https://github.com/softstream-link/byteserde"
+readme = "readme.md"
+keywords = ["serde", "bytes", "serialization", "deserialization", "stack"]
+categories = ["serialization", "deserialization", "procedural-macro", "derive"]
+
+[dependencies]
+byteserde_derive = { path = "./byteserde_derive", version = "0.2.0"}
+
+env_logger = "0.10"
+log = "0.4"
+
+# [[bin]]
+# name = "main"
+# path = "main.rs"
+
+[dev-dependencies]
+text-diff = "0.4"
+criterion = "0.4"
+trybuild = { version = "1.0.79", features = ["diff"] }
+
+
+[[bench]]
+name = "struct_ser_des_bench"
+harness = false

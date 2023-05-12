@@ -1,0 +1,33 @@
+# samples https://github.com/actions/starter-workflows/blob/main/ci/rust.yml
+name: Publish to crates.io
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Toolchain Info
+        run: |
+          cargo --version --verbose
+          rustc --version
+      - name: Echo
+        run: echo About to publish
+      - name: Publish to crates.io
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+        run: |
+          pushd byteserde_derive
+          cargo publish --dry-run 
+          popd
+          cargo publish --dry-run 
+        
+    
+    
+
+
+

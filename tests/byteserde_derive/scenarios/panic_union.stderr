@@ -1,0 +1,7 @@
+error: proc-macro derive panicked
+ --> tests/byteserde_derive/scenarios/panic_union.rs:3:10
+  |
+3 | #[derive(ByteSerializeStack)]
+  |          ^^^^^^^^^^^^^^^^^^
+  |
+  = help: message: Only struct types supported, found 'NotSupportedUnion' of type 'union'
