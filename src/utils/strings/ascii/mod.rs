@@ -10,26 +10,40 @@ use std::fmt;
 
 /// A string of ascii characters, padded with a constant byte, allocated on stack using `[u8; LEN]`
 /// ```
-/// use byteserde::utils::strings::ascii::StringAsciiPadded;
+/// use byteserde::utils::strings::ascii::StringAsciiFixed;
 ///
-/// // Takes [u8; 5] array with compile time check on capacity
-/// let inp_str: StringAsciiPadded<5, 0x20> = b"ABCDE".into();
+/// // Takes [u8; 5] array, which `exact` capacity as [StringAsciiFixed], compile time check on capacity
+/// let inp_str: StringAsciiFixed<5, 0x20, false> = b"ABCDE".into();
 /// println!("{:x}", inp_str);
 /// assert_eq!(inp_str.bytes(), [0x41, 0x42, 0x43, 0x44, 0x45]);
 ///
-/// // Takes only 5 bytes from slice with rutime check on capacity
-/// let inp_str: StringAsciiPadded<5, 0x20> = b"ABCDEFG".as_slice().into();
+/// // Takes `only` 5 bytes no alignment effect or padding due capacity.
+/// let inp_str: StringAsciiFixed<5, 0x20, false> = b"ABCDEFG".as_slice().into();
 /// println!("{:x}", inp_str);
 /// assert_eq!(inp_str.bytes(), [0x41, 0x42, 0x43, 0x44, 0x45]);
 ///
-/// // Takes only 4 bytes from slice with runtime check on capacity and fill with 0x20
-/// let inp_str: StringAsciiPadded<5, 0x20> = b"ABCD".as_slice().into();
+/// // Takes `only` 5 bytes no alignment effect or padding due capacity.
+/// let inp_str: StringAsciiFixed<5, 0x20, true> = b"ABCDEFG".as_slice().into();
+/// println!("{:x}", inp_str);
+/// assert_eq!(inp_str.bytes(), [0x41, 0x42, 0x43, 0x44, 0x45]);
+///
+/// // Takes `all` 4 bytes and aligns to the LEFT, while padding with SPACE
+/// let inp_str: StringAsciiFixed<5, 0x20, false> = b"ABCD".as_slice().into();
 /// println!("{:x}", inp_str);
 /// assert_eq!(inp_str.bytes(), [0x41, 0x42, 0x43, 0x44, 0x20]);
+///
+/// // Takes `all` 4 bytes and aligns to the RIGHT, while padding with SPACE
+/// let inp_str: StringAsciiFixed<5, 0x20, true> = b"ABCD".as_slice().into();
+/// println!("{:x}", inp_str);
+/// assert_eq!(inp_str.bytes(), [0x20, 0x41, 0x42, 0x43, 0x44]);
 /// ```
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq)]
-pub struct StringAsciiPadded<const LEN: usize, const PADDING: u8>([u8; LEN]);
-impl<const LEN: usize, const PADDING: u8> StringAsciiPadded<LEN, PADDING> {
+pub struct StringAsciiFixed<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool>(
+    [u8; LEN],
+);
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool>
+    StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -40,22 +54,46 @@ impl<const LEN: usize, const PADDING: u8> StringAsciiPadded<LEN, PADDING> {
         &self.0[0..]
     }
 }
-impl<const LEN: usize, const PADDING: u8> From<&[u8]> for StringAsciiPadded<LEN, PADDING> {
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8]>
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
     ///  Runt time check for capacity, Takes defensively and upto `LEN`, never overflows.
     fn from(bytes: &[u8]) -> Self {
-        let mut new = StringAsciiPadded::<LEN, PADDING>([PADDING; LEN]);
-        let len = min(LEN, bytes.len());
-        new.0[..len].copy_from_slice(&bytes[..len]);
+        let mut new = StringAsciiFixed::<LEN, PADDING, RIGHT_ALIGN>([PADDING; LEN]);
+        let take_len = min(LEN, bytes.len());
+        if RIGHT_ALIGN {
+            new.0[LEN - take_len..].copy_from_slice(&bytes[..take_len]);
+        } else {
+            new.0[..take_len].copy_from_slice(&bytes[..take_len]);
+        }
         new
     }
 }
-impl<const LEN: usize, const PADDING: u8> From<&[u8; LEN]> for StringAsciiPadded<LEN, PADDING> {
-    /// Compiler time check for capacity
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8; LEN]>
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
+    /// Compiler time check for capacity, bytes array must be same length as [StringAsciiFixed::LEN]
     fn from(bytes: &[u8; LEN]) -> Self {
         bytes[0..].into()
     }
 }
-impl<const LEN: usize, const PADDING: u8> fmt::LowerHex for StringAsciiPadded<LEN, PADDING> {
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u32>
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
+    fn from(value: u32) -> Self {
+        value.to_string().as_bytes().into()
+    }
+}
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u64>
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
+    fn from(value: u64) -> Self {
+        value.to_string().as_bytes().into()
+    }
+}
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> fmt::LowerHex
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
         let name = type_name::<Self>()
             .split("::")
@@ -69,15 +107,23 @@ impl<const LEN: usize, const PADDING: u8> fmt::LowerHex for StringAsciiPadded<LE
             true => format!("\n{hex}", hex = to_hex_pretty(&self.0)),
             false => to_hex_line(&self.0),
         };
-        write!(f, "{name}<{LEN}, 0x{PADDING:x}>({bytes})")
+        write!(
+            f,
+            "{name}<0x{LEN:02x}, 0x{PADDING:02x}, {align}>({bytes})",
+            align = if RIGHT_ALIGN { "'R'" } else { "'L'" }
+        )
     }
 }
-impl<const LEN: usize, const PADDING: u8> fmt::Display for StringAsciiPadded<LEN, PADDING> {
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> fmt::Display
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", String::from_utf8_lossy(&self.0))
     }
 }
-impl<const LEN: usize, const PADDING: u8> fmt::Debug for StringAsciiPadded<LEN, PADDING> {
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> fmt::Debug
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple(type_name::<Self>().split("::").last().ok_or(fmt::Error)?)
             .field(&String::from_utf8_lossy(&self.0))
@@ -86,21 +132,21 @@ impl<const LEN: usize, const PADDING: u8> fmt::Debug for StringAsciiPadded<LEN, 
 }
 
 #[cfg(test)]
-mod test_string_ascii_padded {
-    use super::StringAsciiPadded;
-    use crate::{
-        prelude::{to_serializer_stack, ByteDeserialize, ByteDeserializer, ByteSerializerStack},
-        unittest::setup,
-    };
+mod test_string_ascii_fixed {
+    use super::StringAsciiFixed;
+    use crate::{prelude::*, unittest::setup};
     use log::info;
 
     #[test]
-    fn test_string_ascii_padded_take() {
+    fn test_string_ascii_fixed_take() {
         setup::log::configure();
         const ELEVEN: usize = 11;
         const SPACE: u8 = b' ';
-        let inp_str: StringAsciiPadded<ELEVEN, SPACE> = b"0123456789".as_slice().into();
-        info!("inp_str: {:x}", inp_str);
+        const RIGHT: bool = true;
+        let inp_str: StringAsciiFixed<ELEVEN, SPACE, RIGHT> = b"0123456789".as_slice().into();
+        info!("inp_str: {}", inp_str);
+        info!("inp_str:x {:x}", inp_str);
+        info!("inp_str:? {:?}", inp_str);
 
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
@@ -109,18 +155,28 @@ mod test_string_ascii_padded {
 
         // take half shall FAIL
         let out_err =
-            StringAsciiPadded::<ELEVEN, SPACE>::byte_deserialize_take(des, ELEVEN / 2).unwrap_err();
+            StringAsciiFixed::<ELEVEN, SPACE, RIGHT>::byte_deserialize_take(des, ELEVEN / 2)
+                .unwrap_err();
         info!("out_err: {:?}", out_err);
 
         // take double shall FAIL
         let out_err =
-            StringAsciiPadded::<ELEVEN, SPACE>::byte_deserialize_take(des, ELEVEN * 2).unwrap_err();
+            StringAsciiFixed::<ELEVEN, SPACE, RIGHT>::byte_deserialize_take(des, ELEVEN * 2)
+                .unwrap_err();
         info!("out_err: {:?}", out_err);
         // take correct shall PASS - IMPORANT no bytes depleted by failed takes
-        let out_str = StringAsciiPadded::<ELEVEN, SPACE>::byte_deserialize(des).unwrap();
+        let out_str = StringAsciiFixed::<ELEVEN, SPACE, RIGHT>::byte_deserialize(des).unwrap();
         info!("out_str: {:?}", out_str);
     }
+
+    #[test]
+    fn test_string_ascii_fixed_from_numeric() {
+        setup::log::configure();
+        let inp_str: StringAsciiFixed<20, b'0', true> = u64::MAX.into();
+        info!("inp_str:? {:?}", inp_str)
+    }
 }
+
 
 /// A string of ascii characters with a variable length allocated on heap using `Vec<u8>`
 /// ```
@@ -281,6 +337,9 @@ impl CharAscii {
     pub fn bytes(&self) -> [u8; 1] {
         [self.0]
     }
+    pub fn new(byte: u8) -> Self {
+        Self(byte)
+    }
 }
 impl From<u8> for CharAscii {
     fn from(value: u8) -> Self {
@@ -382,11 +441,14 @@ impl<const CHAR: u8> ByteDeserialize<ConstCharAscii<CHAR>> for ConstCharAscii<CH
             true => Ok(Default::default()),
             false => {
                 let ty: ConstCharAscii<CHAR> = Default::default();
-                 
+
                 Err(SerDesError {
-                    message: format!("Type {:?} expected: 0x{:02x} actual: 0x{:02x}", ty, CHAR, _0),
+                    message: format!(
+                        "Type {:?} expected: 0x{:02x} actual: 0x{:02x}",
+                        ty, CHAR, _0
+                    ),
                 })
-            },
+            }
         }
     }
 }

@@ -42,7 +42,8 @@ pub struct NestedStructRegular {
     field_strings: StringsStructRegular,
 }
 
-fn main() {
+#[test]
+fn all() {
     // **************** NUMERICS ****************
     let inp_num = NumbersStructRegular {
         field_ne_local_macro: 0x00FF_u16,

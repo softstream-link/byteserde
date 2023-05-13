@@ -11,7 +11,7 @@ use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 struct DebugMsg(
     #[byteserde(replace( (_1.len() + _2.len()) as u16 ))] u16,
     ConstCharAscii<b'+'>,
-    #[byteserde(length ( _0 as usize - 1 ))] StringAscii,
+    #[byteserde(length ( _0 as usize - _1.len() ))] StringAscii,
 );
 
 impl Default for DebugMsg {
@@ -20,7 +20,8 @@ impl Default for DebugMsg {
     }
 }
 
-fn main() {
+#[test]
+fn all() {
     let inp_debug = DebugMsg::default();
     println!("inp_debug: {:?}", inp_debug);
 

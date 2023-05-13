@@ -4,9 +4,7 @@ use quote::quote;
 use syn::DeriveInput;
 
 mod common;
-mod named;
 mod struct_shared;
-mod unnamed;
 
 #[proc_macro_derive(ByteSerializeStack, attributes(byteserde))]
 #[allow(non_snake_case)] // keep snake name otherwise it messes up vscode refactoring
@@ -20,9 +18,10 @@ pub fn ByteSerializeStack(input: TokenStream) -> TokenStream {
     // grap just stack presets
     let ser_vars = ser_method.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
     let ser_over = ser_method.iter().map(|f| &f.ser_over).collect::<Vec<_>>();
-    let ser_uses_stack = ser_method.iter().map(|f| &f.ser_uses_stack).collect::<Vec<_>>();
-
-
+    let ser_uses_stack = ser_method
+        .iter()
+        .map(|f| &f.ser_uses_stack)
+        .collect::<Vec<_>>();
 
     let crate_name = get_crate_name();
 
@@ -60,7 +59,10 @@ pub fn ByteSerializeHeap(input: TokenStream) -> TokenStream {
     // grap just heap presets
     let ser_vars = ser_method.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
     let ser_over = ser_method.iter().map(|f| &f.ser_over).collect::<Vec<_>>();
-    let ser_uses_heap = ser_method.iter().map(|f| &f.ser_uses_heap).collect::<Vec<_>>();
+    let ser_uses_heap = ser_method
+        .iter()
+        .map(|f| &f.ser_uses_heap)
+        .collect::<Vec<_>>();
 
     let crate_name = get_crate_name();
 

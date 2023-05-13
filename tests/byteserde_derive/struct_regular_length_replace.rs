@@ -12,7 +12,7 @@ struct DebugMsg {
     #[byteserde(replace( (text.len() + packet_type.len()) as u16 ))]
     packet_length: u16,
     packet_type: ConstCharAscii<b'+'>,
-    #[byteserde(length ( packet_length as usize - 1 ))]
+    #[byteserde(length ( packet_length as usize - packet_type.len() ))]
     text: StringAscii,
 }
 
@@ -26,7 +26,8 @@ impl Default for DebugMsg {
     }
 }
 
-fn main() {
+#[test]
+fn all() {
     let inp_debug = DebugMsg::default();
     println!("inp_debug: {:?}", inp_debug);
 

@@ -1,5 +1,5 @@
 use quote::{__private::TokenStream, quote};
-use syn::{parenthesized, Attribute, Expr, Field, Ident, LitStr, Type};
+use syn::{parenthesized, Attribute, Expr, Field, Ident, LitStr, Member, Type};
 
 // serialize overrides
 pub fn ser_overrides(fld: &Field, var_name: &Ident) -> TokenStream {
@@ -25,13 +25,50 @@ pub fn des_num_vars(endian: &Endian, var_name: &Ident) -> TokenStream {
         _ => quote!( let #var_name = des.deserialize_ne()?; ),
     }
 }
+
+pub enum MemberIdent<'a> {
+    Named(&'a Ident),
+    Unnamed(&'a Member),
+}
+// serialize
+pub fn ser_arr_num(endian: &Endian, member: &MemberIdent) -> TokenStream {
+    match endian {
+        Endian::Big => match member {
+            MemberIdent::Named(fld_name) => {
+                quote!(for n in self.#fld_name { ser.serialize_be(n)?; })
+            }
+            MemberIdent::Unnamed(fld_index) => {
+                quote!(for n in self.#fld_index { ser.serialize_be(n)?; })
+            }
+        },
+        Endian::Lit => match member {
+            MemberIdent::Named(fld_name) => {
+                quote!(for n in self.#fld_name { ser.serialize_le(n)?; })
+            }
+            MemberIdent::Unnamed(fld_index) => {
+                quote!(for n in self.#fld_index { ser.serialize_le(n)?; })
+            }
+        },
+        _ => match member {
+            MemberIdent::Named(fld_name) => {
+                quote!(for n in self.#fld_name { ser.serialize_ne(n)?; })
+            }
+            MemberIdent::Unnamed(fld_index) => {
+                quote!(for n in self.#fld_index { ser.serialize_ne(n)?; })
+            }
+        }
+    }
+}
+// pub fn ser_arr_num_unnamed(endian: &Endian, fld_index: &Member) -> TokenStream {
+//     match endian {
+//         Endian::Big => quote!(for n in self.#fld_index { ser.serialize_be(n)?; }),
+//         Endian::Lit => quote!(for n in self.#fld_index { ser.serialize_le(n)?; }),
+//         _ => quote!(for n in self.#fld_index { ser.serialize_ne(n)?; }),
+//     }
+// }
+
 // deserialize
-pub fn des_arr_num_vars(
-    endian: &Endian,
-    var_name: &Ident,
-    ty: &Type,
-    len: &Expr,
-) -> TokenStream {
+pub fn des_arr_num_vars(endian: &Endian, var_name: &Ident, ty: &Type, len: &Expr) -> TokenStream {
     match endian {
         Endian::Big => {
             quote!( let mut #var_name: [#ty; #len] = [0; #len]; for e in #var_name.iter_mut() {*e = des.deserialize_be()?;} )
@@ -44,7 +81,6 @@ pub fn des_arr_num_vars(
         }
     }
 }
-
 
 #[derive(Debug)]
 pub enum Length {
@@ -83,39 +119,6 @@ pub fn get_effective_endian(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) 
 }
 
 fn get_endian_attribute(attrs: &[Attribute]) -> Endian {
-    // let byteserde_attrs = attrs
-    //     .iter()
-    //     .filter(|atr| atr.meta.path().is_ident("byteserde"))
-    //     .collect::<Vec<_>>();
-
-    // let mut endian = Endian::NotSet;
-
-    // // https://docs.rs/syn/latest/syn/meta/struct.ParseNestedMeta.html
-
-    // for attr in byteserde_attrs {
-    //     let res = attr.parse_nested_meta(|meta| {
-    //         if meta.path.is_ident("endian") {
-    //             let value = meta.value()?;
-    //             let s: LitStr = value.parse()?;
-    //             if s.value() == "be" {
-    //                 endian = Endian::Big;
-    //             } else if s.value() == "le" {
-    //                 endian = Endian::Lit;
-    //             } else if s.value() == "ne" {
-    //                 endian = Endian::Native;
-    //             } else {
-    //                 return Err(meta.error("Expected 'be', 'le', or 'ne'"));
-    //             }
-    //             return Ok(());
-    //         }
-
-    //         Err(meta.error(format!("Unexpected attribute. {}" , quote!(#attr))))
-    //     });
-
-    //     if res.is_err() {
-    //         panic!("{}", res.unwrap_err());
-    //     }
-    // }
     let (endian, _, _) = get_attributes(attrs);
     endian
 }

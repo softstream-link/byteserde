@@ -3,20 +3,16 @@ use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
 #[byteserde(endian = "le")]
-pub struct NumbersStructRegular<const L: usize, const M: usize> {
-    #[byteserde(endian = "be")]
-    filed_arr_u16_local_macro: [u16; L],
-    filed_arr_u16_global_macro: [u16; M],
-}
+pub struct NumbersStructRegular<const L: usize, const M: usize>(
+    #[byteserde(endian = "be")] [u16; L],
+    [u16; M],
+);
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
 pub struct StringsStructRegular<
     S: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<S>,
     C: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<C>,
-> {
-    field_string: S,
-    field_char: C,
-}
+>(S, C);
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 pub struct NestedStructRegular<
@@ -24,17 +20,15 @@ pub struct NestedStructRegular<
     const M: usize,
     S: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<S>,
     C: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<C>,
-> {
-    field_numbers: NumbersStructRegular<L, M>,
-    field_strings: StringsStructRegular<S, C>,
-}
+>(NumbersStructRegular<L, M>, StringsStructRegular<S, C>);
 
-fn main() {
+#[test]
+fn all() {
     // **************** NUMERICS ****************
-    let inp_num = NumbersStructRegular::<2, 3> {
-        filed_arr_u16_local_macro: [0x0001_u16, 0x0002_u16],
-        filed_arr_u16_global_macro: [0x0001_u16, 0x0002_u16, 0x0003_u16],
-    };
+    let inp_num = NumbersStructRegular::<2, 3>(
+        [0x0001_u16, 0x0002_u16],
+        [0x0001_u16, 0x0002_u16, 0x0003_u16],
+    );
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
@@ -52,11 +46,7 @@ fn main() {
     assert_eq!(inp_num, out_num);
 
     // **************** STRINGS ****************
-    // let inp_str = StringsStructRegular::<String, char> {
-    let inp_str = StringsStructRegular::<String, char> {
-        field_string: "Hello".to_string(),
-        field_char: 'a',
-    };
+    let inp_str = StringsStructRegular::<String, char>("Hello".to_string(), 'a');
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
     println!("ser_stack: {ser_stack:#x}");
 
@@ -69,10 +59,7 @@ fn main() {
     assert_eq!(inp_str, out_str);
 
     // **************** NESTED ****************
-    let inp_nes = NestedStructRegular::<2, 3, String, char> {
-        field_numbers: inp_num.clone(),
-        field_strings: inp_str.clone(),
-    };
+    let inp_nes = NestedStructRegular::<2, 3, String, char>(inp_num.clone(), inp_str.clone());
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_nes).unwrap();

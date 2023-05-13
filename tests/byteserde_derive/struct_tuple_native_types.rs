@@ -30,7 +30,8 @@ pub struct StringsStructTuple(String, char);
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 pub struct NestedStructTuple(NumbersStructTuple, StringsStructTuple);
 
-fn main() {
+#[test]
+fn all() {
     // ********************** NUMERICS **********************
     let inp_num = NumbersStructTuple(
         0x00FF_u16,
