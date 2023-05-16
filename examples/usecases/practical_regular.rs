@@ -1,17 +1,15 @@
-use byteserde::prelude::*;
 use byteserde::utils::strings::ascii::{ConstCharAscii, StringAscii};
-use log::info;
-
 use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 
-use crate::unittest::setup;
+
+type Plus = ConstCharAscii<b'+'>;
 
 #[derive(ByteDeserialize, ByteSerializeStack, ByteSerializeHeap, Debug, PartialEq)]
 #[byteserde(endian = "be")]
 struct DebugMsg {
     #[byteserde(replace( (text.len() + packet_type.len()) as u16 ))]
     packet_length: u16,
-    packet_type: ConstCharAscii<b'+'>,
+    packet_type: Plus,
     #[byteserde(length ( packet_length as usize - packet_type.len() ))]
     text: StringAscii,
 }
@@ -28,6 +26,9 @@ impl Default for DebugMsg {
 
 #[test]
 fn all() {
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
+    use log::info;
     setup::log::configure();
     let inp_debug = DebugMsg::default();
     info!("inp_debug: {:?}", inp_debug);
