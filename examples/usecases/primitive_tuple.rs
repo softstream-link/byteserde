@@ -1,12 +1,12 @@
+#![allow(unused_imports)] // supresses warnings in cargo run --example mode
+use crate::unittest::setup;
 use byteserde::prelude::*;
 use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 use log::info;
 
-use crate::integrationtest::setup;
-
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Default)]
 #[byteserde(endian = "le")]
-struct NumbersStructTuple(
+struct Numbers(
     #[byteserde(endian = "ne")] u16,
     #[byteserde(endian = "le")] u16,
     #[byteserde(endian = "be")] u16,
@@ -27,17 +27,17 @@ struct NumbersStructTuple(
     f64,
 );
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
-pub struct StringsStructTuple(String, char);
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+pub struct Strings(String, char);
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
-pub struct NestedStructTuple(NumbersStructTuple, StringsStructTuple);
+pub struct Nested(Numbers, Strings);
 
 #[test]
-fn all() {
+fn test_numbers() {
     setup::log::configure();
-    // ********************** NUMERICS **********************
-    let inp_num = NumbersStructTuple(
+
+    let inp_num = Numbers(
         0x00FF_u16,
         0x00FF_u16,
         0x00FF_u16,
@@ -78,16 +78,21 @@ fn all() {
     assert_eq!(ser_stack.bytes(), ser_heap.bytes());
 
     // deserialize
-    let out_num: NumbersStructTuple = from_serializer_stack(&ser_stack).unwrap();
+    let out_num: Numbers = from_serializer_stack(&ser_stack).unwrap();
     info!("inp_num: {inp_num:?}");
     info!("out_num: {out_num:?}");
     assert_eq!(inp_num, out_num);
+}
 
-    // ********************** STRINGS **********************
-    let inp_str = StringsStructTuple(
+#[test]
+fn test_strings() {
+    setup::log::configure();
+
+    let inp_str = Strings(
         "whatever".to_string(),
         '♥', // 3 bytes long
     );
+
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
     info!("ser_stack: {ser_stack:#x}");
@@ -96,13 +101,22 @@ fn all() {
     info!("ser_heap: {ser_heap:#x}");
     assert_eq!(ser_stack.bytes(), ser_heap.bytes());
     // deserialize
-    let out_str: StringsStructTuple = from_serializer_stack(&ser_stack).unwrap();
+    let out_str: Strings = from_serializer_stack(&ser_stack).unwrap();
     info!("inp_str: {inp_str:?}");
     info!("out_str: {out_str:?}");
     assert_eq!(inp_str, out_str);
+}
 
-    // ********************** NESTED **********************
-    let inp_struct = NestedStructTuple(inp_num.clone(), inp_str.clone());
+#[test]
+fn test_nested() {
+    setup::log::configure();
+
+    let inp_num = Numbers::default();
+    let inp_str = Strings(
+        "whatever".to_string(),
+        '♥', // 3 bytes long
+    );
+    let inp_struct = Nested(inp_num, inp_str);
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_struct).unwrap();
     info!("ser_stack: {ser_stack:#x}");
@@ -111,7 +125,7 @@ fn all() {
     info!("ser_heap: {ser_heap:#x}");
     assert_eq!(ser_stack.bytes(), ser_heap.bytes());
     // deserialize
-    let out_struct: NestedStructTuple = from_serializer_stack(&ser_stack).unwrap();
+    let out_struct: Nested = from_serializer_stack(&ser_stack).unwrap();
     info!("inp_struct: {inp_struct:?}");
     info!("out_struct: {out_struct:?}");
     assert_eq!(inp_struct, out_struct);

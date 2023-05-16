@@ -9,8 +9,8 @@ use syn::{
 };
 
 use crate::struct_shared::{
-    des_num_endian, des_num_vars, get_endian_attribute, get_length_attribute, ser_num,
-    ser_num_endian, ser_overrides, Length, MemberIdent, get_replace_attribute, Replace,
+    des_num_endian, des_num_vars, get_endian_attribute, get_length_attribute,
+    get_replace_attribute, ser_num, ser_num_endian, ser_overrides, Length, MemberIdent, Replace,
 };
 
 pub enum StructType {
@@ -132,6 +132,7 @@ fn setup_numeric(
         des_uses: quote!( #var_name, ),                     // Struct/Tuple ( #var_name, .., ..)
     }
 }
+
 fn setup_array(
     ast: &DeriveInput,
     fld: &Field,
@@ -220,14 +221,13 @@ fn setup_vec(
         _ => panic!("this method should only be called with Vec types"),
     };
 
-    
     let ser_repl = match replace {
         Replace::Set(value) => quote!( let #var_name = &#value; ),
         Replace::NotSet => quote!(),
     };
     FieldSerializerDeserializerTokens {
         ser_vars: ser_vars,
-        ser_repl: ser_repl, 
+        ser_repl: ser_repl,
         ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
         des_vars: des_vars_xxx,
