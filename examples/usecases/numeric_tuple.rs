@@ -1,7 +1,7 @@
 use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
-struct Bytes(#[byteserde(replace(i16::MIN))] i8, u8);
+struct Bytes(#[byteserde(replace(i8::MIN))] i8, u8);
 
 #[test]
 fn test_bytes() {
@@ -15,7 +15,7 @@ fn test_bytes() {
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_bytes).unwrap();
     info!("ser_stack: {ser_stack:#x}");
 
-    assert_eq!(0xff, ser_stack.bytes()[0]);
+    assert_eq!(i8::MIN as u8, ser_stack.bytes()[0]);
     assert_eq!(0x01, ser_stack.bytes()[1]);
 
     // heap
