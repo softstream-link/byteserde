@@ -11,6 +11,39 @@ struct Bytes {
     field_u8: u8,
 }
 
+#[test]
+fn test_bytes() {
+    setup::log::configure();
+    let inp_bytes = Bytes {
+        field_i8: -1,
+        field_u8: 1,
+    };
+
+    // stack
+    let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_bytes).unwrap();
+    info!("ser_stack: {ser_stack:#x}");
+
+    assert_eq!(i8::MIN as u8, ser_stack.bytes()[0]);
+    assert_eq!(0x01, ser_stack.bytes()[1]);
+
+    // heap
+    let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_bytes).unwrap();
+    info!("ser_heap: {ser_heap:#x}");
+    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+
+    // deserialize
+    let out_bytes: Bytes = from_serializer_stack(&ser_stack).unwrap();
+    info!("inp_bytes: {inp_bytes:?}");
+    info!("out_bytes: {out_bytes:?}");
+    assert_eq!(
+        out_bytes,
+        Bytes {
+            field_i8: i8::MIN,
+            field_u8: inp_bytes.field_u8,
+        }
+    );
+}
+
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
 #[byteserde(endian = "le")]
 struct Numerics {
@@ -36,37 +69,6 @@ struct Numerics {
     field_f32: f32,
     field_f64: f64,
 }
-
-#[test]
-fn test_bytes(){
-    setup::log::configure();
-    let inp_bytes = Bytes {
-        field_i8: -1,
-        field_u8: 1,
-    };
-
-    // stack
-    let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_bytes).unwrap();
-    info!("ser_stack: {ser_stack:#x}");
-
-    assert_eq!(i8::MIN as u8, ser_stack.bytes()[0]);
-    assert_eq!(0x01, ser_stack.bytes()[1]);
-
-    // heap
-    let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_bytes).unwrap();
-    info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
-
-    // deserialize
-    let out_bytes: Bytes = from_serializer_stack(&ser_stack).unwrap();
-    info!("inp_bytes: {inp_bytes:?}");
-    info!("out_bytes: {out_bytes:?}");
-    assert_eq!(out_bytes, Bytes{
-        field_i8: i8::MIN,
-        field_u8: inp_bytes.field_u8,
-    });
-}
-
 #[test]
 fn test_numerics() {
     setup::log::configure();

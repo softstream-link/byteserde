@@ -9,27 +9,6 @@ struct VecByte {
     field_vec_u8_tail: Vec<u8>,
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
-#[byteserde(endian = "le")]
-struct VecNumerics {
-    #[byteserde(endian = "be", length(3))]
-    field_vec_u16_head: Vec<u16>,
-    #[byteserde(length(2), replace( vec![10_u16, 11] ))]
-    field_vec_u16_body: Vec<u16>,
-    field_vec_u16_tail: Vec<u16>,
-}
-
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Default)]
-struct Other(u8);
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
-struct VecOther {
-    #[byteserde(length(3))]
-    field_vec_other_head: Vec<Other>,
-    #[byteserde(length(2), replace( vec![Other(10),Other(11)] ))]
-    field_vec_other_body: Vec<Other>,
-    field_vec_other_tail: Vec<Other>,
-}
-
 #[test]
 fn vec_u8() {
     use crate::unittest::setup;
@@ -62,6 +41,16 @@ fn vec_u8() {
             ..inp_num
         }
     );
+}
+
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[byteserde(endian = "le")]
+struct VecNumerics {
+    #[byteserde(endian = "be", length(3))]
+    field_vec_u16_head: Vec<u16>,
+    #[byteserde(length(2), replace( vec![10_u16, 11] ))]
+    field_vec_u16_body: Vec<u16>,
+    field_vec_u16_tail: Vec<u16>,
 }
 
 #[test]
@@ -102,6 +91,16 @@ fn vec_u16() {
     );
 }
 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Default)]
+struct Other(u8);
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+struct VecOther {
+    #[byteserde(length(3))]
+    field_vec_other_head: Vec<Other>,
+    #[byteserde(length(2), replace( vec![Other(10),Other(11)] ))]
+    field_vec_other_body: Vec<Other>,
+    field_vec_other_tail: Vec<Other>,
+}
 #[test]
 fn vec_other() {
     use crate::unittest::setup;

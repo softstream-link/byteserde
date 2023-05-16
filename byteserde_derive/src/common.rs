@@ -56,7 +56,7 @@ pub fn get_struct_ser_des_tokens(
                             | FieldType::VecStructs { ty } => {
                                 setup_vec(ast, fld, ty, var_name, member, &fld_type)
                             }
-                            FieldType::Other { ty } => setup_other(fld, var_name, ty, member),
+                            FieldType::Other { ty } => setup_struct(fld, var_name, ty, member),
                         }
                     })
                     .collect::<Vec<_>>()
@@ -88,7 +88,7 @@ pub fn get_struct_ser_des_tokens(
                             | FieldType::VecStructs { ty } => {
                                 setup_vec(ast, fld, ty, var_name, member, &fld_type)
                             }
-                            FieldType::Other { ty } => setup_other(fld, var_name, ty, member),
+                            FieldType::Other { ty } => setup_struct(fld, var_name, ty, member),
                         }
                     })
                     .collect::<Vec<_>>()
@@ -257,16 +257,21 @@ fn setup_vec(
         des_uses: quote!( #var_name, ),
     }
 }
-fn setup_other(
+fn setup_struct(
     fld: &Field,
     var_name: &Ident,
     ty: &Type,
     member: &MemberIdent,
 ) -> FieldSerializerDeserializerTokens {
     let length = get_length_attribute(&fld.attrs);
+    let replace = get_replace_attribute(&fld.attrs);
     let ser_vars = match member {
         MemberIdent::Named(_) => quote! { let #var_name = &self.#var_name; }, // let #var_name = &self.#var_name;
         MemberIdent::Unnamed(fld_index) => quote! { let #var_name = &self.#fld_index; }, // let #var_name = &self.#fld_index;
+    };
+    let ser_repl = match replace {
+        Replace::Set(value) => quote!( let #var_name: &#ty = &#value; ),
+        Replace::NotSet => quote!(),
     };
     let des_vars = match length {
         Length::Len(len) => {
@@ -275,11 +280,11 @@ fn setup_other(
         Length::NotSet => quote!( let #var_name: #ty = des.deserialize()?; ),
     };
     FieldSerializerDeserializerTokens {
-        ser_vars,
-        ser_repl: quote!(), // not supported
+        ser_vars: ser_vars,
+        ser_repl: ser_repl, 
         ser_uses_stck: quote!( #var_name.byte_serialize_stack(ser)?; ),
         ser_uses_heap: quote!( #var_name.byte_serialize_heap(ser)?; ),
-        des_vars,
+        des_vars: des_vars,
         des_uses: quote!( #var_name, ),
     }
 }

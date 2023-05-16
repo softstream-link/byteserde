@@ -3,26 +3,6 @@ use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
 struct Bytes(#[byteserde(replace(i16::MIN))] i8, u8);
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
-#[byteserde(endian = "le")]
-struct Numerics(
-    #[byteserde(endian = "ne")] // ne test local attribute
-    u16,
-    #[byteserde(endian = "le")] u16, // le test local attribute
-    #[byteserde(endian = "be")] u16, // be test local attribute
-    u16,                             // le test global attribute
-    i16,
-    u16,
-    i32,
-    u32,
-    i64,
-    u64,
-    i128,
-    u128,
-    f32,
-    f64,
-);
-
 #[test]
 fn test_bytes() {
     use crate::unittest::setup;
@@ -50,6 +30,25 @@ fn test_bytes() {
     assert_eq!(out_bytes, Bytes(i8::MIN, inp_bytes.1,));
 }
 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
+#[byteserde(endian = "le")]
+struct Numerics(
+    #[byteserde(endian = "ne")] // ne test local attribute
+    u16,
+    #[byteserde(endian = "le")] u16, // le test local attribute
+    #[byteserde(endian = "be")] u16, // be test local attribute
+    u16,                             // le test global attribute
+    i16,
+    u16,
+    i32,
+    u32,
+    i64,
+    u64,
+    i128,
+    u128,
+    f32,
+    f64,
+);
 #[test]
 fn test_numerics() {
     use crate::unittest::setup;
