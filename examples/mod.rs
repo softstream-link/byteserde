@@ -4,7 +4,10 @@ mod usecases {
     
     pub mod numeric_regular;
     pub mod numeric_tuple;
-    
+
+    pub mod strings_regular;
+
+    pub mod strings_tuple;
     pub mod vec_regular;
     pub mod vec_tuple;
 

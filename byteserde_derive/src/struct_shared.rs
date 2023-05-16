@@ -1,4 +1,4 @@
-use quote::{__private::Span, __private::TokenStream, quote};
+use quote::{__private::Span, quote};
 use syn::{parenthesized, Attribute, Expr, Ident, LitStr, Member};
 
 

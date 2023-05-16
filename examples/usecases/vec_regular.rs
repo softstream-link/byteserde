@@ -1,9 +1,4 @@
-#![allow(unused_imports)] // supresses warnings in cargo run --example mode
-use byteserde::prelude::*;
 use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
-use log::info;
-
-use crate::unittest::setup;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 struct VecByte {
@@ -37,6 +32,9 @@ struct VecOther {
 
 #[test]
 fn vec_u8() {
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
+    use log::info;
     setup::log::configure();
     let inp_num = VecByte {
         field_vec_u8_head: vec![1, 2, 3],
@@ -68,6 +66,9 @@ fn vec_u8() {
 
 #[test]
 fn vec_u16() {
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
+    use log::info;
     setup::log::configure();
     let inp_num = VecNumerics {
         field_vec_u16_head: vec![1, 2, 3],
@@ -103,6 +104,9 @@ fn vec_u16() {
 
 #[test]
 fn vec_other() {
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
+    use log::info;
     setup::log::configure();
     let inp_num = VecOther {
         field_vec_other_head: vec![Other(1), Other(2), Other(3)],

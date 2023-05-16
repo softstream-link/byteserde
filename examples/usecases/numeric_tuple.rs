@@ -1,8 +1,4 @@
-#![allow(unused_imports)] // supresses warnings in cargo run --example mode
-use crate::unittest::setup;
-use byteserde::prelude::*;
 use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
-use log::info;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
 struct Bytes(#[byteserde(replace(i16::MIN))] i8, u8);
@@ -29,6 +25,9 @@ struct Numerics(
 
 #[test]
 fn test_bytes() {
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
+    use log::info;
     setup::log::configure();
     let inp_bytes = Bytes(-1, 1);
 
@@ -53,6 +52,9 @@ fn test_bytes() {
 
 #[test]
 fn test_numerics() {
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
+    use log::info;
     setup::log::configure();
 
     let inp_num = Numerics(
