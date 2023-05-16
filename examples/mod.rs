@@ -1,11 +1,13 @@
 mod unittest;
 
 mod usecases {
+    
+    pub mod numeric_regular;
+    pub mod numeric_tuple;
+    
     pub mod vec_regular;
     pub mod vec_tuple;
 
-    pub mod primitive_regular;
-    pub mod primitive_tuple;
 }
 use log::info;
 use unittest::setup;

@@ -1,32 +1,15 @@
 use quote::{__private::Span, __private::TokenStream, quote};
-use syn::{parenthesized, Attribute, Expr, Field, Ident, LitStr, Member};
+use syn::{parenthesized, Attribute, Expr, Ident, LitStr, Member};
 
-// serialize overrides
-pub fn ser_overrides(fld: &Field, var_name: &Ident) -> TokenStream {
-    let replace = get_replace_attribute(&fld.attrs);
-    match replace {
-        Replace::Set(value) => quote!( let #var_name = #value; ),
-        Replace::NotSet => quote!(),
-    }
-}
-// serialize
-pub fn ser_num(endian: &Endian, var_name: &Ident) -> TokenStream {
-    let ser_num_endian = ser_num_endian(endian);
-    quote!( ser.#ser_num_endian(#var_name)?; )
-}
-// deserialize
-pub fn des_num_vars(endian: &Endian, var_name: &Ident) -> TokenStream {
-    let des_num_endian = des_num_endian(endian);
-    quote!( let #var_name = des.#des_num_endian()?; )
-}
-pub fn ser_num_endian(endian: &Endian) -> Ident {
+
+pub fn ser_endian_method_xx(endian: &Endian) -> Ident {
     match endian {
         Endian::Big => Ident::new("serialize_be", Span::call_site()),
         Endian::Lit => Ident::new("serialize_le", Span::call_site()),
         _ => Ident::new("serialize_ne", Span::call_site()),
     }
 }
-pub fn des_num_endian(endian: &Endian) -> Ident {
+pub fn des_endian_method_xx(endian: &Endian) -> Ident {
     match endian {
         Endian::Big => Ident::new("deserialize_be", Span::call_site()),
         Endian::Lit => Ident::new("deserialize_le", Span::call_site()),
