@@ -28,3 +28,6 @@ trybuild = { version = "1.0.79", features = ["diff"] }
 [[bench]]
 name = "struct_ser_des_bench"
 harness = false
+
+[[example]]
+name = "mod"

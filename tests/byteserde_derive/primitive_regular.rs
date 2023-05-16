@@ -6,16 +6,20 @@ use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 )]
 #[byteserde(endian = "le")]
 pub struct NumbersStructRegular {
-    #[byteserde(endian = "ne")]
+    #[byteserde(endian = "ne")] // ne test local attribute
     field_ne_local_macro: u16,
+    
     #[byteserde(endian = "le")]
-    field_le_local_macro: u16,
+    field_le_local_macro: u16, // le test local attribute
+
     #[byteserde(endian = "be")]
-    field_be_local_macro: u16,
-    field_be_global_macro: u16,
+    field_be_local_macro: u16, // be test local attribute
+    field_be_global_macro: u16, // le test global attribute 
+
     #[byteserde(endian = "be")]
-    filed_arr_u16_local_macro: [u16; 3],
-    filed_arr_u16_global_macro: [u16; 3],
+    field_arr_u16_local_macro: [u16; 3], // be test local attribute
+    field_arr_u16_global_macro: [u16; 3], // le test global attribute
+
     field_i8: i8,
     field_u8: u8,
     field_i16: i16,
@@ -50,8 +54,8 @@ fn all() {
         field_le_local_macro: 0x00FF_u16,
         field_be_local_macro: 0x00FF_u16,
         field_be_global_macro: 0x00FF_u16,
-        filed_arr_u16_local_macro: [0x0001_u16, 0x0002_u16, 0x0003_u16],
-        filed_arr_u16_global_macro: [0x0001_u16, 0x0002_u16, 0x0003_u16],
+        field_arr_u16_local_macro: [0x0001_u16, 0x0002_u16, 0x0003_u16],
+        field_arr_u16_global_macro: [0x0001_u16, 0x0002_u16, 0x0003_u16],
         ..Default::default()
     };
 

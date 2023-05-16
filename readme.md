@@ -1,70 +1,38 @@
-# TODO 
-* resolve performance issue with stack serializer, non matching arm degrates performance when using format macro to generate error message - https://github.com/rust-lang/rust/issues/111075
+# Motivation
+* This product is for [bit steam](https://en.wikipedia.org/wiki/Bitstream) what [serde](https://serde.rs) is for [json](https://www.json.org)
 
-# About
+* The goal of this product is to provide a set of utilities that enable frictionless transitioning between a `byte stream`, ex: `&[u8]`, and an arbitrary `struct`. In other words, the project provides a set of `traits` and `impl`'s that can be used to manually `serialize` an arbitrary `struct` into a `byte stream` as well as to `deserialize` a given `byte stream` into it original `struct`. 
+
+* In addition to be able to custom serialize an arbitrary `struct`, you can leverage an included `#[derive(..)]` `proc_macro` and a number usefull `annotations` to create automatically generated serialize and deserialize `trait` implementation that covers most of typical usecases.
+
+
+# Benefit case
+* If you work with network streams which deliver data in `byte stream` format and a well defined sequence you can use this product to quickly and efficently map your `byte stream` into a `struct` of your choice and focus on the business logic instead of parsing and mapping.
+
+* if you have two or more systems which need to communicate with each other, either over a network socket or a shared memory, but at a very `low latency`/`cpu cost`, this product is a good choice for you.
+
+
+# Structure
 * The project contains two cargo artifacts
     * `byteserde` - [Cargo.toml](Cargo.toml)
-        * contains [ByteSerializeStack](src/ser.rs#ByteSerializeStack), [ByteSerializeHeap](src/ser.rs#ByteSerializeHeap) & [ByteDeserialize](src/des.rs#ByteDeserialize) traits and helper classes that make it easy to impl this trait manually
+        * contains [ByteSerializeStack](src/ser.rs#ByteSerializeStack), [ByteSerializeHeap](src/ser.rs#ByteSerializeHeap) & [ByteDeserialize`<T>`](src/des.rs#ByteDeserialize) `traits` and helper `struct`'s that make it easy to manually create custom `byte stream` serailizer and deserializer
+            
+        * [ByteSerialize***r***Stack`<CAP>`](src/ser.rs#ByteSerializerStack) - provides ultra fast speed by serializing into a pre allocated `byte array` `[u8; CAP]` on `stack`, hence the name, it is very fast but at the cost of you needing to specify the size of the LARGEST `struct` you will attempt to serialize. If you reach the boundary of this preallocated byte array, your serialization will fail. This utility provides a reset features, which moves the internal counter to the begining, and allows you to recycle the buffer for multiple purpoces. 
+        * [ByteSerialize***r***Heap](src/ser.rs#ByteSerializerHeap) - provides a fast enough for most speed by serializing into a `byte vector` `Vec<u8>`, hence the name. this utility takes your worries away in terms of knowing the LARGEST `struct` in advance at the cost of speed. 
+
+        * [ByteDeserialize***r***](src/des.rs#ByteDeserialize) - takes a `byte stream` `&[u8]` irrespctive of heap vs stack allocation and turns it into a `struct`
+
     * `byteserde_derive` - [byteserde/Cargo.toml](byteserde/Cargo.toml)
         * contains procedural macro that generaters implementation of these traits on regular & tuple rust structure. 
         * NOTE: that Union, Enum, and Unit structure are not not currently supported
 
-# Development hints
-* When working on or improving the `byteserde` proc macro the following setup is required to run `cargo expand`
-    1. Add the following block in the [Cargo.toml](Cargo.toml)
-        ```toml
-        [[bin]]
-        name = "main"
-        path = "main.rs"
-        ```
-    2. create a [main.rs](main.rs) file in the root of the project
-        ```rust
-        use byteserde::{ByteSerializerStack, ByteDeserializer};
-        use byteserde_derive::{ByteSerializeStack, ByteDeserialize};
-
-        #[derive(ByteSerializeStack, ByteDeserialize)]
-        pub struct NumbersStructRegular {
-            field_i8: i8,
-            field_u8: u8,
-        }
-        fn main() {}
-        ```
-    3. run expand command
-        ```sh
-        cargo expand --bin main
-        ```
-    4. It shall expand into something that looks as following
-        ```rust
-        ////////// snip ...
-        impl byteserde::ser::ByteSerializeStack for NumbersStructRegular {
-            fn byte_serialize_stack<const CAP: usize>(
-                &self,
-                ser: &mut byteserde::ser::ByteSerializerStack<CAP>,
-            ) -> byteserde_bin::error::Result<()> {
-                ser.serialize_ne(self.field_i8)?;
-                ser.serialize_ne(self.field_u8)?;
-                Ok(())
-            }
-        }
-        impl byteserde::des::ByteDeserialize<NumbersStructRegular> for NumbersStructRegular {
-            fn byte_deserialize(
-                des: &mut byteserde_bin::des::ByteDeserializer,
-            ) -> byteserde::error::Result<NumbersStructRegular> {
-                Ok(NumbersStructRegular {
-                    field_i8: des.deserialize_ne()?,
-                    field_u8: des.deserialize_ne()?,
-                })
-            }
-        }
-        ////////// snip ...
-        ```
+# Examples & Overview
+* Please reffer to this document for a number of helpfull 
 
 
-* All unittests related to the proc macros are defined here  [tests/byteserde/usecases_test.rs](tests/byteserde/usecases_test.rs)
+# TODO 
+* resolve performance issue with stack serializer, non matching arm degrates performance when using format macro to generate error message - https://github.com/rust-lang/rust/issues/111075
 
-    ```sh
-    cargo test --package byteserde_bin --test mod -- byteserde::usecases_test --nocapture
-    ```
-
-
+# Want to contribute?
+* Here are a few useful hints to get you started [developers corner](dev.md)
 

@@ -1,5 +1,8 @@
 use byteserde::prelude::*;
 use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use log::info;
+
+use crate::integrationtest::setup;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
 #[byteserde(endian = "le")]
@@ -32,6 +35,7 @@ pub struct NestedStructTuple(NumbersStructTuple, StringsStructTuple);
 
 #[test]
 fn all() {
+    setup::log::configure();
     // ********************** NUMERICS **********************
     let inp_num = NumbersStructTuple(
         0x00FF_u16,
@@ -55,7 +59,7 @@ fn all() {
     );
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
-    println!("ser_stack: {ser_stack:#x}");
+    info!("ser_stack: {ser_stack:#x}");
     let field_0_ne_local_macro = [ser_stack.bytes()[0], ser_stack.bytes()[1]];
     assert_eq!(field_0_ne_local_macro, 0x00FF_u16.to_ne_bytes());
 
@@ -70,13 +74,13 @@ fn all() {
 
     //heap
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_num).unwrap();
-    println!("ser_heap: {ser_heap:#x}");
+    info!("ser_heap: {ser_heap:#x}");
     assert_eq!(ser_stack.bytes(), ser_heap.bytes());
 
     // deserialize
     let out_num: NumbersStructTuple = from_serializer_stack(&ser_stack).unwrap();
-    println!("inp_num: {inp_num:?}");
-    println!("out_num: {out_num:?}");
+    info!("inp_num: {inp_num:?}");
+    info!("out_num: {out_num:?}");
     assert_eq!(inp_num, out_num);
 
     // ********************** STRINGS **********************
@@ -86,29 +90,29 @@ fn all() {
     );
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
-    println!("ser_stack: {ser_stack:#x}");
+    info!("ser_stack: {ser_stack:#x}");
     // heap
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_str).unwrap();
-    println!("ser_heap: {ser_heap:#x}");
+    info!("ser_heap: {ser_heap:#x}");
     assert_eq!(ser_stack.bytes(), ser_heap.bytes());
     // deserialize
     let out_str: StringsStructTuple = from_serializer_stack(&ser_stack).unwrap();
-    println!("inp_str: {inp_str:?}");
-    println!("out_str: {out_str:?}");
+    info!("inp_str: {inp_str:?}");
+    info!("out_str: {out_str:?}");
     assert_eq!(inp_str, out_str);
 
     // ********************** NESTED **********************
     let inp_struct = NestedStructTuple(inp_num.clone(), inp_str.clone());
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_struct).unwrap();
-    println!("ser_stack: {ser_stack:#x}");
+    info!("ser_stack: {ser_stack:#x}");
     // heap
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_struct).unwrap();
-    println!("ser_heap: {ser_heap:#x}");
+    info!("ser_heap: {ser_heap:#x}");
     assert_eq!(ser_stack.bytes(), ser_heap.bytes());
     // deserialize
     let out_struct: NestedStructTuple = from_serializer_stack(&ser_stack).unwrap();
-    println!("inp_struct: {inp_struct:?}");
-    println!("out_struct: {out_struct:?}");
+    info!("inp_struct: {inp_struct:?}");
+    info!("out_struct: {out_struct:?}");
     assert_eq!(inp_struct, out_struct);
 }

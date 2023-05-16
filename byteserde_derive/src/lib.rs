@@ -17,10 +17,10 @@ pub fn ByteSerializeStack(input: TokenStream) -> TokenStream {
     let (ser_method, _) = get_struct_ser_des_tokens(&ast);
     // grap just stack presets
     let ser_vars = ser_method.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
-    let ser_over = ser_method.iter().map(|f| &f.ser_over).collect::<Vec<_>>();
+    let ser_over = ser_method.iter().map(|f| &f.ser_repl).collect::<Vec<_>>();
     let ser_uses_stack = ser_method
         .iter()
-        .map(|f| &f.ser_uses_stack)
+        .map(|f| &f.ser_uses_stck)
         .collect::<Vec<_>>();
 
     let crate_name = get_crate_name();
@@ -58,7 +58,7 @@ pub fn ByteSerializeHeap(input: TokenStream) -> TokenStream {
     let (ser_method, _) = get_struct_ser_des_tokens(&ast);
     // grap just heap presets
     let ser_vars = ser_method.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
-    let ser_over = ser_method.iter().map(|f| &f.ser_over).collect::<Vec<_>>();
+    let ser_over = ser_method.iter().map(|f| &f.ser_repl).collect::<Vec<_>>();
     let ser_uses_heap = ser_method
         .iter()
         .map(|f| &f.ser_uses_heap)

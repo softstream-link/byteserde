@@ -16,7 +16,7 @@ jobs:
           cargo --version --verbose
           rustc --version
       - name: Test
-        run: cargo test
+        run: cargo test --examples --tests
       - name: Benchmark
         run: cargo bench
       - name: Clippy

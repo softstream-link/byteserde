@@ -84,10 +84,10 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
         &self.bytes[0..self.len]
     }
 
-    pub fn serialize_bytes_array<const N: usize>(&mut self, bytes: &[u8; N]) -> Result<&mut Self> {
-        self.serialize_bytes(bytes)?;
-        Result::Ok(self)
-    }
+    // pub fn serialize_bytes_array<const N: usize>(&mut self, bytes: &[u8; N]) -> Result<&mut Self> {
+    //     self.serialize_bytes(bytes)?;
+    //     Result::Ok(self)
+    // }
     pub fn serialize_bytes(&mut self, bytes: &[u8]) -> Result<&mut Self> {
         let input_len = bytes.len();
         let avail = self.avail();
@@ -222,10 +222,6 @@ impl ByteSerializerHeap {
     }
     pub fn bytes(&self) -> &[u8] {
         &self.bytes[0..]
-    }
-    pub fn serialize_bytes_array<const N: usize>(&mut self, bytes: &[u8; N]) -> Result<&mut Self> {
-        self.serialize_bytes(bytes)?;
-        Result::Ok(self)
     }
     pub fn serialize_bytes(&mut self, bytes: &[u8]) -> Result<&mut Self> {
         self.bytes.extend_from_slice(bytes);

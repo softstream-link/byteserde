@@ -1,14 +1,16 @@
-use quote::{__private::TokenStream, quote};
+use quote::{
+    __private::{Span, TokenStream},
+    quote,
+};
 use syn::{
-    ConstParam, Data, DeriveInput, Expr, Field, Fields, GenericParam, Generics, Ident, Index,
-    Member, Path, Type, TypeArray, TypeParam, TypePath,
+    AngleBracketedGenericArguments, ConstParam, Data, DeriveInput, Expr, Field, Fields,
+    GenericArgument, GenericParam, Generics, Ident, Index, Member, Path, PathArguments, Type,
+    TypeArray, TypeParam, TypePath,
 };
 
-use crate::{
-    struct_shared::{
-        des_arr_num_vars, des_num_vars, get_effective_endian, get_length_attribute, ser_arr_num,
-        ser_num, ser_overrides, Length, MemberIdent,
-    },
+use crate::struct_shared::{
+    des_num_endian, des_num_vars, get_endian_attribute, get_length_attribute, ser_num,
+    ser_num_endian, ser_overrides, Length, MemberIdent, get_replace_attribute, Replace,
 };
 
 pub enum StructType {
@@ -18,8 +20,8 @@ pub enum StructType {
 #[derive(Debug)]
 pub struct FieldSerializerDeserializerTokens {
     pub ser_vars: TokenStream,
-    pub ser_over: TokenStream,
-    pub ser_uses_stack: TokenStream,
+    pub ser_repl: TokenStream,
+    pub ser_uses_stck: TokenStream,
     pub ser_uses_heap: TokenStream,
     pub des_vars: TokenStream,
     pub des_uses: TokenStream,
@@ -37,24 +39,24 @@ pub fn get_struct_ser_des_tokens(
                     .iter()
                     .map(|fld| {
                         let var_name = fld.ident.as_ref().unwrap();
+                        let member = &MemberIdent::Named(var_name);
                         let fld_type = map_field_type(&fld.ty);
                         match fld_type {
                             FieldType::Numeric | FieldType::Byte => {
                                 // TODO optimize for byte & byte arrays to avoid endian
-                                setup_numeric(ast, fld, var_name, MemberIdent::Named(var_name))
+                                setup_numeric(ast, fld, var_name, member)
                             }
-                            FieldType::NumericArray { ty, len }
-                            | FieldType::ByteArray { ty, len } => setup_numeric_array(
-                                ast,
-                                fld,
-                                ty,
-                                var_name,
-                                len,
-                                &MemberIdent::Named(var_name),
-                            ),
-                            FieldType::Other { ty } => {
-                                setup_other(fld, var_name, ty, MemberIdent::Named(var_name))
+                            FieldType::ArrayBytes { ty, len }
+                            | FieldType::ArrayNumerics { ty, len }
+                            | FieldType::ArrayStructs { ty, len } => {
+                                setup_array(ast, fld, ty, var_name, len, member)
                             }
+                            FieldType::VecBytes { ty }
+                            | FieldType::VecNumerics { ty }
+                            | FieldType::VecStructs { ty } => {
+                                setup_vec(ast, fld, ty, var_name, member, &fld_type)
+                            }
+                            FieldType::Other { ty } => setup_other(fld, var_name, ty, member),
                         }
                     })
                     .collect::<Vec<_>>()
@@ -69,24 +71,24 @@ pub fn get_struct_ser_des_tokens(
                             index: i as u32,
                             span: ast.ident.span(),
                         });
+                        let member = &MemberIdent::Unnamed(fld_index);
                         let var_name = &Ident::new(&format!("_{}", i), ast.ident.span());
                         let fld_type = map_field_type(&fld.ty);
                         match fld_type {
                             FieldType::Numeric | FieldType::Byte => {
-                                setup_numeric(ast, fld, var_name, MemberIdent::Unnamed(fld_index))
+                                setup_numeric(ast, fld, var_name, member)
                             }
-                            FieldType::NumericArray { ty, len }
-                            | FieldType::ByteArray { ty, len } => setup_numeric_array(
-                                ast,
-                                fld,
-                                ty,
-                                var_name,
-                                len,
-                                &MemberIdent::Unnamed(fld_index),
-                            ),
-                            FieldType::Other { ty } => {
-                                setup_other(fld, var_name, ty, MemberIdent::Unnamed(fld_index))
+                            FieldType::ArrayBytes { ty, len }
+                            | FieldType::ArrayNumerics { ty, len }
+                            | FieldType::ArrayStructs { ty, len } => {
+                                setup_array(ast, fld, ty, var_name, len, member)
                             }
+                            FieldType::VecBytes { ty }
+                            | FieldType::VecNumerics { ty }
+                            | FieldType::VecStructs { ty } => {
+                                setup_vec(ast, fld, ty, var_name, member, &fld_type)
+                            }
+                            FieldType::Other { ty } => setup_other(fld, var_name, ty, member),
                         }
                     })
                     .collect::<Vec<_>>()
@@ -115,22 +117,22 @@ fn setup_numeric(
     ast: &DeriveInput,
     fld: &Field,
     var_name: &Ident,
-    member: MemberIdent,
+    member: &MemberIdent,
 ) -> FieldSerializerDeserializerTokens {
-    let effective_endian = &get_effective_endian(&ast.attrs, &fld.attrs);
+    let effective_endian = &get_endian_attribute(&ast.attrs, &fld.attrs);
     FieldSerializerDeserializerTokens {
         ser_vars: match member {
             MemberIdent::Named(_) => quote! { let #var_name = self.#var_name; }, // let #var_name = self.#var_name;
             MemberIdent::Unnamed(fld_index) => quote! { let #var_name = self.#fld_index; }, // let #var_name = &self.#fld_index;
         },
-        ser_over: ser_overrides(fld, var_name), // let #var_name = #[derive(replace( **** ))];
-        ser_uses_stack: ser_num(effective_endian, var_name), // ser.serialize_[be|le|ne]( #var_name )?;
+        ser_repl: ser_overrides(fld, var_name), // let #var_name = #[derive(replace( **** ))];
+        ser_uses_stck: ser_num(effective_endian, var_name), // ser.serialize_[be|le|ne]( #var_name )?;
         ser_uses_heap: ser_num(effective_endian, var_name), // ser.serialize_[be|le|ne]( #var_name )?;
         des_vars: des_num_vars(effective_endian, var_name), // let #var_name = des.deserialize_[be|le|ne]()?;
         des_uses: quote!( #var_name, ),                     // Struct/Tuple ( #var_name, .., ..)
     }
 }
-fn setup_numeric_array(
+fn setup_array(
     ast: &DeriveInput,
     fld: &Field,
     ty: &Type,
@@ -138,13 +140,97 @@ fn setup_numeric_array(
     len: &Expr,
     member: &MemberIdent,
 ) -> FieldSerializerDeserializerTokens {
-    let effective_endian = &get_effective_endian(&ast.attrs, &fld.attrs);
+    let effective_endian = &get_endian_attribute(&ast.attrs, &fld.attrs);
+    let ser_num_endian = ser_num_endian(effective_endian);
+    let des_num_endian = des_num_endian(effective_endian);
+    let ser_uses = match member {
+        MemberIdent::Named(fld_name) => {
+            quote!(for n in self.#fld_name { ser.#ser_num_endian(n)?; })
+        }
+        MemberIdent::Unnamed(fld_index) => {
+            quote!(for n in self.#fld_index { ser.#ser_num_endian(n)?; })
+        }
+    };
+    let des_vars = quote!( let mut #var_name: [#ty; #len] = [0; #len]; for e in #var_name.iter_mut() {*e = des.#des_num_endian()?;} );
+
     FieldSerializerDeserializerTokens {
-        ser_vars: quote!(), //"replace not implemented for numeric arrays so just injecting blank and set allowing a var to be created
-        ser_over: quote!(),
-        ser_uses_stack: ser_arr_num(effective_endian, member), // for e in self.fld_name { ser.serialize_[be|le|ne](e)?; }
-        ser_uses_heap: ser_arr_num(effective_endian, member),  // same as stack
-        des_vars: des_arr_num_vars(effective_endian, var_name, ty, len), // let mut fld_name: [u16: len] = [0; len]; for e in fld_name.iter_mut() {*e = des.deserialize_[be|le|ne]()?;} },
+        ser_vars: quote!(),
+        ser_repl: quote!(),
+        ser_uses_stck: ser_uses.clone(),
+        ser_uses_heap: ser_uses.clone(),
+        des_vars: des_vars, // let mut fld_name: [u16: len] = [0; len]; for e in fld_name.iter_mut() {*e = des.deserialize_[be|le|ne]()?;} },
+        des_uses: quote!( #var_name, ),
+    }
+}
+fn setup_vec(
+    ast: &DeriveInput,
+    fld: &Field,
+    ty: &Type,
+    var_name: &Ident,
+    member: &MemberIdent,
+    option: &FieldType,
+) -> FieldSerializerDeserializerTokens {
+    let length = get_length_attribute(&fld.attrs);
+    let replace = get_replace_attribute(&fld.attrs);
+    let endian = &get_endian_attribute(&ast.attrs, &fld.attrs);
+    let ser_num_endian = ser_num_endian(endian);
+    let des_num_endian = des_num_endian(endian);
+
+    let ser_vars = match member {
+        MemberIdent::Named(_) => quote!( let #var_name: &#ty = &self.#var_name; ),
+        MemberIdent::Unnamed(fld_index) => quote! { let #var_name: &#ty = &self.#fld_index; },
+    };
+    let des_vars_byte = match length {
+        Length::Len(ref len) => {
+            quote!( let #var_name: #ty = des.deserialize_take::<#ty>( (#len) as usize )?.into(); )
+        }
+        Length::NotSet => {
+            quote!( let #var_name: #ty = des.deserialize_bytes_slice_remaining().into(); )
+        }
+    };
+    let des_vars_numerics = match length {
+        Length::Len(ref len) => {
+            quote!( let mut #var_name: #ty = vec![]; for _ in 0..#len { #var_name.push(des.#des_num_endian()?); })
+        }
+        Length::NotSet => {
+            quote!( let mut #var_name: #ty = vec![]; while des.is_empty() == false { #var_name.push(des.#des_num_endian()?); })
+        }
+    };
+    let des_vars_other = match length {
+        Length::Len(ref len) => {
+            quote!( let mut #var_name: #ty = vec![]; for _ in 0..#len { #var_name.push(des.deserialize()?); })
+        }
+        Length::NotSet => {
+            quote!( let mut #var_name: #ty = vec![]; while des.is_empty() == false { #var_name.push(des.deserialize()?); })
+        }
+    };
+    let des_vars_xxx = match option {
+        FieldType::VecBytes { .. } => des_vars_byte,
+        FieldType::VecNumerics { .. } => des_vars_numerics,
+        FieldType::VecStructs { .. } => des_vars_other,
+        _ => panic!("this method should only be called with Vec types"),
+    };
+
+    let ser_uses_xxx = |byte_serialize_xxx: &Ident| match option {
+        FieldType::VecBytes { .. } => quote!( ser.serialize_bytes(&#var_name)?; ),
+        FieldType::VecNumerics { .. } => quote!( for i in #var_name { ser.#ser_num_endian(*i)?; }),
+        FieldType::VecStructs { .. } => {
+            quote!( for i in #var_name { i.#byte_serialize_xxx(ser)?; })
+        }
+        _ => panic!("this method should only be called with Vec types"),
+    };
+
+    
+    let ser_repl = match replace {
+        Replace::Set(value) => quote!( let #var_name = &#value; ),
+        Replace::NotSet => quote!(),
+    };
+    FieldSerializerDeserializerTokens {
+        ser_vars: ser_vars,
+        ser_repl: ser_repl, 
+        ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
+        ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
+        des_vars: des_vars_xxx,
         des_uses: quote!( #var_name, ),
     }
 }
@@ -152,34 +238,40 @@ fn setup_other(
     fld: &Field,
     var_name: &Ident,
     ty: &Type,
-    member: MemberIdent,
+    member: &MemberIdent,
 ) -> FieldSerializerDeserializerTokens {
     let length = get_length_attribute(&fld.attrs);
+    let ser_vars = match member {
+        MemberIdent::Named(_) => quote! { let #var_name = &self.#var_name; }, // let #var_name = &self.#var_name;
+        MemberIdent::Unnamed(fld_index) => quote! { let #var_name = &self.#fld_index; }, // let #var_name = &self.#fld_index;
+    };
+    let des_vars = match length {
+        Length::Len(len) => {
+            quote!( let #var_name: #ty = des.deserialize_take( (#len) as usize )?; )
+        }
+        Length::NotSet => quote!( let #var_name: #ty = des.deserialize()?; ),
+    };
     FieldSerializerDeserializerTokens {
-        ser_vars: match member {
-            MemberIdent::Named(_) => quote! { let #var_name = &self.#var_name; }, // let #var_name = &self.#var_name;
-            MemberIdent::Unnamed(fld_index) => quote! { let #var_name = &self.#fld_index; }, // let #var_name = &self.#fld_index;
-        },
-        ser_over: quote!(), // not supported
-        ser_uses_stack: quote!( #var_name.byte_serialize_stack(ser)?; ),
+        ser_vars,
+        ser_repl: quote!(), // not supported
+        ser_uses_stck: quote!( #var_name.byte_serialize_stack(ser)?; ),
         ser_uses_heap: quote!( #var_name.byte_serialize_heap(ser)?; ),
-        des_vars: match length {
-            Length::Len(len) => {
-                quote!( let #var_name: #ty = des.deserialize_take( (#len) as usize )?; )
-            }
-            Length::NotSet => quote!( let #var_name: #ty = des.deserialize()?; ),
-        },
+        des_vars,
         des_uses: quote!( #var_name, ),
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 enum FieldType<'a> {
     Byte,
     Numeric,
-    ByteArray { ty: &'a Type, len: &'a Expr },
-    NumericArray { ty: &'a Type, len: &'a Expr },
     Other { ty: &'a Type },
+    ArrayBytes { ty: &'a Type, len: &'a Expr },
+    ArrayNumerics { ty: &'a Type, len: &'a Expr },
+    ArrayStructs { ty: &'a Type, len: &'a Expr },
+    VecBytes { ty: &'a Type },
+    VecNumerics { ty: &'a Type },
+    VecStructs { ty: &'a Type },
 }
 
 fn map_field_type(ty: &Type) -> FieldType {
@@ -187,8 +279,8 @@ fn map_field_type(ty: &Type) -> FieldType {
         Type::Path(TypePath { path, .. }) => path_2_numeric_byte_or_other(path, ty),
         Type::Array(TypeArray { elem: ty, len, .. }) => match ty.as_ref() {
             Type::Path(TypePath { path, .. }) => match path_2_numeric_byte_or_other(path, ty) {
-                FieldType::Numeric => FieldType::NumericArray { ty, len },
-                FieldType::Byte => FieldType::ByteArray { ty, len },
+                FieldType::Numeric => FieldType::ArrayNumerics { ty, len },
+                FieldType::Byte => FieldType::ArrayBytes { ty, len },
                 _ => FieldType::Other { ty },
             },
             _ => FieldType::Other { ty },
@@ -203,7 +295,7 @@ fn path_2_numeric_byte_or_other<'a>(path: &'a Path, ty: &'a Type) -> FieldType<'
         return FieldType::Byte;
     }
 
-    // all numerics
+    // all non byte numerics
     if path.is_ident("i8")
         || path.is_ident("i16")
         || path.is_ident("u16")
@@ -217,6 +309,21 @@ fn path_2_numeric_byte_or_other<'a>(path: &'a Path, ty: &'a Type) -> FieldType<'
         || path.is_ident("f64")
     {
         return FieldType::Numeric;
+    }
+
+    // Vec
+    if path.segments.len() == 1 && path.segments[0].ident == "Vec" {
+        let vec_args = &path.segments[0].arguments;
+        if let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) = vec_args
+        {
+            if let GenericArgument::Type(Type::Path(path, ..)) = &args[0] {
+                return match path_2_numeric_byte_or_other(&path.path, ty) {
+                    FieldType::Numeric { .. } => FieldType::VecNumerics { ty },
+                    FieldType::Byte => FieldType::VecBytes { ty },
+                    _ => FieldType::VecStructs { ty },
+                };
+            }
+        };
     }
 
     FieldType::Other { ty }

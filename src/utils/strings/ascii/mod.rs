@@ -1,7 +1,6 @@
 use crate::des::ByteDeserialize;
-use crate::error::SerDesError;
+use crate::error::{SerDesError, Result};
 use crate::prelude::ByteDeserializer;
-use crate::ser::{ByteSerializeHeap, ByteSerializeStack};
 use crate::utils::hex::{to_hex_line, to_hex_pretty};
 use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 use std::any::type_name;
@@ -77,10 +76,23 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8; LE
         bytes[0..].into()
     }
 }
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u16>
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
+    fn from(value: u16) -> Self {
+        if LEN < 5 {
+            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u16, LEN must be atleast 5 bytes")
+        }
+        value.to_string().as_bytes().into()
+    }
+}
 impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u32>
     for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
 {
     fn from(value: u32) -> Self {
+        if LEN < 10 {
+            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u32, LEN must be atleast 10 bytes")
+        }
         value.to_string().as_bytes().into()
     }
 }
@@ -88,6 +100,9 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u64>
     for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
 {
     fn from(value: u64) -> Self {
+        if LEN < 20 {
+            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u64, LEN must be atleast 20 bytes")
+        }
         value.to_string().as_bytes().into()
     }
 }
@@ -138,7 +153,7 @@ mod test_string_ascii_fixed {
     use log::info;
 
     #[test]
-    fn test_string_ascii_fixed_take() {
+    fn test_take() {
         setup::log::configure();
         const ELEVEN: usize = 11;
         const SPACE: u8 = b' ';
@@ -170,13 +185,39 @@ mod test_string_ascii_fixed {
     }
 
     #[test]
-    fn test_string_ascii_fixed_from_numeric() {
+    fn test_from_u64_pass() {
         setup::log::configure();
         let inp_str: StringAsciiFixed<20, b'0', true> = u64::MAX.into();
         info!("inp_str:? {:?}", inp_str)
     }
+    #[test]
+    #[should_panic]
+    fn test_from_u64_fail() {
+        let _: StringAsciiFixed<19, b'0', true> = u64::MAX.into();
+    }
+    #[test]
+    fn test_from_u32_pass() {
+        setup::log::configure();
+        let inp_str: StringAsciiFixed<10, b'0', true> = u32::MAX.into();
+        info!("inp_str:? {:?}", inp_str)
+    }
+    #[test]
+    #[should_panic]
+    fn test_from_u32_fail() {
+        let _: StringAsciiFixed<9, b'0', true> = u32::MAX.into();
+    }
+    #[test]
+    fn test_from_u16_pass() {
+        setup::log::configure();
+        let inp_str: StringAsciiFixed<5, b'0', true> = u16::MAX.into();
+        info!("inp_str:? {:?}", inp_str)
+    }
+    #[test]
+    #[should_panic]
+    fn test_from_u16_fail() {
+        let _: StringAsciiFixed<4, b'0', true> = u16::MAX.into();
+    }
 }
-
 
 /// A string of ascii characters with a variable length allocated on heap using `Vec<u8>`
 /// ```
@@ -204,7 +245,7 @@ mod test_string_ascii_fixed {
 /// println!("out_str: {:x}", out_str);
 /// assert_eq!(StringAscii::from(b"ABCDEABCDE"), out_str);
 /// ```
-#[derive(PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq)]
 pub struct StringAscii(Vec<u8>);
 impl StringAscii {
     pub fn len(&self) -> usize {
@@ -215,36 +256,6 @@ impl StringAscii {
     }
     pub fn bytes(&self) -> &[u8] {
         &self.0[0..]
-    }
-}
-impl ByteSerializeStack for StringAscii {
-    /// Manually implemented not using derive macro.
-    /// no support for `Vec<T>`
-    fn byte_serialize_stack<const CAP: usize>(
-        &self,
-        ser: &mut crate::prelude::ByteSerializerStack<CAP>,
-    ) -> crate::error::Result<()> {
-        ser.serialize_bytes(&self.0)?;
-        Ok(())
-    }
-}
-impl ByteSerializeHeap for StringAscii {
-    /// Manually implemented not using derive macro.
-    /// no support for `Vec<T>`
-    fn byte_serialize_heap(
-        &self,
-        ser: &mut crate::prelude::ByteSerializerHeap,
-    ) -> crate::error::Result<()> {
-        ser.serialize_bytes(&self.0)?;
-        Ok(())
-    }
-}
-impl ByteDeserialize<StringAscii> for StringAscii {
-    /// Manually implemented not using derive macro.
-    /// This needs to be a `greedy` implementation since Size is not known at compile time.
-    /// If Successfull will return a new instance of T type struct but depleating `all` of the [ByteDeserializer::remaining()] bytes from [ByteDeserializer]
-    fn byte_deserialize(des: &mut ByteDeserializer) -> crate::error::Result<StringAscii> {
-        Ok(Self(Vec::from(des.deserialize_bytes_slice_remaining())))
     }
 }
 impl From<&[u8]> for StringAscii {
@@ -277,6 +288,13 @@ impl fmt::Debug for StringAscii {
 impl fmt::Display for StringAscii {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", String::from_utf8_lossy(&self.0))
+    }
+}
+
+/// Special case to support greedy vector of bytes deserialization
+impl ByteDeserialize<Vec<u8>> for Vec<u8> {
+    fn byte_deserialize(des: &mut ByteDeserializer) -> Result<Vec<u8>> {
+        Ok(des.deserialize_bytes_slice_remaining().into())
     }
 }
 

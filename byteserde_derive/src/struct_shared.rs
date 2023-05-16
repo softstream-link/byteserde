@@ -1,85 +1,41 @@
-use quote::{__private::TokenStream, quote};
-use syn::{parenthesized, Attribute, Expr, Field, Ident, LitStr, Member, Type};
+use quote::{__private::Span, __private::TokenStream, quote};
+use syn::{parenthesized, Attribute, Expr, Field, Ident, LitStr, Member};
 
 // serialize overrides
 pub fn ser_overrides(fld: &Field, var_name: &Ident) -> TokenStream {
-    let over = get_replace_attribute(&fld.attrs);
-    match over {
+    let replace = get_replace_attribute(&fld.attrs);
+    match replace {
         Replace::Set(value) => quote!( let #var_name = #value; ),
         Replace::NotSet => quote!(),
     }
 }
 // serialize
 pub fn ser_num(endian: &Endian, var_name: &Ident) -> TokenStream {
-    match endian {
-        Endian::Big => quote!( ser.serialize_be(#var_name)?; ),
-        Endian::Lit => quote!( ser.serialize_le(#var_name)?; ),
-        _ => quote!( ser.serialize_ne(#var_name)?; ),
-    }
+    let ser_num_endian = ser_num_endian(endian);
+    quote!( ser.#ser_num_endian(#var_name)?; )
 }
 // deserialize
 pub fn des_num_vars(endian: &Endian, var_name: &Ident) -> TokenStream {
+    let des_num_endian = des_num_endian(endian);
+    quote!( let #var_name = des.#des_num_endian()?; )
+}
+pub fn ser_num_endian(endian: &Endian) -> Ident {
     match endian {
-        Endian::Big => quote!( let #var_name = des.deserialize_be()?; ),
-        Endian::Lit => quote!( let #var_name = des.deserialize_le()?; ),
-        _ => quote!( let #var_name = des.deserialize_ne()?; ),
+        Endian::Big => Ident::new("serialize_be", Span::call_site()),
+        Endian::Lit => Ident::new("serialize_le", Span::call_site()),
+        _ => Ident::new("serialize_ne", Span::call_site()),
     }
 }
-
+pub fn des_num_endian(endian: &Endian) -> Ident {
+    match endian {
+        Endian::Big => Ident::new("deserialize_be", Span::call_site()),
+        Endian::Lit => Ident::new("deserialize_le", Span::call_site()),
+        _ => Ident::new("deserialize_ne", Span::call_site()),
+    }
+}
 pub enum MemberIdent<'a> {
     Named(&'a Ident),
     Unnamed(&'a Member),
-}
-// serialize
-pub fn ser_arr_num(endian: &Endian, member: &MemberIdent) -> TokenStream {
-    match endian {
-        Endian::Big => match member {
-            MemberIdent::Named(fld_name) => {
-                quote!(for n in self.#fld_name { ser.serialize_be(n)?; })
-            }
-            MemberIdent::Unnamed(fld_index) => {
-                quote!(for n in self.#fld_index { ser.serialize_be(n)?; })
-            }
-        },
-        Endian::Lit => match member {
-            MemberIdent::Named(fld_name) => {
-                quote!(for n in self.#fld_name { ser.serialize_le(n)?; })
-            }
-            MemberIdent::Unnamed(fld_index) => {
-                quote!(for n in self.#fld_index { ser.serialize_le(n)?; })
-            }
-        },
-        _ => match member {
-            MemberIdent::Named(fld_name) => {
-                quote!(for n in self.#fld_name { ser.serialize_ne(n)?; })
-            }
-            MemberIdent::Unnamed(fld_index) => {
-                quote!(for n in self.#fld_index { ser.serialize_ne(n)?; })
-            }
-        }
-    }
-}
-// pub fn ser_arr_num_unnamed(endian: &Endian, fld_index: &Member) -> TokenStream {
-//     match endian {
-//         Endian::Big => quote!(for n in self.#fld_index { ser.serialize_be(n)?; }),
-//         Endian::Lit => quote!(for n in self.#fld_index { ser.serialize_le(n)?; }),
-//         _ => quote!(for n in self.#fld_index { ser.serialize_ne(n)?; }),
-//     }
-// }
-
-// deserialize
-pub fn des_arr_num_vars(endian: &Endian, var_name: &Ident, ty: &Type, len: &Expr) -> TokenStream {
-    match endian {
-        Endian::Big => {
-            quote!( let mut #var_name: [#ty; #len] = [0; #len]; for e in #var_name.iter_mut() {*e = des.deserialize_be()?;} )
-        }
-        Endian::Lit => {
-            quote!( let mut #var_name: [#ty; #len] = [0; #len]; for e in #var_name.iter_mut() {*e = des.deserialize_le()?;} )
-        }
-        _ => {
-            quote!( let mut #var_name: [#ty; #len] = [0; #len]; for e in #var_name.iter_mut() {*e = des.deserialize_ne()?;} )
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -110,17 +66,15 @@ pub enum Endian {
     NotSet,
 }
 
-pub fn get_effective_endian(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
-    let fld_endian = get_endian_attribute(fld_attrs);
+pub fn get_endian_attribute(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
+    let (fld_endian, _, _) = get_attributes(fld_attrs);
     match fld_endian {
-        Endian::NotSet => get_endian_attribute(struc_attrs),
+        Endian::NotSet => {
+            let (struct_endian, _, _) = get_attributes(struc_attrs);
+            struct_endian
+        }
         _ => fld_endian,
     }
-}
-
-fn get_endian_attribute(attrs: &[Attribute]) -> Endian {
-    let (endian, _, _) = get_attributes(attrs);
-    endian
 }
 
 fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace) {
