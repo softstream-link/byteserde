@@ -27,7 +27,7 @@
         * NOTE: that Union, Enum, and Unit structure are not not currently supported
 
 # Examples & Overview
-* Please reffer to [this document](./examples/readme.md) for a number of helpfull 
+* Please reffer to [this document](./examples/readme.md) for a number of helpfull examples and feature review.
 
 # Want to contribute?
 * Here are a few useful hints to get you started [developers corner](dev.md)

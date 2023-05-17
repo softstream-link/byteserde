@@ -16,14 +16,14 @@ jobs:
         run: cargo test --examples --tests
       - name: Benchmark
         run: cargo bench
-      - name: Clippy
+      - name: Clippy Deny Warnings
         run: |
           rustup component add clippy 
           cargo clippy --all-features -- --deny warnings
           pushd byteserde_derive
           cargo clippy --all-features -- --deny warnings
           popd
-      - name: Publish to crates.io
+      - name: Publish Dry Run to crates.io
         run: |
           pushd byteserde_derive
           cargo publish --dry-run 
