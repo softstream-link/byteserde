@@ -150,11 +150,11 @@ fn setup_numeric(
     };
 
     FieldSerializerDeserializerTokens {
-        ser_vars: ser_vars,
-        ser_repl: ser_repl,
+        ser_vars,
+        ser_repl,
         ser_uses_stck: ser_uses_xxx.clone(),
-        ser_uses_heap: ser_uses_xxx.clone(),
-        des_vars: des_vars,
+        ser_uses_heap: ser_uses_xxx,
+        des_vars,
         des_uses: quote!( #var_name, ),
     }
 }
@@ -224,11 +224,11 @@ fn setup_array(
     };
 
     FieldSerializerDeserializerTokens {
-        ser_vars: ser_vars,
-        ser_repl: ser_repl,
+        ser_vars,
+        ser_repl,
         ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
-        des_vars: des_vars,
+        des_vars,
         des_uses: quote!( #var_name, ),
     }
 }
@@ -299,8 +299,8 @@ fn setup_vec(
     };
 
     FieldSerializerDeserializerTokens {
-        ser_vars: ser_vars,
-        ser_repl: ser_repl,
+        ser_vars,
+        ser_repl,
         ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
         des_vars: des_vars_xxx,
@@ -330,11 +330,11 @@ fn setup_struct(
         Length::NotSet => quote!( let #var_name: #ty = des.deserialize()?; ),
     };
     FieldSerializerDeserializerTokens {
-        ser_vars: ser_vars,
-        ser_repl: ser_repl,
+        ser_vars,
+        ser_repl,
         ser_uses_stck: quote!( #var_name.byte_serialize_stack(ser)?; ),
         ser_uses_heap: quote!( #var_name.byte_serialize_heap(ser)?; ),
-        des_vars: des_vars,
+        des_vars,
         des_uses: quote!( #var_name, ),
     }
 }
