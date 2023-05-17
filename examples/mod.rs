@@ -7,6 +7,7 @@ mod usecases {
 
     // arrays
     pub mod arr_regular;
+    pub mod arr_tuple;
 
     // vec
     pub mod vec_regular;
