@@ -3,7 +3,7 @@
 
 * The goal of this product is to provide a set of utilities that enable frictionless transitioning between a `byte stream`, ex: `&[u8]`, and an arbitrary `struct`. In other words, the project provides a set of `traits` and `impl`'s that can be used to manually `serialize` an arbitrary `struct` into a `byte stream` as well as to `deserialize` a given `byte stream` into it original `struct`. 
 
-* In addition to be able to custom serialize an arbitrary `struct`, you can leverage an included `#[derive(..)]` `proc_macro` and a number usefull `annotations` to create automatically generated serialize and deserialize `trait` implementation that covers most of typical usecases.
+* In addition to be able to custom serialize an arbitrary `struct`, you can leverage an included `#[derive(..)]` `proc_macro` and a number usefull `macro attributes` to create automatically generated serialize and deserialize `trait` implementation that covers most of typical usecases.
 
 
 # Benefit case
@@ -18,7 +18,7 @@
         * contains [ByteSerializeStack](src/ser.rs#ByteSerializeStack), [ByteSerializeHeap](src/ser.rs#ByteSerializeHeap) & [ByteDeserialize`<T>`](src/des.rs#ByteDeserialize) `traits` and helper `struct`'s that make it easy to manually create custom `byte stream` serailizer and deserializer
             
         * [ByteSerialize***r***Stack`<CAP>`](src/ser.rs#ByteSerializerStack) - provides ultra fast speed by serializing into a pre allocated `byte array` `[u8; CAP]` on `stack`, hence the name, it is very fast but at the cost of you needing to specify the size of the LARGEST `struct` you will attempt to serialize. If you reach the boundary of this preallocated byte array, your serialization will fail. This utility provides a reset features, which moves the internal counter to the begining, and allows you to recycle the buffer for multiple purpoces. 
-        * [ByteSerialize***r***Heap](src/ser.rs#ByteSerializerHeap) - provides a fast enough for most speed by serializing into a `byte vector` `Vec<u8>`, hence the name. this utility takes your worries away in terms of knowing the LARGEST `struct` in advance at the cost of speed. 
+        * [ByteSerialize***r***Heap](src/ser.rs#ByteSerializerHeap) - provides a fast enough for most speed by serializing into a `byte vector` `Vec<u8>`, hence the name. This utility trades some performance in return for not having to worry about knowing the LARGEST `struct` size in advance. 
 
         * [ByteDeserialize***r***](src/des.rs#ByteDeserialize) - takes a `byte stream` `&[u8]` irrespctive of heap vs stack allocation and turns it into a `struct`
 
@@ -27,7 +27,8 @@
         * NOTE: that Union, Enum, and Unit structure are not not currently supported
 
 # Examples & Overview
-* Please reffer to this document for a number of helpfull 
+* Please reffer to [this document](./examples/readme.md) for a number of helpfull 
+
 
 
 # TODO 
