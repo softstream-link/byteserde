@@ -2,7 +2,6 @@ pub trait ToNeBytes<const N: usize> {
     fn to_bytes(&self) -> [u8; N];
 }
 
-
 /// calling
 ///     impl_ToNeBytes!(i16, 2);
 /// will generate
@@ -21,9 +20,7 @@ macro_rules! impl_ToNeBytes {
         }
     };
 }
-
-impl_ToNeBytes!(u8, 1);
-impl_ToNeBytes!(i8, 1);
+const USIZE: usize = std::mem::size_of::<usize>();
 impl_ToNeBytes!(u16, 2);
 impl_ToNeBytes!(i16, 2);
 impl_ToNeBytes!(u32, 4);
@@ -34,11 +31,12 @@ impl_ToNeBytes!(u128, 16);
 impl_ToNeBytes!(i128, 16);
 impl_ToNeBytes!(f32, 4);
 impl_ToNeBytes!(f64, 8);
+impl_ToNeBytes!(usize, USIZE);
+impl_ToNeBytes!(isize, USIZE);
 // //////////////////////////////////////////////////////////////////////
 pub trait FromNeBytes<const N: usize, T> {
     fn from_bytes(v: [u8; N]) -> T;
 }
-
 
 /// calling
 ///     impl_FromNeBytes!(i16, 2);
@@ -58,8 +56,6 @@ macro_rules! impl_FromNeBytes {
         }
     };
 }
-impl_FromNeBytes!(u8, 1);
-impl_FromNeBytes!(i8, 1);
 impl_FromNeBytes!(u16, 2);
 impl_FromNeBytes!(i16, 2);
 impl_FromNeBytes!(u32, 4);
@@ -70,25 +66,15 @@ impl_FromNeBytes!(u128, 16);
 impl_FromNeBytes!(i128, 16);
 impl_FromNeBytes!(f32, 4);
 impl_FromNeBytes!(f64, 8);
-
+impl_FromNeBytes!(usize, USIZE);
+impl_FromNeBytes!(isize, USIZE);
 // //////////////////////////////////////////////////////////////////////
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::unittest::setup;
     use log::info;
-    #[test]
-    fn test_u8() {
-        setup::log::configure();
-        let inp = 0x0F_u8;
-        let byt = inp.to_bytes();
-        let out = u8::from_bytes(byt);
 
-        info!("inp: {inp}, inp:x {inp:#04x}, inp:b {inp:08b}");
-        info!("out: {out}, out:x {out:#04x}, out:b {out:08b}");
-        info!("byt:x {byt:#04x}, byt:b {byt:08b}", byt = byt[0]);
-        assert_eq!(inp, out);
-    }
     #[test]
     fn test_u16() {
         setup::log::configure();
@@ -108,7 +94,7 @@ mod tests {
 
         #[cfg(target_endian = "little")]
         assert_eq!(byt, [0x00_u8, 0xAA_u8]);
- 
+
         assert_eq!(inp, out);
     }
 }

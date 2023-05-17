@@ -1,8 +1,4 @@
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
-use log::info;
-
-use crate::unittest::setup;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
 #[byteserde(endian = "le")]
@@ -34,6 +30,9 @@ pub struct NestedStructRegular<
 
 #[test]
 fn all() {
+    use crate::unittest::setup;
+
+    use log::info;
     setup::log::configure();
     // **************** NUMERICS ****************
     let inp_num = NumbersStructRegular::<2, 3> {

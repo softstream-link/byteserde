@@ -1,4 +1,4 @@
-mod integrationtest;
+// mod integrationtest;
 use crate::integrationtest::setup;
 use byteserde::prelude::*;
 use log::info;

@@ -1,4 +1,3 @@
-mod integrationtest;
 use crate::integrationtest::setup;
 use byteserde::{des::ByteDeserializer, error::Result, ser::ByteSerializerStack};
 use log::info;
@@ -15,7 +14,7 @@ fn test_deserializer_u16() {
             };
         }
         // throw in extra byte to make sure last read of u16 fails
-        ser.serialize_be(0xff_u8).unwrap();
+        ser.serialize_bytes_slice(&[0xff_u8]).unwrap();
         info!("ser:x {ser:x}");
 
         let mut de = ByteDeserializer::new(ser.bytes());

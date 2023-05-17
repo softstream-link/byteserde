@@ -1,5 +1,4 @@
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
 #[byteserde(endian = "le")]

@@ -1,5 +1,5 @@
 use byteserde::utils::strings::ascii::{ConstCharAscii, StringAscii};
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde::prelude::*;
 
 
 type Plus = ConstCharAscii<b'+'>;
@@ -27,7 +27,6 @@ impl Default for DebugMsg {
 #[test]
 fn all() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
     let inp_debug = DebugMsg::default();
@@ -36,12 +35,12 @@ fn all() {
     let tail = &[0x01, 0x02, 0x3];
     // stack
     let mut ser_stack: ByteSerializerStack<135> = to_serializer_stack(&inp_debug).unwrap();
-    ser_stack.serialize_bytes(tail).unwrap();
+    ser_stack.serialize_bytes_slice(tail).unwrap();
     info!("ser_stack: {ser_stack:#x}");
 
     // heap
     let mut ser_heap = to_serializer_heap(&inp_debug).unwrap();
-    ser_heap.serialize_bytes(tail).unwrap();
+    ser_heap.serialize_bytes_slice(tail).unwrap();
     info!("ser_heap: {ser_heap:#x}");
     assert_eq!(ser_stack.bytes(), ser_heap.bytes());
 

@@ -454,7 +454,7 @@ impl<const CHAR: u8> ByteDeserialize<ConstCharAscii<CHAR>> for ConstCharAscii<CH
     fn byte_deserialize(
         des: &mut crate::prelude::ByteDeserializer,
     ) -> crate::error::Result<ConstCharAscii<CHAR>> {
-        let _0: u8 = des.deserialize_ne()?;
+        let _0 = des.deserialize_bytes_slice(1)?[0];
         match _0 == CHAR {
             true => Ok(Default::default()),
             false => {

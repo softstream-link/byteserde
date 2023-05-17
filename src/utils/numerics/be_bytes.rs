@@ -20,9 +20,7 @@ macro_rules! impl_ToBeBytes {
         }
     };
 }
-
-impl_ToBeBytes!(u8, 1);
-impl_ToBeBytes!(i8, 1);
+const USIZE: usize = std::mem::size_of::<usize>();
 impl_ToBeBytes!(u16, 2);
 impl_ToBeBytes!(i16, 2);
 impl_ToBeBytes!(u32, 4);
@@ -33,6 +31,8 @@ impl_ToBeBytes!(u128, 16);
 impl_ToBeBytes!(i128, 16);
 impl_ToBeBytes!(f32, 4);
 impl_ToBeBytes!(f64, 8);
+impl_ToBeBytes!(usize, USIZE);
+impl_ToBeBytes!(isize, USIZE);
 // //////////////////////////////////////////////////////////////////////
 
 pub trait FromBeBytes<const N: usize, T> {
@@ -57,8 +57,8 @@ macro_rules! impl_FromBeBytes {
         }
     };
 }
-impl_FromBeBytes!(u8, 1);
-impl_FromBeBytes!(i8, 1);
+
+
 impl_FromBeBytes!(u16, 2);
 impl_FromBeBytes!(i16, 2);
 impl_FromBeBytes!(u32, 4);
@@ -69,24 +69,15 @@ impl_FromBeBytes!(u128, 16);
 impl_FromBeBytes!(i128, 16);
 impl_FromBeBytes!(f32, 4);
 impl_FromBeBytes!(f64, 8);
+impl_FromBeBytes!(usize, USIZE);
+impl_FromBeBytes!(isize, USIZE);
 // //////////////////////////////////////////////////////////////////////
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::unittest::setup;
     use log::info;
-    #[test]
-    fn test_u8() {
-        setup::log::configure();
-        let inp = 0x0F_u8;
-        let byt = inp.to_bytes();
-        let out = u8::from_bytes(byt);
 
-        info!("inp: {inp}, inp:x {inp:#04x}, inp:b {inp:08b}");
-        info!("out: {out}, out:x {out:#04x}, out:b {out:08b}");
-        info!("byt:x {byt:#04x}, byt:b {byt:08b}", byt = byt[0]);
-        assert_eq!(inp, out);
-    }
     #[test]
     fn test_u16() {
         setup::log::configure();

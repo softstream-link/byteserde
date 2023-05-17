@@ -1,4 +1,4 @@
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde::prelude::*;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
 struct Bytes {
@@ -10,7 +10,6 @@ struct Bytes {
 #[test]
 fn test_bytes() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
     let inp_bytes = Bytes {
@@ -71,7 +70,6 @@ struct Numerics {
 #[test]
 fn test_numerics() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
 
@@ -112,8 +110,11 @@ fn test_numerics() {
     let out_num: Numerics = from_serializer_stack(&ser_stack).unwrap();
     info!("inp_num: {inp_num:?}");
     info!("out_num: {out_num:?}");
-    assert_eq!( out_num, Numerics{
-        field_i16: i16::MIN,
-        ..inp_num
-    });
+    assert_eq!(
+        out_num,
+        Numerics {
+            field_i16: i16::MIN,
+            ..inp_num
+        }
+    );
 }

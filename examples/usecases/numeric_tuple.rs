@@ -1,4 +1,4 @@
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde::prelude::*;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
 struct Bytes(#[byteserde(replace(i8::MIN))] i8, u8);
@@ -6,7 +6,6 @@ struct Bytes(#[byteserde(replace(i8::MIN))] i8, u8);
 #[test]
 fn test_bytes() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
     let inp_bytes = Bytes(-1, 1);
@@ -52,7 +51,6 @@ struct Numerics(
 #[test]
 fn test_numerics() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
 

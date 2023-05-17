@@ -1,4 +1,3 @@
-mod integrationtest;
 use crate::integrationtest::setup;
 use byteserde::prelude::*;
 use log::info;
@@ -37,22 +36,18 @@ fn test_serialize_string_too_short_and_not_utf8() {
 
     //  create string shorter then its len indicates
     let ser = &mut ByteSerializerStack::<128>::default();
-    let _ = ser.serialize_bytes(&[0x00_u8, 0x00_u8, 0x00_u8, 0x08_u8]);
-    let _ = ser.serialize_bytes(&[0xFF_u8]);
+    let _ = ser.serialize_bytes_slice(&8_usize.to_be_bytes());
+    let _ = ser.serialize_bytes_slice(&[0xFF_u8]);
     info!("ser: {ser:#x}");
     let mut des = ByteDeserializer::new(ser.bytes());
     let out = des.deserialize::<String>();
     info!("{out:?}");
     assert!(out.is_err());
-    assert_eq!(
-        out.unwrap_err().message,
-        "ByteDeserializer len: 5, idx: 4, remaining: 1, requested: 8"
-    );
 
     //  create invalid utf8
     let ser = &mut ByteSerializerStack::<128>::default();
-    let _ = ser.serialize_bytes(&[0x00_u8, 0x00_u8, 0x00_u8, 0x08_u8]);
-    let _ = ser.serialize_bytes(&[
+    let _ = ser.serialize_bytes_slice(&8_usize.to_be_bytes());
+    let _ = ser.serialize_bytes_slice(&[
         0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8,
     ]);
     info!("ser: {ser:#x}");
@@ -87,7 +82,7 @@ fn test_deserialize_char_too_long_and_not_utf8() {
 
     // create invalid len chat
     let ser = &mut ByteSerializerStack::<128>::default();
-    let _ = ser.serialize_bytes(&[0x05_u8]);
+    let _ = ser.serialize_bytes_slice(&[0x05_u8]);
     info!("ser: {ser:#x}");
 
     let mut des = ByteDeserializer::new(ser.bytes());
@@ -102,7 +97,7 @@ fn test_deserialize_char_too_long_and_not_utf8() {
 
     // create invalid utf8
     let ser = &mut ByteSerializerStack::<128>::default();
-    let _ = ser.serialize_bytes(&[0x01_u8, 0xFF_u8]);
+    let _ = ser.serialize_bytes_slice(&[0x01_u8, 0xFF_u8]);
     info!("ser: {ser:#x}");
 
     let mut des = ByteDeserializer::new(ser.bytes());

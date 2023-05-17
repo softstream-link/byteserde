@@ -38,6 +38,14 @@ pub struct ByteDeserializer<'x> {
     idx: usize,
 }
 
+/// Provides a conveninet way to view buffer content as both HEX and ASCII bytes where printable.
+/// supports both forms of alternate
+/// ```
+/// use byteserde::des::ByteDeserializer;
+/// let mut des = ByteDeserializer::new(&[0x01, 0x00, 0x02, 0x00, 0x00, 0x03]);
+/// println ! ("{:#x}", des); // upto 16 bytes per line
+/// println ! ("{:x}", des);  // single line
+/// ```
 impl<'x> LowerHex for ByteDeserializer<'x> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bytes = match f.alternate() {
@@ -147,7 +155,14 @@ impl<'x> ByteDeserializer<'x> {
         }
     }
 
-    /// depletes `1` byte for `u8`, `2` for `u16`, etc. and returns after deserializing using `Native` endianess
+    /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `native` endianess
+    /// FromNeBytes trait is already implemented for all rust's numeric primitives in this crate
+    /// ```
+    /// use serde_bytes::ByteDeserializer;
+    /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
+    /// let v: u16 = des.deserialize_ne().unwrap();
+    /// // ... etc
+    /// ```
     pub fn deserialize_ne<const N: usize, T: FromNeBytes<N, T>>(&mut self) -> Result<T> {
         let r = self.deserialize_bytes_array::<N>();
         match r {
@@ -155,7 +170,14 @@ impl<'x> ByteDeserializer<'x> {
             Err(e) => Err(e),
         }
     }
-    /// depletes `1` byte for `u8`, `2` for `u16`, etc. and returns after deserializing using `Little` endianess
+    /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `little` endianess
+    /// FromLeBytes trait is already implemented for all rust's numeric primitives in this crate
+    /// ```
+    /// use serde_bytes::ByteDeserializer;
+    /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
+    /// let v: u16 = des.deserialize_le().unwrap();
+    /// // ... etc
+    /// ```
     pub fn deserialize_le<const N: usize, T: FromLeBytes<N, T>>(&mut self) -> Result<T> {
         let r = self.deserialize_bytes_array::<N>();
         match r {
@@ -163,7 +185,14 @@ impl<'x> ByteDeserializer<'x> {
             Err(e) => Err(e),
         }
     }
-    /// depletes `1` byte for `u8`, `2` for `u16`, etc. and returns after deserializing using `Big` endianess
+    /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `big` endianess
+    /// FromBeBytes trait is already implemented for all rust's numeric primitives in this crate
+    /// ```
+    /// use serde_bytes::ByteDeserializer;
+    /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
+    /// let v: u16 = des.deserialize_be().unwrap();
+    /// // ... etc
+    /// ```
     pub fn deserialize_be<const N: usize, T: FromBeBytes<N, T>>(&mut self) -> Result<T> {
         let r = self.deserialize_bytes_array::<N>();
         match r {
@@ -171,7 +200,8 @@ impl<'x> ByteDeserializer<'x> {
             Err(e) => Err(e),
         }
     }
-    /// creates a new instance of T type struct, depleating exactly the right amount of bytes from [ByteDeserializer]
+    /// creates a new instance of `T` type `struct`, depleating exactly the right amount of bytes from [ByteDeserializer]
+    /// `T` must implement [ByteDeserialize] trait
     pub fn deserialize<T>(&mut self) -> Result<T>
     where
         T: ByteDeserialize<T>,
@@ -179,7 +209,7 @@ impl<'x> ByteDeserializer<'x> {
         T::byte_deserialize(self)
     }
 
-    /// creates a new instance of T type struct, depleating up to `len` bytes from [ByteDeserializer].
+    /// creates a new instance of T type struct, depleating `exactly` `len` bytes from [ByteDeserializer].
     /// Intended for types with variable length such as Strings, Vecs, etc.
     pub fn deserialize_take<T>(&mut self, len: usize) -> Result<T>
     where

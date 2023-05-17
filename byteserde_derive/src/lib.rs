@@ -5,7 +5,7 @@ use syn::DeriveInput;
 
 mod common;
 mod struct_shared;
-
+//  TODO rename length to deplete
 #[proc_macro_derive(ByteSerializeStack, attributes(byteserde))]
 #[allow(non_snake_case)] // keep snake name otherwise it messes up vscode refactoring
 pub fn ByteSerializeStack(input: TokenStream) -> TokenStream {

@@ -1,5 +1,5 @@
 use byteserde::utils::strings::ascii::{CharAscii, ConstCharAscii, StringAscii, StringAsciiFixed};
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde::prelude::*;
 
 type UsernameAscii = StringAsciiFixed<10, b' ', true>;
 type AnyCharAscii = CharAscii;
@@ -16,7 +16,6 @@ struct AsciiStrings(
 #[test]
 fn test_ascii() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
 
@@ -55,7 +54,6 @@ struct Strings(String, char);
 #[test]
 fn test_strings() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
 

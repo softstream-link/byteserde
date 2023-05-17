@@ -1,4 +1,4 @@
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde::prelude::*;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 struct VecByte {
@@ -12,7 +12,6 @@ struct VecByte {
 #[test]
 fn vec_u8() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
     let inp_num = VecByte {
@@ -56,7 +55,6 @@ struct VecNumerics {
 #[test]
 fn vec_u16() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
     let inp_num = VecNumerics {
@@ -104,7 +102,6 @@ struct VecOther {
 #[test]
 fn vec_other() {
     use crate::unittest::setup;
-    use byteserde::prelude::*;
     use log::info;
     setup::log::configure();
     let inp_num = VecOther {
