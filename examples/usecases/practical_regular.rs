@@ -1,6 +1,5 @@
-use byteserde::utils::strings::ascii::{ConstCharAscii, StringAscii};
 use byteserde::prelude::*;
-
+use byteserde::utils::strings::ascii::{ConstCharAscii, StringAscii};
 
 type Plus = ConstCharAscii<b'+'>;
 
@@ -10,7 +9,7 @@ struct DebugMsg {
     #[byteserde(replace( (text.len() + packet_type.len()) as u16 ))]
     packet_length: u16,
     packet_type: Plus,
-    #[byteserde(length ( packet_length as usize - packet_type.len() ))]
+    #[byteserde(deplete( packet_length as usize - packet_type.len() ))]
     text: StringAscii,
 }
 

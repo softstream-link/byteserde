@@ -11,7 +11,7 @@ struct AsciiStrings {
     #[byteserde(replace( AnyCharAscii::from(b'R') ))]
     anychar: AnyCharAscii,
     always_char_x: XCharAscii,
-    #[byteserde(length( username.len() ))]
+    #[byteserde(deplete( username.len() ))]
     length_match_username: StringAscii,
 }
 

@@ -2,8 +2,8 @@ use byteserde::prelude::*;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 struct VecByte(
-    #[byteserde(length(3))] Vec<u8>,
-    #[byteserde(length(2), replace( vec![10,11] ))] Vec<u8>,
+    #[byteserde(deplete(3))] Vec<u8>,
+    #[byteserde(deplete(2), replace( vec![10,11] ))] Vec<u8>,
     Vec<u8>,
 );
 
@@ -34,8 +34,8 @@ fn vec_u8() {
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 #[byteserde(endian = "le")]
 struct VecNumerics(
-    #[byteserde(endian = "be", length(3))] Vec<u16>,
-    #[byteserde(length(2), replace( vec![10_u16, 11] ))] Vec<u16>,
+    #[byteserde(endian = "be", deplete(3))] Vec<u16>,
+    #[byteserde(deplete(2), replace( vec![10_u16, 11] ))] Vec<u16>,
     Vec<u16>,
 );
 
@@ -70,8 +70,8 @@ fn vec_u16() {
 struct Other(u8);
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 struct VecOther(
-    #[byteserde(length(3))] Vec<Other>,
-    #[byteserde(length(2), replace( vec![Other(10),Other(11)] ))] Vec<Other>,
+    #[byteserde(deplete(3))] Vec<Other>,
+    #[byteserde(deplete(2), replace( vec![Other(10),Other(11)] ))] Vec<Other>,
     Vec<Other>,
 );
 #[test]

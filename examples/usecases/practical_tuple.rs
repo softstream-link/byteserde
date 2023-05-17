@@ -7,7 +7,7 @@ type Plus = ConstCharAscii<b'+'>;
 struct DebugMsg(
     #[byteserde(replace( (_1.len() + _2.len()) as u16 ))] u16,
     Plus,
-    #[byteserde(length ( _0 as usize - _1.len() ))] StringAscii,
+    #[byteserde(deplete( _0 as usize - _1.len() ))] StringAscii,
 );
 
 impl Default for DebugMsg {

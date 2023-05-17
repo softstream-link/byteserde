@@ -10,7 +10,7 @@ struct AsciiStrings(
     UsernameAscii,
     #[byteserde(replace(AnyCharAscii::from(b'R')))] AnyCharAscii,
     XCharAscii,
-    #[byteserde(length( _0.len() ))] StringAscii,
+    #[byteserde(deplete( _0.len() ))] StringAscii,
 );
 
 #[test]

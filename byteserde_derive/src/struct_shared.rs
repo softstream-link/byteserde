@@ -95,7 +95,7 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace) {
                 over = Replace::Set(content.parse::<Expr>()?);
                 return Ok(());
             }
-            if meta.path.is_ident("length") {
+            if meta.path.is_ident("deplete") {
                 let content;
                 parenthesized!(content in meta.input);
                 length = Length::Len(content.parse::<Expr>()?);
