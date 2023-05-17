@@ -1,0 +1,21 @@
+[package]
+name = "byteserde_derive"
+version = "0.1.0"
+edition = "2021"
+authors = ["Softstream <softstream.link@gmail.com>"]
+license-file = "../LICENSE"
+description = "A procedural macro for mapping byte streams to/from arbitrary struct types with focus on performance"
+repository = "https://github.com/softstream-link/byteserde"
+readme = "../readme.md"
+keywords = [ "serde", "bytes", "serialization", "derive" ]
+categories = ["enchoding"]
+rust-version = "1.69"
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full"] }
+quote = "1.0"
+
+[dev-dependencies]
+trybuild = { version = "1.0", features = ["diff"] }

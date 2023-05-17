@@ -1,0 +1,31 @@
+[package]
+name = "byteserde"
+version = "0.1.0"
+edition = "2021"
+authors = ["Softstream <softstream.link@gmail.com>"]
+license-file = "LICENSE"
+description = "A generic serialization/deserialization framework for mapping byte streams to/from arbitrary struct types with focus on performance."
+repository = "https://github.com/softstream-link/byteserde"
+readme = "readme.md"
+keywords = [ "serde", "bytes", "serialization", "derive" ]
+categories = ["enchoding"]
+rust-version = "1.69"
+
+[dependencies]
+byteserde_derive = { path = "./byteserde_derive", version = "0.1.0" }
+
+env_logger = "0.10"
+log = "0.4"
+
+[dev-dependencies]
+text-diff = "0.4"
+criterion = "0.4"
+trybuild = { version = "1.0.79", features = ["diff"] }
+
+
+[[bench]]
+name = "struct_ser_des_bench"
+harness = false
+
+[[example]]
+name = "mod"
