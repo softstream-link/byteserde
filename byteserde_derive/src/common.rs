@@ -339,7 +339,6 @@ fn setup_struct(
     }
 }
 
-#[derive(PartialEq, Debug)]
 enum FieldType<'a> {
     Byte {
         ty: &'a Type,

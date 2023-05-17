@@ -1,7 +1,6 @@
 use quote::{__private::Span, quote};
 use syn::{parenthesized, Attribute, Expr, Ident, LitStr, Member};
 
-
 pub fn ser_endian_method_xx(endian: &Endian) -> Ident {
     match endian {
         Endian::Big => Ident::new("serialize_be", Span::call_site()),
@@ -21,7 +20,6 @@ pub enum MemberIdent<'a> {
     Unnamed(&'a Member),
 }
 
-#[derive(Debug)]
 pub enum Length {
     NotSet,
     Len(Expr),
@@ -31,7 +29,6 @@ pub fn get_length_attribute(attrs: &[Attribute]) -> Length {
     length
 }
 
-#[derive(Debug)]
 pub enum Replace {
     NotSet,
     Set(Expr),
