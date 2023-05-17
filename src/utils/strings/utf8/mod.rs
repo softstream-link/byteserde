@@ -29,7 +29,7 @@ impl ByteSerializeHeap for String {
 impl ByteDeserialize<String> for String {
     fn byte_deserialize(deserializer: &mut ByteDeserializer) -> Result<String> {
         let len: usize = deserializer.deserialize_be()?;
-        let bytes = deserializer.deserialize_bytes_slice(len as usize)?;
+        let bytes = deserializer.deserialize_bytes_slice(len)?;
         match String::from_utf8(bytes.to_vec()) {
             Ok(s) => Ok(s),
             Err(_) => Err(SerDesError {

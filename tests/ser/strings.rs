@@ -9,7 +9,6 @@ fn test_serialize_string() {
     setup::log::configure();
 
     let size = size_of::<usize>();
-    info!("x: {size}");
     let ser = &mut ByteSerializerStack::<128>::default();
 
     let inp = "whatever".to_string();

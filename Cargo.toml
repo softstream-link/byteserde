@@ -1,6 +1,6 @@
 [package]
 name = "byteserde"
-version = "0.2.0"
+version = "0.1.0"
 edition = "2021"
 license-file = "LICENSE"
 description = "Collection of functions aimed to achieve byte serializing and deserializing of structs to and from bytes with focus on performance"
@@ -10,14 +10,10 @@ keywords = ["serde", "bytes", "serialization", "deserialization", "stack"]
 categories = ["serialization", "deserialization", "procedural-macro", "derive"]
 
 [dependencies]
-byteserde_derive = { path = "./byteserde_derive", version = "0.2.0"}
+byteserde_derive = { path = "./byteserde_derive", version = "0.1.0"}
 
 env_logger = "0.10"
 log = "0.4"
-
-# [[bin]]
-# name = "main"
-# path = "main.rs"
 
 [dev-dependencies]
 text-diff = "0.4"

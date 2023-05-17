@@ -29,11 +29,6 @@
 # Examples & Overview
 * Please reffer to [this document](./examples/readme.md) for a number of helpfull 
 
-
-
-# TODO 
-* resolve performance issue with stack serializer, non matching arm degrates performance when using format macro to generate error message - https://github.com/rust-lang/rust/issues/111075
-
 # Want to contribute?
 * Here are a few useful hints to get you started [developers corner](dev.md)
 

@@ -1,6 +1,6 @@
 [package]
 name = "byteserde_derive"
-version = "0.2.0"
+version = "0.1.0"
 edition = "2021"
 license-file = "../LICENSE"
 description = "A procedural macro for serializing and deserializing structs to and from bytes with focus on performance"
