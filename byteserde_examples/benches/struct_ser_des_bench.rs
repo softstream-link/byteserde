@@ -1,5 +1,5 @@
 use byteserde::prelude::*;
-// use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 

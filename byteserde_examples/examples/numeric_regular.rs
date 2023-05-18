@@ -1,4 +1,8 @@
+mod unittest;
 use byteserde::prelude::*;
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use log::info;
+use unittest::setup;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
 struct Bytes {
@@ -9,8 +13,9 @@ struct Bytes {
 
 #[test]
 fn test_bytes() {
-    use crate::unittest::setup;
-    use log::info;
+    bytes()
+}
+fn bytes() {
     setup::log::configure();
     let inp_bytes = Bytes {
         field_i8: -1,
@@ -69,8 +74,9 @@ struct Numerics {
 }
 #[test]
 fn test_numerics() {
-    use crate::unittest::setup;
-    use log::info;
+    numerics()
+}
+fn numerics() {
     setup::log::configure();
 
     let inp_num = Numerics {
@@ -117,4 +123,9 @@ fn test_numerics() {
             ..inp_num
         }
     );
+}
+
+fn main() {
+    bytes();
+    numerics();
 }

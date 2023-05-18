@@ -1,12 +1,18 @@
+mod unittest;
 use byteserde::prelude::*;
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use log::info;
+use unittest::setup;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
 struct Bytes(#[byteserde(replace(i8::MIN))] i8, u8);
 
 #[test]
 fn test_bytes() {
-    use crate::unittest::setup;
-    use log::info;
+    bytes()
+}
+
+fn bytes() {
     setup::log::configure();
     let inp_bytes = Bytes(-1, 1);
 
@@ -50,8 +56,9 @@ struct Numerics(
 );
 #[test]
 fn test_numerics() {
-    use crate::unittest::setup;
-    use log::info;
+    numerics()
+}
+fn numerics() {
     setup::log::configure();
 
     let inp_num = Numerics(
@@ -85,4 +92,9 @@ fn test_numerics() {
     info!("inp_num: {inp_num:?}");
     info!("out_num: {out_num:?}");
     assert_eq!(inp_num, out_num);
+}
+
+fn main() {
+    bytes();
+    numerics();
 }

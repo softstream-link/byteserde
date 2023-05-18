@@ -3,5 +3,5 @@ members = [
     "byteserde",
     "byteserde_derive",
     "byteserde_types",
-    
+    "byteserde_examples",
 ]

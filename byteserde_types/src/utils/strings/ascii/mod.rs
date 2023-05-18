@@ -426,7 +426,7 @@ impl<const CHAR: u8> ConstCharAscii<CHAR> {
     pub fn bytes(&self) -> [u8; 1] {
         [CHAR]
     }
-    pub fn is_empty() -> bool {
+    pub fn is_empty(&self) -> bool {
         false
     }
     pub fn len(&self) -> usize {

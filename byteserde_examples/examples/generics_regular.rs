@@ -1,4 +1,8 @@
+mod unittest;
 use byteserde::prelude::*;
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use log::info;
+use unittest::setup;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
 #[byteserde(endian = "le")]
@@ -29,10 +33,10 @@ pub struct NestedStructRegular<
 }
 
 #[test]
+fn test_all() {
+    all()
+}
 fn all() {
-    use crate::unittest::setup;
-
-    use log::info;
     setup::log::configure();
     // **************** NUMERICS ****************
     let inp_num = NumbersStructRegular::<2, 3> {
@@ -93,4 +97,8 @@ fn all() {
     info!("inp_nes: {inp_nes:?}");
     info!("out_nes: {out_nes:?}");
     assert_eq!(inp_nes, out_nes);
+}
+
+fn main() {
+    all()
 }

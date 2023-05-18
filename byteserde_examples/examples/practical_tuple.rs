@@ -1,5 +1,9 @@
+mod unittest;
 use byteserde::prelude::*;
-use byteserde::utils::strings::ascii::{ConstCharAscii, StringAscii};
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_types::prelude::*;
+use log::info;
+use unittest::setup;
 
 type Plus = ConstCharAscii<b'+'>;
 #[derive(ByteDeserialize, ByteSerializeStack, ByteSerializeHeap, Debug, PartialEq)]
@@ -17,9 +21,11 @@ impl Default for DebugMsg {
 }
 
 #[test]
+fn test_all() {
+    all()
+}
+
 fn all() {
-    use crate::unittest::setup;
-    use log::info;
     setup::log::configure();
     let inp_debug = DebugMsg::default();
     info!("inp_debug: {:?}", inp_debug);
@@ -46,4 +52,8 @@ fn all() {
     assert_eq!(inp_debug.1, out_debug.1);
     assert_eq!(inp_debug.2, out_debug.2);
     assert_eq!(des.remaining(), tail.len());
+}
+
+fn main() {
+    all()
 }

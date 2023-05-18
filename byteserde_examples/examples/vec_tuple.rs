@@ -1,5 +1,8 @@
+mod unittest;
 use byteserde::prelude::*;
-
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use log::info;
+use unittest::setup;
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 struct VecByte(
     #[byteserde(deplete(3))] Vec<u8>,
@@ -8,9 +11,10 @@ struct VecByte(
 );
 
 #[test]
+fn test_vec_u8() {
+    vec_u8()
+}
 fn vec_u8() {
-    use crate::unittest::setup;
-    use log::info;
     setup::log::configure();
     let inp_num = VecByte(vec![1, 2, 3], vec![], vec![6, 7, 8]);
 
@@ -40,9 +44,10 @@ struct VecNumerics(
 );
 
 #[test]
+fn test_vec_u16() {
+    vec_u16()
+}
 fn vec_u16() {
-    use crate::unittest::setup;
-    use log::info;
     setup::log::configure();
     let inp_num = VecNumerics(vec![1, 2, 3], vec![], vec![4, 5, 6]);
 
@@ -75,9 +80,10 @@ struct VecOther(
     Vec<Other>,
 );
 #[test]
+fn test_vec_other() {
+    vec_other()
+}
 fn vec_other() {
-    use crate::unittest::setup;
-    use log::info;
     setup::log::configure();
     let inp_num = VecOther(
         vec![Other(1), Other(2), Other(3)],
@@ -102,4 +108,10 @@ fn vec_other() {
         out_num,
         VecOther(inp_num.0, vec![Other(10), Other(11)], inp_num.2,)
     );
+}
+
+fn main() {
+    vec_u8();
+    vec_u16();
+    vec_other();
 }

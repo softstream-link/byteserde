@@ -1,26 +1,24 @@
+mod unittest;
 use byteserde::prelude::*;
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use log::info;
+use unittest::setup;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
-struct ArrBytes {
-    field_arr_u8: [u8; 2],
-    field_arr_i8: [i8; 2],
-    #[byteserde(replace([10, 11]))]
-    field_arr_u8_repl: [u8; 2],
-    #[byteserde(replace([-10, -11]))]
-    field_arr_i8_repl: [i8; 2],
-}
+struct ArrBytes(
+    [u8; 2],
+    [i8; 2],
+    #[byteserde(replace([10, 11]))] [u8; 2],
+    #[byteserde(replace([-10, -11]))] [i8; 2],
+);
 
 #[test]
 fn test_bytes() {
-    use crate::unittest::setup;
-    use log::info;
+    bytes()
+}
+fn bytes() {
     setup::log::configure();
-
-    let inp_num = ArrBytes {
-        field_arr_u8: [1, 2],
-        field_arr_i8: [-1, -2],
-        ..Default::default()
-    };
+    let inp_num = ArrBytes([1, 2], [-1, -2], [0; 2], [0; 2]);
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
@@ -36,41 +34,28 @@ fn test_bytes() {
     info!("out: {out_num:?}");
     assert_eq!(
         out_num,
-        ArrBytes {
-            field_arr_u8_repl: [10, 11],
-            field_arr_i8_repl: [-10, -11],
-            ..inp_num
-        }
+        ArrBytes(inp_num.0, inp_num.1, [10, 11], [-10, -11],)
     );
 }
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
 #[byteserde(endian = "be")]
-struct ArrNumerics {
-    #[byteserde(endian = "ne")]
-    field_arr_ne_local_macro: [u16; 2],
-    #[byteserde(endian = "le")]
-    field_arr_le_local_macro: [u16; 2],
-    #[byteserde(endian = "be")]
-    field_arr_be_local_macro: [u16; 2],
-    field_arr_be_global_macro: [u16; 2], // global macro
-    #[byteserde(replace([10, 11]))]
-    field_arr_relp: [u16; 2],
-}
+struct ArrNumerics(
+    #[byteserde(endian = "ne")] [u16; 2],
+    #[byteserde(endian = "le")] [u16; 2],
+    #[byteserde(endian = "be")] [u16; 2],
+    [u16; 2], // global macro
+    #[byteserde(replace([10, 11]))] [u16; 2],
+);
 
 #[test]
 fn test_numerics() {
-    use crate::unittest::setup;
-    use log::info;
+    numerics()
+}
+fn numerics() {
     setup::log::configure();
 
-    let inp_num = ArrNumerics {
-        field_arr_ne_local_macro: [1, 2],
-        field_arr_le_local_macro: [3, 4],
-        field_arr_be_local_macro: [5, 6],
-        field_arr_be_global_macro: [7, 8],
-        ..Default::default()
-    };
+    let inp_num = ArrNumerics([1, 2], [3, 4], [5, 6], [7, 8], [0; 2]);
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
@@ -91,10 +76,7 @@ fn test_numerics() {
     info!("out: {out_num:?}");
     assert_eq!(
         out_num,
-        ArrNumerics {
-            field_arr_relp: [10, 11],
-            ..inp_num
-        }
+        ArrNumerics(inp_num.0, inp_num.1, inp_num.2, inp_num.3, [10, 11],)
     );
 }
 
@@ -104,22 +86,19 @@ fn test_numerics() {
 struct Other(u8);
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
-struct ArrOther {
-    field_arr_other: [Other; 2],
-    #[byteserde(replace([Other(3), Other(4)]))]
-    filed_arr_other_repl: [Other; 2],
-}
+struct ArrOther(
+    [Other; 2],
+    #[byteserde(replace([Other(3), Other(4)]))] [Other; 2],
+);
 
 #[test]
 fn test_other() {
-    use crate::unittest::setup;
-    use log::info;
+    other()
+}
+fn other() {
     setup::log::configure();
 
-    let inp_other = ArrOther {
-        field_arr_other: [Other(1), Other(2)],
-        ..Default::default()
-    };
+    let inp_other = ArrOther([Other::default(); 2], [Other(1), Other(2)]);
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_other).unwrap();
@@ -134,11 +113,11 @@ fn test_other() {
     let out_other: ArrOther = from_serializer_stack(&ser_stack).unwrap();
     info!("inp_other: {inp_other:?}");
     info!("out_other: {out_other:?}");
-    assert_eq!(
-        out_other,
-        ArrOther {
-            filed_arr_other_repl: [Other(3), Other(4)],
-            ..inp_other
-        }
-    );
+    assert_eq!(out_other, ArrOther(inp_other.0, [Other(3), Other(4)],));
+}
+
+fn main() {
+    bytes();
+    numerics();
+    other();
 }

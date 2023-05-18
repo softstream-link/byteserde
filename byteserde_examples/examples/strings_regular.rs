@@ -1,5 +1,9 @@
-use byteserde::utils::strings::ascii::{CharAscii, ConstCharAscii, StringAscii, StringAsciiFixed};
+mod unittest;
 use byteserde::prelude::*;
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_types::prelude::*;
+use log::info;
+use unittest::setup;
 
 type UsernameAscii = StringAsciiFixed<10, b' ', true>;
 type AnyCharAscii = CharAscii;
@@ -8,7 +12,7 @@ type XCharAscii = ConstCharAscii<b'X'>;
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 struct AsciiStrings {
     username: UsernameAscii,
-    #[byteserde(replace( AnyCharAscii::from(b'R') ))]
+    #[byteserde(replace(AnyCharAscii::from(b'R')))]
     anychar: AnyCharAscii,
     always_char_x: XCharAscii,
     #[byteserde(deplete( username.len() ))]
@@ -16,9 +20,11 @@ struct AsciiStrings {
 }
 
 #[test]
-fn test_ascii(){
-    use crate::unittest::setup;
-    use log::info;
+fn test_ascii() {
+    ascii()
+}
+
+fn ascii() {
     setup::log::configure();
 
     let inp_str = AsciiStrings {
@@ -39,11 +45,14 @@ fn test_ascii(){
     let out_str: AsciiStrings = from_serializer_heap(&ser_heap).unwrap();
     info!("inp_str: {:?}", inp_str);
     info!("out_str: {:?}", out_str);
-    assert_eq!(out_str, AsciiStrings{
-        length_match_username: inp_str.length_match_username.bytes()[0..10].into(),
-        anychar: AnyCharAscii::from(b'R'),
-        ..inp_str
-    });
+    assert_eq!(
+        out_str,
+        AsciiStrings {
+            length_match_username: inp_str.length_match_username.bytes()[0..10].into(),
+            anychar: AnyCharAscii::from(b'R'),
+            ..inp_str
+        }
+    );
 }
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
@@ -54,8 +63,9 @@ struct Strings {
 
 #[test]
 fn test_strings() {
-    use crate::unittest::setup;
-    use log::info;
+    strings()
+}
+fn strings() {
     setup::log::configure();
 
     let inp_str = Strings {
@@ -74,4 +84,9 @@ fn test_strings() {
     info!("inp_str: {:?}", inp_str);
     info!("inp_str: {:?}", out_str);
     assert_eq!(inp_str, out_str);
+}
+
+fn main() {
+    ascii();
+    strings();
 }

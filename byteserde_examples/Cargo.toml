@@ -1,5 +1,5 @@
 [package]
-name = "test_suite"
+name = "byteserde_examples"
 version = "0.1.0"
 edition = "2021"
 authors = ["Softstream <softstream.link@gmail.com>"]
@@ -13,12 +13,18 @@ rust-version = "1.69"
 publish = false
 
 [dependencies]
-byteserde_derive = { path = "./../byteserde_derive"}
+byteserde = { path = "./../byteserde" }
+byteserde_derive = { path = "./../byteserde_derive" }
+byteserde_types = { path = "./../byteserde_types"}
 
 
 
+[[bench]]
+name = "struct_ser_des_bench"
+harness = false
 
 [dev-dependencies]
+criterion = "0.4"
 env_logger = "0.10" 
 log = "0.4"
 

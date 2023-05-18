@@ -13,22 +13,22 @@ jobs:
           cargo --version --verbose
           rustc --version
       - name: Test
-        run: cargo test --examples --tests
+        run: |
+          cargo test
+          cargo test --examples
       - name: Benchmark
         run: cargo bench
       - name: Clippy Deny Warnings
-        run: |
-          rustup component add clippy 
-          cargo clippy --all-features -- --deny warnings
-          pushd byteserde_derive
-          cargo clippy --all-features -- --deny warnings
-          popd
+        run: cargo clippy --all-features -- --deny warnings
       - name: Publish Dry Run to crates.io
         run: |
-          pushd byteserde_derive
-          cargo publish --dry-run 
+          pushd byteserde
+          cargo publish --dry-run
           popd
-          # cargo publish --dry-run # - this fails on branch since the version of byteserde_derive is likely not published yet.
+          pushd byteserde_derive
+          cargo publish --dry-run
+          popd
+
 
     
     

@@ -1,5 +1,9 @@
-use byteserde::utils::strings::ascii::{CharAscii, ConstCharAscii, StringAscii, StringAsciiFixed};
+mod unittest;
 use byteserde::prelude::*;
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_types::prelude::*;
+use log::info;
+use unittest::setup;
 
 type UsernameAscii = StringAsciiFixed<10, b' ', true>;
 type AnyCharAscii = CharAscii;
@@ -15,8 +19,9 @@ struct AsciiStrings(
 
 #[test]
 fn test_ascii() {
-    use crate::unittest::setup;
-    use log::info;
+    ascii()
+}
+fn ascii() {
     setup::log::configure();
 
     let inp_str = AsciiStrings(
@@ -53,8 +58,9 @@ struct Strings(String, char);
 
 #[test]
 fn test_strings() {
-    use crate::unittest::setup;
-    use log::info;
+    strings()
+}
+fn strings() {
     setup::log::configure();
 
     let inp_str = Strings(
@@ -74,4 +80,9 @@ fn test_strings() {
     info!("inp_str: {:?}", inp_str);
     info!("out_str: {:?}", out_str);
     assert_eq!(inp_str, out_str);
+}
+
+fn main() {
+    ascii();
+    strings();
 }
