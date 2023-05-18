@@ -13,8 +13,8 @@ rust-version = "1.69"
 
 
 [dependencies]
-byteserde_derive = {path = "../byteserde_derive", version = "*"}
-byteserde = {path = "../byteserde", version = "*"}
+byteserde_derive = {path = "../byteserde_derive", version = "1.1"}
+byteserde = {path = "../byteserde", version = "1.1"}
 
 [dev-dependencies]
 env_logger = "0.10"
