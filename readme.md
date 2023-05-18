@@ -24,6 +24,12 @@
 
     * `byteserde_derive` - [byteserde_derive/Cargo.toml](byteserde_derive/Cargo.toml)
         * contains procedural macro that generaters implementation of these traits on regular & tuple rust structure. 
+        * This crate supports three attributes:
+          * `#[byteserde( endian = "le" )]` - this will cause entire `struct` or `member` to serialize in desired endian. Valid options are `le`, `be`, `ne`
+        
+          * `#[byteserde( replace( ... ))]` - this only affects `serialization` of the `member` whose value will be ignored and value of `...` expresion will instead be serialized used . Ex: This is usefull when one of the fields contains length of the packet but you don't know its value until the instance is created. Using this attribute you can create an expression which will be evaluated  during serialization. See: Examples for more details.
+        
+          * `#[byteserde( deplete( ... ) )]` - this only affects `deserialization` of the `member` by limiting the number of bytes the member is allowed to read from the stream. Must evaluate to `usize`. Ex: This is usefull when part of the `byte stream` contains infomation about numbers of bytes representing one of following members. See: Examples for more details. 
         * NOTE: that Union, Enum, and Unit structure are not not currently supported
     
     * `byteserde_tyeps` - [byteserde_types/Cargo.toml](byteserde_types/Cargo.toml)
