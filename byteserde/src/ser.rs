@@ -14,12 +14,12 @@ use std::{
 /// Trait type accepted by [ByteSerializerStack] for serialization.
 /// Example: Define structure and manually implement ByteSerializeStack trait then use it to serialize.
 /// ```
-/// use byteserde::prelude::*;
+/// use ::byteserde::prelude::*;
 ///
 /// struct MyStruct { a: u8, }
 /// impl ByteSerializeStack for MyStruct {
 ///     fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ByteSerializerStack<CAP>) -> Result<()> {
-///         ser.serialize_be(self.a)?;
+///         ser.serialize_bytes_slice(&[self.a])?;
 ///         Ok(())
 ///    }
 /// }
@@ -41,13 +41,13 @@ pub trait ByteSerializeStack {
 /// A byte buffer allocated on stack backed by [u8; CAP], can be reused and recyled by calling [Self::reset()].
 /// Example: Creates a buffer with 128 bytes capacity and serializes data into it.
 /// ```
-/// use byteserde::prelude::ByteSerializerStack;
+/// use ::byteserde::prelude::*;
 /// let mut ser = ByteSerializerStack::<128>::default();
 /// assert_eq!(ser.is_empty(), true);
 ///
-/// ser.serialize_bytes(&[0x01]);
+/// ser.serialize_bytes_slice(&[0x01]);
 ///
-/// assert_eq!(ser.capacify(), 128);
+/// assert_eq!(ser.capacity(), 128);
 /// assert_eq!(ser.avail(), 128 - 1);
 /// assert_eq!(ser.len(), 1);
 ///
@@ -62,7 +62,7 @@ pub struct ByteSerializerStack<const CAP: usize> {
 /// Provides a conveninet way to view buffer content as both HEX and ASCII bytes where printable.
 /// supports both forms of alternate formatting `{:x}` and `{:#x}`.
 /// ```
-/// use byteserde::prelude::ByteSerializerStack;
+/// use ::byteserde::prelude::*;
 /// let mut ser = ByteSerializerStack::<128>::default();
 /// println ! ("{:#x}", ser); // upto 16 bytes per line
 /// println ! ("{:x}", ser);  // single line
@@ -160,7 +160,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `native` endianess.
     /// ToNeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use byteserde::prelude::ByteSerializerStack;
+    /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerStack::<128>::default();
     /// ser.serialize_ne(0x1_u16);
     /// ser.serialize_ne(0x1_i16);
@@ -172,7 +172,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `little` endianess.
     /// ToLeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use byteserde::prelude::ByteSerializerStack;
+    /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerStack::<128>::default();
     /// ser.serialize_le(0x1_u16);
     /// ser.serialize_le(0x1_i16);
@@ -184,7 +184,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `big` endianess.
     /// ToBeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use byteserde::prelude::ByteSerializerStack;
+    /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerStack::<128>::default();
     /// ser.serialize_be(0x1_u16);
     /// ser.serialize_be(0x1_i16);
@@ -225,12 +225,11 @@ where
 /// Trait type accepted by [ByteSerializerHeap] for serialization.
 /// Example: Define structure and manually implement ByteSerializeHeap trait then use it to serialize.
 /// ```
-/// use byteserde::prelude::*;
-///
+/// use ::byteserde::prelude::*;
 /// struct MyStruct { a: u8, }
 /// impl ByteSerializeHeap for MyStruct {
 ///    fn byte_serialize_heap(&self, ser: &mut ByteSerializerHeap) -> Result<()> {
-///       ser.serialize_be(self.a)?;
+///       ser.serialize_bytes_slice(&[self.a])?;
 ///      Ok(())
 ///   }
 /// }
@@ -249,10 +248,10 @@ pub trait ByteSerializeHeap {
 /// A byte buffer allocated on heap backed by Vec<u8>, can be reused and recycled by calling [Selc::reset()].
 /// Example: Create a Buffer and serialize data into it.
 /// ```
-/// use byteserde::prelude::*;
+/// use ::byteserde::prelude::*;
 /// let mut ser = ByteSerializerHeap::default();
 /// 
-/// ser.serialize_bytes(&[0x01]).unwrap();
+/// ser.serialize_bytes_slice(&[0x01]).unwrap();
 /// 
 /// assert_eq!(ser.len(), 1);
 /// assert_eq!(ser.is_empty(), false);
@@ -266,7 +265,7 @@ pub struct ByteSerializerHeap {
 /// Provides a convenient way to view buffer content as both HEX and ASCII bytes where prinable.
 /// supports both forms of alternate formatting `{:x}` and `{:#x}`.
 /// ```
-/// use byteserde::prelude::*;
+/// use ::byteserde::prelude::*;
 /// let mut ser = ByteSerializerHeap::default();
 /// println!("{:x}", ser);
 /// println!("{:#x}", ser);
@@ -315,7 +314,7 @@ impl ByteSerializerHeap {
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `native` endianess.
     /// ToNeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use byteserde::prelude::ByteSerializerHeap;
+    /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerHeap::default();
     /// ser.serialize_ne(0x1_u16);
     /// ser.serialize_ne(0x1_i16);
@@ -327,7 +326,7 @@ impl ByteSerializerHeap {
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `little` endianess.
     /// ToLeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use byteserde::prelude::ByteSerializerHeap;
+    /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerHeap::default();
     /// ser.serialize_le(0x1_u16);
     /// ser.serialize_le(0x1_i16);
@@ -338,7 +337,7 @@ impl ByteSerializerHeap {
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `big` endianess.
     /// ToBeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use byteserde::prelude::ByteSerializerHeap;
+    /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerHeap::default();
     /// ser.serialize_be(0x1_u16);
     /// ser.serialize_be(0x1_i16);

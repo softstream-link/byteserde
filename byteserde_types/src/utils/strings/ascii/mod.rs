@@ -1,7 +1,5 @@
-use crate::des::ByteDeserialize;
-use crate::error::{SerDesError, Result};
-use crate::prelude::ByteDeserializer;
-use crate::utils::hex::{to_hex_line, to_hex_pretty};
+use byteserde::prelude::*;
+use byteserde::utils::hex::{to_hex_line, to_hex_pretty};
 use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
 use std::any::type_name;
 use std::cmp::min;
@@ -9,7 +7,7 @@ use std::fmt;
 
 /// A string of ascii characters, padded with a constant byte, allocated on stack using `[u8; LEN]`
 /// ```
-/// use byteserde::utils::strings::ascii::StringAsciiFixed;
+/// use ::byteserde_types::prelude::*;
 ///
 /// // Takes [u8; 5] array, which `exact` capacity as [StringAsciiFixed], compile time check on capacity
 /// let inp_str: StringAsciiFixed<5, 0x20, false> = b"ABCDE".into();
@@ -148,8 +146,9 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> fmt::Debug
 
 #[cfg(test)]
 mod test_string_ascii_fixed {
-    use super::StringAsciiFixed;
-    use crate::{prelude::*, unittest::setup};
+    use crate::prelude::*;
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
     use log::info;
 
     #[test]
@@ -220,9 +219,11 @@ mod test_string_ascii_fixed {
 }
 
 /// A string of ascii characters with a variable length allocated on heap using `Vec<u8>`
+/// 
 /// ```
-/// use byteserde::utils::strings::ascii::StringAscii;
-/// use byteserde::prelude::*;
+/// use ::byteserde_types::prelude::*;
+/// use ::byteserde::prelude::*;
+/// 
 /// // Take all bytes from array
 /// let inp_str: StringAscii = b"ABCDE".into();
 /// println!("inp_str: {:x}", inp_str);
@@ -291,20 +292,11 @@ impl fmt::Display for StringAscii {
     }
 }
 
-/// Special case to support greedy vector of bytes deserialization
-impl ByteDeserialize<Vec<u8>> for Vec<u8> {
-    fn byte_deserialize(des: &mut ByteDeserializer) -> Result<Vec<u8>> {
-        Ok(des.deserialize_bytes_slice_remaining().into())
-    }
-}
-
 #[cfg(test)]
 mod test_string_ascii {
-    use super::StringAscii;
-    use crate::{
-        prelude::{to_serializer_stack, ByteDeserialize, ByteDeserializer, ByteSerializerStack},
-        unittest::setup,
-    };
+    use crate::prelude::*;
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
     use log::info;
 
     #[test]
@@ -339,7 +331,7 @@ mod test_string_ascii {
 
 /// an ascii character
 /// ```
-/// use byteserde::utils::strings::ascii::CharAscii;
+/// use ::byteserde_types::prelude::*;
 ///
 /// let inp_char: CharAscii = b'A'.into();
 /// println!("{:x}", inp_char);
@@ -395,16 +387,11 @@ impl fmt::Display for CharAscii {
 
 #[cfg(test)]
 mod test_char_ascii {
+    use crate::prelude::*;
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
     use log::info;
 
-    use crate::{
-        prelude::{
-            to_serializer_heap, to_serializer_stack, ByteDeserialize, ByteDeserializer,
-            ByteSerializerHeap, ByteSerializerStack,
-        },
-        unittest::setup,
-        utils::strings::ascii::CharAscii,
-    };
     #[test]
     fn test_char_ascii() {
         setup::log::configure();
@@ -426,7 +413,7 @@ mod test_char_ascii {
 
 /// an ascii const character
 /// ```
-/// use byteserde::utils::strings::ascii::ConstCharAscii;
+/// use ::byteserde_types::prelude::*;
 ///
 /// let inp_char: ConstCharAscii<b'+'> = Default::default();
 /// println!("{:x}", inp_char);
@@ -437,23 +424,24 @@ mod test_char_ascii {
 pub struct ConstCharAscii<const CHAR: u8>(u8);
 impl<const CHAR: u8> ConstCharAscii<CHAR> {
     pub fn bytes(&self) -> [u8; 1] {
-        [self.0]
+        [CHAR]
     }
-    pub fn is_empty(&self) -> bool {
+    pub fn is_empty() -> bool {
         false
     }
     pub fn len(&self) -> usize {
         1
     }
-    pub fn to_char(&self) -> char {
-        char::from_u32(u32::from(self.0)).unwrap()
+    pub fn size() -> usize {
+        1
+    }
+    pub fn to_char() -> char {
+        char::from_u32(u32::from(CHAR)).unwrap()
     }
 }
 impl<const CHAR: u8> ByteDeserialize<ConstCharAscii<CHAR>> for ConstCharAscii<CHAR> {
     #[allow(clippy::just_underscores_and_digits)]
-    fn byte_deserialize(
-        des: &mut crate::prelude::ByteDeserializer,
-    ) -> crate::error::Result<ConstCharAscii<CHAR>> {
+    fn byte_deserialize(des: &mut ByteDeserializer) -> Result<ConstCharAscii<CHAR>> {
         let _0 = des.deserialize_bytes_slice(1)?[0];
         match _0 == CHAR {
             true => Ok(Default::default()),
@@ -501,15 +489,11 @@ impl<const CHAR: u8> fmt::Display for ConstCharAscii<CHAR> {
 
 #[cfg(test)]
 mod test_const_char_ascii {
+    use crate::prelude::*;
+    use crate::unittest::setup;
+    use byteserde::prelude::*;
     use byteserde_derive::ByteSerializeStack;
     use log::info;
-
-    use crate::{
-        error::Result,
-        prelude::{to_serializer_stack, ByteDeserializer, ByteSerializerStack},
-        unittest::setup,
-        utils::strings::ascii::ConstCharAscii,
-    };
 
     #[test]
     fn test_const_char_ascii() {

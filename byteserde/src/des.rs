@@ -16,14 +16,14 @@ use super::ser::ByteSerializerStack;
 
 /// Utility struct with a number of methods to enable deserialization of bytes into various types
 /// ```
-/// use byteserde::des::ByteDeserializer;
+/// use ::byteserde::prelude::ByteDeserializer;
 /// let bytes = &[0x01, 0x00, 0x02, 0x00, 0x00, 0x03];
 /// let mut des = ByteDeserializer::new(bytes);
 /// assert_eq!(des.remaining(), 6);
 /// assert_eq!(des.idx(), 0);
 /// assert_eq!(des.len(), 6);
 ///
-/// let first: u8 = des.deserialize_ne().unwrap();
+/// let first: u8 = des.deserialize_bytes_slice(1).unwrap()[0];
 /// assert_eq!(first , 1);
 ///
 /// let second: [u8; 2] = des.deserialize_bytes_array().unwrap();
@@ -158,7 +158,7 @@ impl<'x> ByteDeserializer<'x> {
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `native` endianess
     /// FromNeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use serde_bytes::ByteDeserializer;
+    /// use ::byteserde::prelude::ByteDeserializer;
     /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
     /// let v: u16 = des.deserialize_ne().unwrap();
     /// // ... etc
@@ -173,7 +173,7 @@ impl<'x> ByteDeserializer<'x> {
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `little` endianess
     /// FromLeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use serde_bytes::ByteDeserializer;
+    /// use ::byteserde::prelude::ByteDeserializer;
     /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
     /// let v: u16 = des.deserialize_le().unwrap();
     /// // ... etc
@@ -188,7 +188,7 @@ impl<'x> ByteDeserializer<'x> {
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `big` endianess
     /// FromBeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use serde_bytes::ByteDeserializer;
+    /// use ::byteserde::prelude::ByteDeserializer;
     /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
     /// let v: u16 = des.deserialize_be().unwrap();
     /// // ... etc
@@ -241,6 +241,13 @@ pub trait ByteDeserialize<T> {
         }
         
         
+    }
+}
+
+/// Special case to support greedy vector of bytes deserialization
+impl ByteDeserialize<Vec<u8>> for Vec<u8> {
+    fn byte_deserialize(des: &mut ByteDeserializer) -> Result<Vec<u8>> {
+        Ok(des.deserialize_bytes_slice_remaining().into())
     }
 }
 

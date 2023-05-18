@@ -1,5 +1,5 @@
 error: proc-macro derive panicked
- --> tests/byteserde_derive/error_scenarios/panic_struct_unit.rs:3:10
+ --> tests/error_scenarios/panic_struct_unit.rs:3:10
   |
 3 | #[derive(ByteSerializeStack)]
   |          ^^^^^^^^^^^^^^^^^^
