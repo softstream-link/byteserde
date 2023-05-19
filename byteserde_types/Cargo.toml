@@ -1,5 +1,5 @@
 [package]
-name = "byteserde_derive"
+name = "byteserde_types"
 version = "0.1.1"
 edition = "2021"
 authors = ["Softstream <softstream.link@gmail.com>"]
@@ -10,12 +10,12 @@ readme = "../readme.md"
 keywords = [ "serde", "bytes", "serialization", "derive" ]
 categories = ["encoding"]
 rust-version = "1.69"
-[lib]
-proc-macro = true
+
 
 [dependencies]
-syn = { version = "2.0", features = ["full"] }
-quote = "1.0"
+byteserde_derive = {path = "../byteserde_derive", version = "0.1"}
+byteserde = {path = "../byteserde", version = "0.1"}
 
 [dev-dependencies]
-trybuild = { version = "1.0", features = ["diff"] }
+env_logger = "0.10"
+log = "0.4"

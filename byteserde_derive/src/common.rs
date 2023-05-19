@@ -469,6 +469,10 @@ pub fn get_generics(generics: &Generics) -> (TokenStream, TokenStream) {
 /// All `crate's` internal references need to use relative path which when starts from root starts with `crate`. This is particularly relevant when using `#[deverive()]` macro.
 pub fn get_crate_name() -> TokenStream {
     let cargo_crate_name = std::env::var("CARGO_CRATE_NAME").unwrap();
+    // for (key, value) in std::env::vars() {
+    //     eprintln!("{key}: {value}");
+    // }
+    // eprintln!("cargo_crate_name: {}", cargo_crate_name);
     let crate_name = match cargo_crate_name.as_str() {
         "byteserde" => quote!(crate),
         _ => quote!(::byteserde),

@@ -1,0 +1,30 @@
+[package]
+name = "byteserde_examples"
+version = "0.1.0"
+edition = "2021"
+authors = ["Softstream <softstream.link@gmail.com>"]
+license-file = "LICENSE"
+description = "A number of common types required for proessing byte streams, for byteserde"
+repository = "https://github.com/softstream-link/byteserde"
+readme = "readme.md"
+keywords = [ "serde", "bytes", "serialization", "derive" ]
+categories = ["encoding"]
+rust-version = "1.69"
+publish = false
+
+[dependencies]
+byteserde = { path = "./../byteserde" }
+byteserde_derive = { path = "./../byteserde_derive" }
+byteserde_types = { path = "./../byteserde_types"}
+
+
+
+[[bench]]
+name = "struct_ser_des_bench"
+harness = false
+
+[dev-dependencies]
+criterion = "0.4"
+env_logger = "0.10" 
+log = "0.4"
+

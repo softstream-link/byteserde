@@ -1,0 +1,7 @@
+error: proc-macro derive panicked
+ --> tests/error_scenarios/panic_struct_unit.rs:3:10
+  |
+3 | #[derive(ByteSerializeStack)]
+  |          ^^^^^^^^^^^^^^^^^^
+  |
+  = help: message: Unit struct type is not supported, found 'StrictUnit'
