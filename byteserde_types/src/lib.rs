@@ -1,6 +1,7 @@
 // public
 pub mod prelude;
-pub mod utils;
+pub mod strings;
+pub mod macros;
 
 // test only
 #[cfg(test)]

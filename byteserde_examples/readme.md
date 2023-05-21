@@ -12,10 +12,10 @@
 * [Regular](./examples/strings_regular.rs)
 * [Tuple](./examples/strings_tuple.rs)
     * `ascii` types are included with the package
-        * [StringAsciiFixed](../byteserde_types/src/utils/strings/ascii/mod.rs#StringAsciiFixed) - fixed length string
-        * [StringAscii](../byteserde_types/src/utils/strings/ascii/mod.rs#StringAscii) - variable length string
-        * [CharAscii](../byteserde_types/src/utils/strings/ascii/mod.rs#CharAscii) - char, one byte long
-        * [ConstCharAscii](../byteserde_types/src/utils/strings/ascii/mod.rs#ConstCharAscii) - constant char, one byte long
+        * [StringAsciiFixed](../byteserde_types/src/strings/ascii/mod.rs#StringAsciiFixed) - fixed length string
+        * [StringAscii](../byteserde_types/src/strings/ascii/mod.rs#StringAscii) - variable length string
+        * [CharAscii](../byteserde_types/src/strings/ascii/mod.rs#CharAscii) - char, one byte long
+        * [ConstCharAscii](../byteserde_types/src/strings/ascii/mod.rs#ConstCharAscii) - constant char, one byte long
 
 ## `Arrays` of `u8`, `u16`, `i32`, .. / `ascii`, `utf-8` strings / other arbitrary types
 * [Regular](./examples/arr_regular.rs)

@@ -32,8 +32,8 @@
           * `#[byteserde( deplete( ... ) )]` - this only affects `deserialization` of the `member` by limiting the number of bytes the member is allowed to read from the stream. Must evaluate to `usize`. Ex: This is usefull when part of the `byte stream` contains infomation about numbers of bytes representing one of following members. See: Examples for more details. 
         * NOTE: that Union, Enum, and Unit structure are not not currently supported
     
-    * `byteserde_tyeps` - [byteserde_types/Cargo.toml](byteserde_types/Cargo.toml)
-        * contains optional ascii string related types, which are typically usefull when dealing with fixed length strings when parsing a `byte stream`, see examples section for more details.
+    * `byteserde_types` - [byteserde_types/Cargo.toml](byteserde_types/Cargo.toml)
+        * contains optional ascii string related types, which are typically usefull when dealing with fixed length strings while parsing a `byte stream`, see examples section for more details.
 
 # Examples & Overview
 * Please refer to [this document](byteserde_examples/readme.md) for a number of helpfull examples and feature review.

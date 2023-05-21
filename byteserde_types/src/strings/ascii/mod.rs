@@ -341,7 +341,7 @@ mod test_string_ascii {
 /// println!("{:x}", inp_char);
 /// assert_eq!(inp_char.bytes(), [0x41]);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq, Clone, Copy)]
 pub struct CharAscii(u8);
 impl CharAscii {
     pub fn bytes(&self) -> [u8; 1] {
@@ -349,6 +349,14 @@ impl CharAscii {
     }
     pub fn new(byte: u8) -> Self {
         Self(byte)
+    }
+    pub fn char(&self) -> u8 {
+        self.0
+    }
+}
+impl From<&CharAscii> for u8 {
+    fn from(value: &CharAscii) -> Self {
+        value.0
     }
 }
 impl From<u8> for CharAscii {

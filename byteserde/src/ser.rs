@@ -38,7 +38,7 @@ pub trait ByteSerializeStack {
         ser: &mut ByteSerializerStack<CAP>,
     ) -> Result<()>;
 }
-/// A byte buffer allocated on stack backed by [u8; CAP], can be reused and recyled by calling [Self::reset()].
+/// A byte buffer allocated on stack backed by `[u8; CAP]`, can be reused and recyled by calling [Self::reset()].
 /// Example: Creates a buffer with 128 bytes capacity and serializes data into it.
 /// ```
 /// use ::byteserde::prelude::*;
@@ -50,6 +50,7 @@ pub trait ByteSerializeStack {
 /// assert_eq!(ser.capacity(), 128);
 /// assert_eq!(ser.avail(), 128 - 1);
 /// assert_eq!(ser.len(), 1);
+/// assert_eq!(ser.is_empty(), false);
 ///
 /// ser.reset();
 /// assert_eq!(ser.is_empty(), true);
@@ -245,7 +246,7 @@ where
 pub trait ByteSerializeHeap {
     fn byte_serialize_heap(&self, ser: &mut ByteSerializerHeap) -> Result<()>;
 }
-/// A byte buffer allocated on heap backed by Vec<u8>, can be reused and recycled by calling [Selc::reset()].
+/// A byte buffer allocated on heap backed by `Vec<u8>`, can be reused and recycled by calling [Self::reset()].
 /// Example: Create a Buffer and serialize data into it.
 /// ```
 /// use ::byteserde::prelude::*;
