@@ -9,13 +9,14 @@ use syn::{
 };
 
 use crate::struct_shared::{
-    des_endian_method_xx, get_endian_attribute, get_length_attribute, get_replace_attribute,
-    ser_endian_method_xx, Length, MemberIdent, Replace,
+    des_endian_method_xx, get_endian_attribute, get_from_attribute, get_length_attribute,
+    get_replace_attribute, ser_endian_method_xx, From, Length, MemberIdent, Replace,
 };
 
 pub enum StructType {
     Regular,
     Tuple,
+    Enum,
 }
 #[derive(Debug)]
 pub struct FieldSerializerDeserializerTokens {
@@ -97,6 +98,43 @@ pub fn get_struct_ser_des_tokens(
                 struct_name = &ast.ident
             ),
         },
+        Data::Enum(_) => {
+            let from = get_from_attribute(&ast.attrs);
+            let struct_type = match from {
+                From::Set(value) => {
+                    quote!(#value)
+                }
+                _ => panic!("from attribute is required for enum types"),
+            };
+            ty = StructType::Enum;
+            let mut tokens = Vec::<FieldSerializerDeserializerTokens>::new();
+            tokens.push(FieldSerializerDeserializerTokens {
+                ser_vars: quote!(let _from_enum = #struct_type::from(self);),
+                ser_repl: quote!(),
+                ser_uses_stck: quote!(ser.serialize(&_from_enum)?;),
+                ser_uses_heap: quote!(ser.serialize(&_from_enum)?;),
+                des_vars: quote!( let _struct = des.deserialize::<#struct_type>()?; ),
+                des_uses: quote!(),
+            });
+
+            tokens
+            // for var in &data.variants{
+
+            //     match &var.fields{
+            //         Fields::Unnamed(flds) => {
+            //             eprintln!("\t *** len: {:?}", flds.unnamed.len());
+            //             let x = &flds.unnamed[0].ty;
+
+            //             eprintln!("\t *** type: {:?}", quote!(#x));
+            //         },
+            //         _ => panic!("Only unnamed fields supported, found '{struct_name}'", struct_name = &ast.ident),
+            //     }
+            //     eprintln!("\t *** ident: {:?}", var.ident);
+            //     // eprintln!("\t *** fields: {:?}", var.fields);
+            //     // eprintln!("\t *** variant: {:?}", var);
+            // }
+            // todo!("Enum types are not supported, found '{struct_name}'", struct_name = &ast.ident);
+        }
         _ => {
             panic!(
                 "Only struct types supported, found '{struct_name}' of type '{ty}'",

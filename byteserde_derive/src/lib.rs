@@ -4,10 +4,10 @@ use quote::quote;
 use syn::DeriveInput;
 
 mod common;
+mod enum_map;
 mod struct_shared;
 #[proc_macro_derive(ByteSerializeStack, attributes(byteserde))]
-#[allow(non_snake_case)] // keep snake name otherwise it messes up vscode refactoring
-pub fn ByteSerializeStack(input: TokenStream) -> TokenStream {
+pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
 
     // get struct name
@@ -47,8 +47,7 @@ pub fn ByteSerializeStack(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(ByteSerializeHeap, attributes(byteserde))]
-#[allow(non_snake_case)] // keep snake name otherwise it messes up vscode refactoring
-pub fn ByteSerializeHeap(input: TokenStream) -> TokenStream {
+pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
     // get struct name
     let struct_name = &ast.ident;
@@ -87,8 +86,7 @@ pub fn ByteSerializeHeap(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(ByteDeserialize, attributes(byteserde))]
-#[allow(non_snake_case)] // keep snake name otherwise it messes up vscode refactoring
-pub fn ByteDeserialize(input: TokenStream) -> TokenStream {
+pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
     // get struct name
     let struct_name = &ast.ident;
@@ -101,6 +99,7 @@ pub fn ByteDeserialize(input: TokenStream) -> TokenStream {
     let impl_body = match ty {
         common::StructType::Regular => quote!(#struct_name {#( #des_uses )*}),
         common::StructType::Tuple => quote!  (#struct_name (#( #des_uses )*)),
+        common::StructType::Enum => quote! ( #struct_name::from( _struct )),
     };
 
     let crate_name = get_crate_name();
@@ -119,6 +118,30 @@ pub fn ByteDeserialize(input: TokenStream) -> TokenStream {
                 // TupleName ( _0, _1 )
                 #( #des_vars )*
                 Ok(#impl_body)
+            }
+        }
+    };
+    output.into()
+}
+
+#[proc_macro_derive(ByteEnumMap, attributes(byteserde))]
+pub fn byte_enum_map(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input).unwrap();
+    // get struct name
+    let struct_name = &ast.ident;
+
+
+    // generate From
+    let output = quote! {
+        #[automatically_derived]
+        pub enum NewEnum {
+            Invalid,
+        }
+
+        #[automatically_derived]
+        impl From<&#struct_name> for NewEnum { // TODO need to create Enum identity from attributes
+            fn from(value: &#struct_name) -> Self{
+                NewEnum::Invalid
             }
         }
     };

@@ -1,3 +1,4 @@
+
 use quote::{__private::Span, quote};
 use syn::{parenthesized, Attribute, Expr, Ident, LitStr, Member};
 
@@ -25,16 +26,17 @@ pub enum Length {
     Len(Expr),
 }
 pub fn get_length_attribute(attrs: &[Attribute]) -> Length {
-    let (_, length, _) = get_attributes(attrs);
+    let (_, length, _, _) = get_attributes(attrs);
     length
 }
 
+#[derive(Debug)]
 pub enum Replace {
     NotSet,
     Set(Expr),
 }
 pub fn get_replace_attribute(attrs: &[Attribute]) -> Replace {
-    let (_, _, replace) = get_attributes(attrs);
+    let (_, _, replace, _) = get_attributes(attrs);
     replace
 }
 
@@ -47,17 +49,25 @@ pub enum Endian {
 }
 
 pub fn get_endian_attribute(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
-    let (fld_endian, _, _) = get_attributes(fld_attrs);
+    let (fld_endian, _, _, _) = get_attributes(fld_attrs);
     match fld_endian {
         Endian::NotSet => {
-            let (struct_endian, _, _) = get_attributes(struc_attrs);
+            let (struct_endian, _, _, _) = get_attributes(struc_attrs);
             struct_endian
         }
         _ => fld_endian,
     }
 }
 
-fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace) {
+pub enum From{
+    NotSet,
+    Set(Ident),
+}
+pub fn get_from_attribute(struct_attrs: &[Attribute]) -> From {
+    let (_, _, _, from) = get_attributes(struct_attrs);
+    from
+}
+fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace, From) {
     let byteserde_attrs = attrs
         .iter()
         .filter(|atr| atr.meta.path().is_ident("byteserde"))
@@ -66,7 +76,8 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace) {
     let mut endian = Endian::NotSet;
     let mut length = Length::NotSet;
     let mut over = Replace::NotSet;
-
+    let mut from = From::NotSet;
+    
     // https://docs.rs/syn/latest/syn/meta/struct.ParseNestedMeta.html
 
     for attr in byteserde_attrs {
@@ -85,7 +96,6 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace) {
                 }
                 return Ok(());
             }
-
             if meta.path.is_ident("replace") {
                 let content;
                 parenthesized!(content in meta.input);
@@ -98,14 +108,20 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace) {
                 length = Length::Len(content.parse::<Expr>()?);
                 return Ok(());
             }
+            if meta.path.is_ident("from") {
+                let content;
+                parenthesized!(content in meta.input);
+                from = From::Set(content.parse::<Ident>()?);
+                return Ok(());
+            }
 
             Err(meta.error(format!("Unexpected attribute. {}", quote!(#attr))))
         });
 
         if res.is_err() {
-            panic!("{}", res.unwrap_err());
+            panic!("Failed to process attrs: {} {}", quote!( #(#attrs)* ), res.unwrap_err());
         }
     }
 
-    (endian, length, over)
+    (endian, length, over, from)
 }

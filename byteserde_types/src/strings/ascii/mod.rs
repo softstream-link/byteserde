@@ -69,7 +69,7 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8]>
 impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8; LEN]>
     for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
 {
-    /// Compiler time check for capacity, bytes array must be same length as [StringAsciiFixed::LEN]
+    /// Compiler time check for capacity, bytes array must be same length as `LEN`
     fn from(bytes: &[u8; LEN]) -> Self {
         bytes[0..].into()
     }
@@ -350,7 +350,7 @@ impl CharAscii {
     pub fn new(byte: u8) -> Self {
         Self(byte)
     }
-    pub fn char(&self) -> u8 {
+    pub fn as_byte(&self) -> u8 {
         self.0
     }
 }
@@ -379,17 +379,13 @@ impl fmt::LowerHex for CharAscii {
 impl fmt::Debug for CharAscii {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple(type_name::<Self>().split("::").last().ok_or(fmt::Error)?)
-            .field(&char::from_u32(u32::from(self.0)).ok_or(fmt::Error)?)
+            .field(&char::from_u32(self.0 as u32).ok_or(fmt::Error)?)
             .finish()
     }
 }
 impl fmt::Display for CharAscii {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            &char::from_u32(u32::from(self.0)).ok_or(fmt::Error)?
-        )
+        write!(f, "{}", &char::from_u32(self.0 as u32).ok_or(fmt::Error)?)
     }
 }
 
