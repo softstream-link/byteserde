@@ -9,11 +9,11 @@
 /// * `[derive, ...]` -- list of traits to derive for the struct, must be valid rust traits
 ///
 /// # Derives
-/// Note that provided implementation already includes several traits which should included in the derive list.
+/// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
 /// * `Debug` & `Display` - provides a human readable sting view of the `[u8; LEN]` byte buffer as a utf-8 string
 ///
 /// # From
-/// Not that provided implementation already includes the following `From` implementations.
+/// Note that provided implementation already includes the following `From` implementations.
 /// * `From<&[u8]>` - will take upto `LEN` bytes from the slice and pad if necessary usig `PADDING` argument.
 /// * `From<&[u8; LEN]>` - must match the length of the buffer, will not pad.
 ///
@@ -77,7 +77,34 @@ macro_rules! string_ascii_fixed {
     };
 }
 
-
+/// Generates a `tuple` `struct` with a given name for managing an ascii char allocated on `stack` using `u8`.
+/// 
+/// # Arguments
+/// * `NAME` - name of the struct to be generated
+/// * `[derive, ...]` -- list of traits to derive for the struct, must be valid rust traits
+/// 
+/// # Derives
+/// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
+/// * `Debug` & `Display` - provides a human readable sting view of the `u8` byte as utf-8 char
+/// 
+/// # From
+/// Note that provided implementation already includes the following `From` implementations.
+/// * `From<u8>` - will take the `u8` byte and return tupe struct with type of `NAME` agrument.
+/// * `From<[u8; 1]>` - will take the first byte of the array and return tupe struct with type of `NAME` agrument.
+/// 
+/// # Examples
+/// ```
+/// # #[macro_use] extern crate byteserde_types; fn main() {
+/// char_ascii!(Char, PartialEq);
+/// let inp_char: Char = b'1'.into(); // from u8
+/// println!("inp_char: {:?}, {}", inp_char, inp_char);
+/// assert_eq!(inp_char.as_byte(), b'1');
+/// 
+/// let inp_char: Char = [b'1'].into(); // from array
+/// println!("inp_char: {:?}, {}", inp_char, inp_char);
+/// assert_eq!(inp_char.as_byte(), b'1');
+/// # }
+/// ```
 #[macro_export]
 macro_rules! char_ascii {
     ($NAME:ident, $($derive:ty),*) => {

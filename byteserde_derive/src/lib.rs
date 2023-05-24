@@ -1,4 +1,4 @@
-use common::{get_crate_name, get_generics, get_struct_ser_des_tokens};
+use common::{get_crate_name, get_generics, get_struct_ser_des_tokens, get_enum_from_tokens};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
@@ -124,26 +124,14 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     output.into()
 }
 
-#[proc_macro_derive(ByteEnumMap, attributes(byteserde))]
-pub fn byte_enum_map(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(ByteEnumFrom, attributes(byteserde))]
+pub fn byte_enum_from(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
-    // get struct name
-    let struct_name = &ast.ident;
-
-
+    
+    let froms = get_enum_from_tokens(&ast);
     // generate From
     let output = quote! {
-        #[automatically_derived]
-        pub enum NewEnum {
-            Invalid,
-        }
-
-        #[automatically_derived]
-        impl From<&#struct_name> for NewEnum { // TODO need to create Enum identity from attributes
-            fn from(value: &#struct_name) -> Self{
-                NewEnum::Invalid
-            }
-        }
+         #(#froms)*
     };
     output.into()
 }

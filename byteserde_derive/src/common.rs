@@ -1,3 +1,5 @@
+use core::panic;
+
 use quote::{
     __private::{Span, TokenStream},
     quote,
@@ -9,8 +11,8 @@ use syn::{
 };
 
 use crate::struct_shared::{
-    des_endian_method_xx, get_endian_attribute, get_from_attribute, get_length_attribute,
-    get_replace_attribute, ser_endian_method_xx, From, Length, MemberIdent, Replace,
+    des_endian_method_xx, get_endian_attribute, get_bind_attribute, get_length_attribute,
+    get_replace_attribute, ser_endian_method_xx, Bind, Length, MemberIdent, Replace, get_from_attributes, From,
 };
 
 pub enum StructType {
@@ -19,7 +21,7 @@ pub enum StructType {
     Enum,
 }
 #[derive(Debug)]
-pub struct FieldSerializerDeserializerTokens {
+pub struct FldSerDesTokens {
     pub ser_vars: TokenStream,
     pub ser_repl: TokenStream,
     pub ser_uses_stck: TokenStream,
@@ -29,7 +31,7 @@ pub struct FieldSerializerDeserializerTokens {
 }
 pub fn get_struct_ser_des_tokens(
     ast: &DeriveInput,
-) -> (Vec<FieldSerializerDeserializerTokens>, StructType) {
+) -> (Vec<FldSerDesTokens>, StructType) {
     let ty: StructType;
 
     let tokens = match &ast.data {
@@ -99,16 +101,16 @@ pub fn get_struct_ser_des_tokens(
             ),
         },
         Data::Enum(_) => {
-            let from = get_from_attribute(&ast.attrs);
-            let struct_type = match from {
-                From::Set(value) => {
+            let bind = get_bind_attribute(&ast.attrs);
+            let struct_type = match bind {
+                Bind::Set(value) => {
                     quote!(#value)
                 }
-                _ => panic!("from attribute is required for enum types"),
+                _ => panic!("bind attribute is required for enum types"),
             };
             ty = StructType::Enum;
-            let mut tokens = Vec::<FieldSerializerDeserializerTokens>::new();
-            tokens.push(FieldSerializerDeserializerTokens {
+            let mut tokens = Vec::<FldSerDesTokens>::new();
+            tokens.push(FldSerDesTokens {
                 ser_vars: quote!(let _from_enum = #struct_type::from(self);),
                 ser_repl: quote!(),
                 ser_uses_stck: quote!(ser.serialize(&_from_enum)?;),
@@ -118,22 +120,6 @@ pub fn get_struct_ser_des_tokens(
             });
 
             tokens
-            // for var in &data.variants{
-
-            //     match &var.fields{
-            //         Fields::Unnamed(flds) => {
-            //             eprintln!("\t *** len: {:?}", flds.unnamed.len());
-            //             let x = &flds.unnamed[0].ty;
-
-            //             eprintln!("\t *** type: {:?}", quote!(#x));
-            //         },
-            //         _ => panic!("Only unnamed fields supported, found '{struct_name}'", struct_name = &ast.ident),
-            //     }
-            //     eprintln!("\t *** ident: {:?}", var.ident);
-            //     // eprintln!("\t *** fields: {:?}", var.fields);
-            //     // eprintln!("\t *** variant: {:?}", var);
-            // }
-            // todo!("Enum types are not supported, found '{struct_name}'", struct_name = &ast.ident);
         }
         _ => {
             panic!(
@@ -150,6 +136,112 @@ pub fn get_struct_ser_des_tokens(
     (tokens, ty)
 }
 
+pub fn get_enum_from_tokens(
+    ast: &DeriveInput,
+) -> Vec<quote::__private::TokenStream>
+{
+
+    let enum_type = &ast.ident;
+    let enum_type_str = format!("{}", quote!(#enum_type));
+    let enum_ref_type_str = format!("{}", quote!(&#enum_type));
+
+    let bind = get_bind_attribute(&ast.attrs);
+    let bind_type = match bind {
+        Bind::Set(value) => quote!(#value),
+        _ => panic!("Enum {enum_type} is missing required `#[byteserde(bind( ... ))]` attribute"),
+    };    
+    let bind_type_str = format!("{}", quote!(#bind_type));
+    let bind_ref_type_str = format!("{}", quote!(&#bind_type));
+
+    let from_types: Vec<From> = get_from_attributes(&ast.attrs);
+    if from_types.len() == 0 {
+        panic!(
+            "Enum {enum_type} is missing at least one from attribute,
+                Example: 
+                    `#[byteserde(from(&{enum_type_str}))] - used by serializers`
+                    `#[byteserde(from({enum_type_str}))] - convenient for testings`
+                    "
+        );
+    }
+    let mut tokens = Vec::<TokenStream>::new();
+    for from_type in from_types{
+        let from_type_str = format!("{}", quote!(#from_type));
+        if ![&bind_type_str, &bind_ref_type_str, &enum_type_str, &enum_ref_type_str].contains(&&from_type_str){
+             panic!("`#[byteserde(from({from_type_str}))]` needs to match one of 
+                 `{bind_type_str}`
+                 `{bind_ref_type_str}`
+                 `{enum_type_str}`
+                 `{enum_ref_type_str}`
+                 ")
+         }
+
+        
+        let from_impl = match &ast.data {
+            Data::Enum(data) => {
+                let match_arms = data.variants
+                    .iter()
+                    .map(|var| {
+                        let replace = match get_replace_attribute(&var.attrs){
+                            Replace::Set(value) => {
+                                quote!(#value)
+                            }
+                            _ => panic!("`{enum_type}::{}` variant with missing replace, consider adding `#[byteserde(replace( <instance of type {bind_type_str}> ))]`",
+                                &var.ident
+                            ),
+                        
+                        };
+                        let enum_variant = &var.ident;
+                        match var.fields{
+                            Fields::Unit =>{
+                                match from_type_str.contains(&enum_type_str){
+                                   true => quote!(#enum_type::#enum_variant => #replace,),
+                                   false => quote!(#replace => #enum_type::#enum_variant,),
+                                }
+                            },
+                            _ => panic!("Only unit fields for enum types supported"),
+                        }
+                    }
+                    )
+                    .collect::<Vec<_>>();
+                // eprintln!("match_arms: {}", quote!(#(#match_arms)*));
+                let impl_from = match from_type_str.contains(&enum_type_str){
+                    true => {
+                        quote! {
+                            #[automatically_derived]
+                            impl From<#from_type> for #bind_type{
+                                fn from(v: #from_type) -> #bind_type{
+                                    match v{
+                                         #(#match_arms)*
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    false => {
+                        quote! {
+                            #[automatically_derived]
+                            impl From<#from_type> for #enum_type{
+                                fn from(v: #from_type) -> #enum_type{
+                                    match v{
+                                         #(#match_arms)*
+                                         _ => panic!("{:?} is not mapped to enum variant", v),
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+                // eprintln!("impl_from: {}", quote!(#impl_from));
+                impl_from
+                
+            }
+            _ => panic!("This feature is only supported for enum types")
+            };
+        tokens.push(from_impl);
+    }
+    tokens
+}
+
 fn setup_numeric(
     ast: &DeriveInput,
     fld: &Field,
@@ -157,7 +249,7 @@ fn setup_numeric(
     var_name: &Ident,
     member: &MemberIdent,
     option: &FieldType,
-) -> FieldSerializerDeserializerTokens {
+) -> FldSerDesTokens {
     let replace = get_replace_attribute(&fld.attrs);
     let endian = get_endian_attribute(&ast.attrs, &fld.attrs);
     let ser_endian_method_xx = ser_endian_method_xx(&endian);
@@ -187,7 +279,7 @@ fn setup_numeric(
         _ => panic!("this method should only be called Byte, Numeric types"),
     };
 
-    FieldSerializerDeserializerTokens {
+    FldSerDesTokens {
         ser_vars,
         ser_repl,
         ser_uses_stck: ser_uses_xxx.clone(),
@@ -205,7 +297,7 @@ fn setup_array(
     len: &Expr,
     member: &MemberIdent,
     option: &FieldType,
-) -> FieldSerializerDeserializerTokens {
+) -> FldSerDesTokens {
     let replace = get_replace_attribute(&fld.attrs);
     let endian = get_endian_attribute(&ast.attrs, &fld.attrs);
     let ser_endian_method_xx = ser_endian_method_xx(&endian);
@@ -261,7 +353,7 @@ fn setup_array(
         ),
     };
 
-    FieldSerializerDeserializerTokens {
+    FldSerDesTokens {
         ser_vars,
         ser_repl,
         ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
@@ -277,7 +369,7 @@ fn setup_vec(
     var_name: &Ident,
     member: &MemberIdent,
     option: &FieldType,
-) -> FieldSerializerDeserializerTokens {
+) -> FldSerDesTokens {
     let length = get_length_attribute(&fld.attrs);
     let replace = get_replace_attribute(&fld.attrs);
     let endian = get_endian_attribute(&ast.attrs, &fld.attrs);
@@ -336,7 +428,7 @@ fn setup_vec(
         _ => panic!("this method should only be called with Vec types"),
     };
 
-    FieldSerializerDeserializerTokens {
+    FldSerDesTokens {
         ser_vars,
         ser_repl,
         ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
@@ -350,7 +442,7 @@ fn setup_struct(
     var_name: &Ident,
     ty: &Type,
     member: &MemberIdent,
-) -> FieldSerializerDeserializerTokens {
+) -> FldSerDesTokens {
     let length = get_length_attribute(&fld.attrs);
     let replace = get_replace_attribute(&fld.attrs);
     let ser_vars = match member {
@@ -367,7 +459,7 @@ fn setup_struct(
         }
         Length::NotSet => quote!( let #var_name: #ty = des.deserialize()?; ),
     };
-    FieldSerializerDeserializerTokens {
+    FldSerDesTokens {
         ser_vars,
         ser_repl,
         ser_uses_stck: quote!( #var_name.byte_serialize_stack(ser)?; ),
