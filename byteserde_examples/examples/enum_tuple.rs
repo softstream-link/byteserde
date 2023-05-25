@@ -1,7 +1,7 @@
 mod unittest;
 
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteEnumFrom, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserialize, ByteEnumFromBinder, ByteSerializeHeap, ByteSerializeStack};
 use byteserde_types::char_ascii;
 use log::info;
 use unittest::setup;
@@ -82,7 +82,7 @@ fn enums_from_auto_impl() {
     
     char_ascii!(Side, PartialEq);
 
-    #[derive(ByteEnumFrom, Debug, PartialEq)]
+    #[derive(ByteEnumFromBinder, Debug, PartialEq)]
     #[byteserde(bind(Side))]
     #[byteserde(from(&SideEnum))]
     #[byteserde(from(SideEnum))]

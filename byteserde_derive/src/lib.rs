@@ -1,4 +1,5 @@
-use common::{get_crate_name, get_generics, get_struct_ser_des_tokens, get_enum_from_tokens};
+use common::{get_crate_name, get_generics, get_struct_ser_des_tokens};
+use enum_map::get_enum_from_tokens;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
@@ -124,7 +125,7 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     output.into()
 }
 
-#[proc_macro_derive(ByteEnumFrom, attributes(byteserde))]
+#[proc_macro_derive(ByteEnumFromBinder, attributes(byteserde))]
 pub fn byte_enum_from(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
     

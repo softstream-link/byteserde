@@ -21,10 +21,10 @@
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// // Align=Left / Len=10 / Padding=Minus
-/// string_ascii_fixed!(Password, 10, b'-', false,); // not required comma after alignment
+/// string_ascii_fixed!(Password, 10, b'-', false,); // NOTE required comma after alignment when you dont provide a single derive argument
 /// let inp_pwd: Password = b"12345".as_slice().into(); // from slice
 /// println!("inp_pwd: {:?}, {}", inp_pwd, inp_pwd);
-/// assert_eq!(&inp_pwd.0, b"12345-----");
+/// assert_eq!(inp_pwd.as_bytes(), b"12345-----");
 ///
 /// // Align=Right / Len=10 / Padding=Space
 /// string_ascii_fixed!(Username, 10, b' ', true, PartialEq);
@@ -32,17 +32,21 @@
 /// let inp_usr2: Username = b"     12345".into(); // from array of matching len
 /// println!("inp_usr1: {:?}, {}", inp_usr1, inp_usr1);
 /// println!("inp_usr2: {:?}, {}", inp_usr2, inp_usr2);
-/// assert_eq!(&inp_usr1.0, b"     12345");
-/// assert_eq!(&inp_usr2.0, b"     12345");
+/// assert_eq!(inp_usr1.as_bytes(), b"     12345");
+/// assert_eq!(inp_usr2.as_bytes(), b"     12345");
 /// assert_eq!(inp_usr1, inp_usr2);
 /// # }
 /// ```
-///
 #[macro_export]
 macro_rules! string_ascii_fixed {
     ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN: literal, $($DERIVE:ty),* ) => {
         #[derive( $($DERIVE),* ) ]
         pub struct $NAME([u8; $LEN]);
+        impl $NAME{
+            pub fn as_bytes(&self) -> &[u8; $LEN] { 
+                &self.0
+            }
+        }
         impl From<&[u8]> for $NAME {
             ///  Runt time check for capacity, Takes defensively and upto `LEN`, never overflows.
             fn from(bytes: &[u8]) -> Self {
@@ -108,8 +112,15 @@ macro_rules! string_ascii_fixed {
 #[macro_export]
 macro_rules! char_ascii {
     ($NAME:ident, $($derive:ty),*) => {
+        /// Tuple struct with a `u8` buffer to represent an ascii char.
         #[derive( $($derive),* )]
         pub struct $NAME(u8);
+        impl $NAME {
+            /// proves access to the `u8` byte
+            pub fn as_byte(&self) -> u8 {
+                self.0
+            }
+        }
         impl From<u8> for $NAME {
             fn from(byte: u8) -> Self {
                 $NAME(byte)
@@ -120,11 +131,7 @@ macro_rules! char_ascii {
                 $NAME(bytes[0])
             }
         }
-        impl $NAME {
-            pub fn as_byte(&self) -> u8 {
-                self.0
-            }
-        }
+        // utf8 `char` based impls
         impl std::fmt::Debug for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_tuple( stringify! ($NAME) )
@@ -132,6 +139,7 @@ macro_rules! char_ascii {
                     .finish()
             }
         }
+        /// utf8 `char` based impls
         impl std::fmt::Display for $NAME{
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", &char::from_u32(self.0 as u32).ok_or(std::fmt::Error)?)
