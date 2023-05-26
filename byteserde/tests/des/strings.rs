@@ -12,7 +12,7 @@ fn test_deserialize_string() {
     let _ = inp.byte_serialize_stack(ser);
     info!("ser: {ser:#x}");
 
-    let mut des = ByteDeserializer::new(ser.bytes());
+    let mut des = ByteDeserializer::new(ser.as_slice());
     let out: String = des.deserialize().unwrap();
     info!("des: {des:#x}");
     info!("out: {out}");
@@ -23,7 +23,7 @@ fn test_deserialize_string() {
     let _ = inp.byte_serialize_stack(ser);
     info!("ser: {ser:#x}");
 
-    let mut des = ByteDeserializer::new(ser.bytes());
+    let mut des = ByteDeserializer::new(ser.as_slice());
     let out: String = des.deserialize().unwrap();
     info!("des: {des:#x}");
     info!("out: {out}");
@@ -39,7 +39,7 @@ fn test_serialize_string_too_short_and_not_utf8() {
     let _ = ser.serialize_bytes_slice(&8_usize.to_be_bytes());
     let _ = ser.serialize_bytes_slice(&[0xFF_u8]);
     info!("ser: {ser:#x}");
-    let mut des = ByteDeserializer::new(ser.bytes());
+    let mut des = ByteDeserializer::new(ser.as_slice());
     let out = des.deserialize::<String>();
     info!("{out:?}");
     assert!(out.is_err());
@@ -51,7 +51,7 @@ fn test_serialize_string_too_short_and_not_utf8() {
         0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8,
     ]);
     info!("ser: {ser:#x}");
-    let mut des = ByteDeserializer::new(ser.bytes());
+    let mut des = ByteDeserializer::new(ser.as_slice());
     let out = des.deserialize::<String>();
     info!("{out:?}");
     assert_eq!(
@@ -69,7 +69,7 @@ fn test_deserialize_char() {
     let _ = inp.byte_serialize_stack(ser);
     info!("ser: {ser:#x}");
 
-    let mut des = ByteDeserializer::new(ser.bytes());
+    let mut des = ByteDeserializer::new(ser.as_slice());
     let out: char = des.deserialize().unwrap();
     info!("des: {des:#x}");
     info!("out: {out}");
@@ -85,7 +85,7 @@ fn test_deserialize_char_too_long_and_not_utf8() {
     let _ = ser.serialize_bytes_slice(&[0x05_u8]);
     info!("ser: {ser:#x}");
 
-    let mut des = ByteDeserializer::new(ser.bytes());
+    let mut des = ByteDeserializer::new(ser.as_slice());
     let out = des.deserialize::<char>();
     info!("des: {des:#x}");
     info!("out: {out:?}");
@@ -100,7 +100,7 @@ fn test_deserialize_char_too_long_and_not_utf8() {
     let _ = ser.serialize_bytes_slice(&[0x01_u8, 0xFF_u8]);
     info!("ser: {ser:#x}");
 
-    let mut des = ByteDeserializer::new(ser.bytes());
+    let mut des = ByteDeserializer::new(ser.as_slice());
     let out = des.deserialize::<char>();
     info!("des: {des:#x}");
     info!("out: {out:?}");

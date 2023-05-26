@@ -147,3 +147,53 @@ macro_rules! char_ascii {
         }
     }
 }
+
+#[macro_export]
+macro_rules! u32_tuple {
+    ($NAME:ident, $ENDIAN:literal, $($derive:ty),*) => {
+        /// Tuple struct with a `u32` value
+        #[derive( $($derive),* )]
+        #[byteserde(endian = $ENDIAN )]
+        pub struct $NAME(u32);
+        impl $NAME {
+            pub fn value(&self) -> u32 {
+                self.0
+            }
+        }
+        impl From<u32> for $NAME {
+            fn from(v: u32) -> Self {
+                $NAME(v)
+            }
+        }
+        impl std::fmt::Display for $NAME{
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", &self.0)
+            }
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! u64_tuple {
+    ($NAME:ident, $ENDIAN:literal, $($derive:ty),*) => {
+        /// Tuple struct with a `u64` value
+        #[derive( $($derive),* )]
+        #[byteserde(endian = $ENDIAN )]
+        pub struct $NAME(u64);
+        impl $NAME {
+            pub fn value(&self) -> u64 {
+                self.0
+            }
+        }
+        impl From<u64> for $NAME {
+            fn from(v: u64) -> Self {
+                $NAME(v)
+            }
+        }
+        impl std::fmt::Display for $NAME{
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", &self.0)
+            }
+        }
+    }
+}

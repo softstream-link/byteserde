@@ -40,9 +40,9 @@ fn all() {
     let mut ser_heap = to_serializer_heap(&inp_debug).unwrap();
     ser_heap.serialize_bytes_slice(tail).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
-    let des = &mut ByteDeserializer::new(ser_stack.bytes());
+    let des = &mut ByteDeserializer::new(ser_stack.as_slice());
 
     let out_debug = DebugMsg::byte_deserialize(des).unwrap();
     info!("out_debug: {:?}", out_debug);

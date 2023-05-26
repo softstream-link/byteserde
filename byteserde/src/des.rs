@@ -1,7 +1,4 @@
-use std::{
-    any::type_name,
-    fmt::{Debug, LowerHex},
-};
+use std::fmt::{Debug, LowerHex};
 
 use crate::{
     error::{Result, SerDesError},
@@ -53,9 +50,11 @@ impl<'x> LowerHex for ByteDeserializer<'x> {
             false => to_hex_line(self.bytes),
         };
         let len = self.bytes.len();
-        let name = type_name::<Self>().split("::").last().unwrap();
         let idx = self.idx;
-        write!(f, "{name} {{ len: {len}, idx: {idx}, bytes: {bytes} }}",)
+        write!(
+            f,
+            "ByteDeserializer {{ len: {len}, idx: {idx}, bytes: {bytes} }}",
+        )
     }
 }
 
@@ -132,7 +131,7 @@ impl<'x> ByteDeserializer<'x> {
             }
         }
     }
-    
+
     /// moves the index forward by `len` bytes, intended to be used in combination with [Self::peek_bytes_slice()]
     fn advance_idx(&mut self, len: usize) {
         self.idx += len;
@@ -239,8 +238,6 @@ pub trait ByteDeserialize<T> {
             }
             Err(e) => Err(e),
         }
-        
-        
     }
 }
 
@@ -265,12 +262,12 @@ pub fn from_serializer_stack<const CAP: usize, T>(ser: &ByteSerializerStack<CAP>
 where
     T: ByteDeserialize<T>,
 {
-    from_bytes(ser.bytes())
+    from_bytes(ser.as_slice())
 }
 /// This is a short cut method that uses [`ByteSerializerHeap::bytes()`] method to issue a [from_bytes] call.
 pub fn from_serializer_heap<T>(ser: &ByteSerializerHeap) -> Result<T>
 where
     T: ByteDeserialize<T>,
 {
-    from_bytes(ser.bytes())
+    from_bytes(ser.as_slice())
 }

@@ -1,7 +1,0 @@
-error: proc-macro derive panicked
- --> tests/error_scenarios/panic_enum.rs:3:10
-  |
-3 | #[derive(ByteSerializeStack)]
-  |          ^^^^^^^^^^^^^^^^^^
-  |
-  = help: message: Only struct types supported, found 'NotSupportedEnum' of type 'enum'

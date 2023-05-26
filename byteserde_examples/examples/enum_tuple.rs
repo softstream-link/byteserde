@@ -61,9 +61,9 @@ fn enums_bind_2_tuple_manual_from() {
     ser_heap.serialize(&inp_enum_buy).unwrap();
     ser_heap.serialize(&inp_enum_sel).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
-    let mut des = ByteDeserializer::new(ser_stack.bytes());
+    let mut des = ByteDeserializer::new(ser_stack.as_slice());
     // deserialize
     let out_enum_buy: SideEnum = des.deserialize().unwrap();
     let out_enum_sel: SideEnum = des.deserialize().unwrap();

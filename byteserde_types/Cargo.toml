@@ -1,16 +1,16 @@
 [package]
 name = "byteserde_types"
-version = "0.1.1"
-edition = "2021"
-authors = ["Softstream <softstream.link@gmail.com>"]
-license-file = "../LICENSE"
-description = "A procedural macro for mapping byte streams to/from arbitrary struct types with focus on performance"
-repository = "https://github.com/softstream-link/byteserde"
-readme = "../readme.md"
-keywords = [ "serde", "bytes", "serialization", "derive" ]
-categories = ["encoding"]
-rust-version = "1.69"
+version.workspace = true
+authors.workspace = true
+readme.workspace = true
+license-file.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
+description = "A procedural macro for mapping byte streams to/from arbitrary struct types with focus on performance"
 
 [dependencies]
 byteserde_derive = {path = "../byteserde_derive", version = "0.1"}

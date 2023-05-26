@@ -14,11 +14,11 @@ fn test_serializer_u16() {
         info!("ser:x {ser:x}");
         info!("idx {idx}");
         info!("inp: {inp}, ipn:x {inp:#06x}, inp:b {inp:016b}");
-        println!("{:?}", &ser.bytes());
-        println!("{:?}", &ser.bytes()[idx..idx + 2]);
+        println!("{:?}", &ser.as_slice());
+        println!("{:?}", &ser.as_slice()[idx..idx + 2]);
         let out = match le {
-            true => u16::from_le_bytes(ser.bytes()[idx..idx + 2].try_into().unwrap()),
-            false => u16::from_be_bytes(ser.bytes()[idx..idx + 2].try_into().unwrap()),
+            true => u16::from_le_bytes(ser.as_slice()[idx..idx + 2].try_into().unwrap()),
+            false => u16::from_be_bytes(ser.as_slice()[idx..idx + 2].try_into().unwrap()),
         };
         info!("out: {out}, out:x {out:#06x}, out:b {inp:016b}");
         assert_eq!(inp, out);

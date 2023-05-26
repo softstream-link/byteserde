@@ -32,7 +32,7 @@ fn vec_u8() {
     // heap
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_num).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     // deserialize
     let out_num: VecByte = from_serializer_stack(&ser_stack).unwrap();
@@ -73,14 +73,14 @@ fn vec_u16() {
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
     info!("ser_stack: {ser_stack:#x}");
     // head first
-    assert_eq!(ser_stack.bytes()[0..2], 1_u16.to_be_bytes());
+    assert_eq!(ser_stack.as_slice()[0..2], 1_u16.to_be_bytes());
     // tail first
-    assert_eq!(ser_stack.bytes()[10..12], 4_u16.to_le_bytes());
+    assert_eq!(ser_stack.as_slice()[10..12], 4_u16.to_le_bytes());
 
     // heap
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_num).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     // deserialize
     let out_num: VecNumerics = from_serializer_stack(&ser_stack).unwrap();
@@ -124,7 +124,7 @@ fn vec_other() {
     // heap
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_num).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     // deserialize
     let out_num: VecOther = from_serializer_stack(&ser_stack).unwrap();

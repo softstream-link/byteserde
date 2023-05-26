@@ -17,7 +17,7 @@ fn test_deserializer_u16() {
         ser.serialize_bytes_slice(&[0xff_u8]).unwrap();
         info!("ser:x {ser:x}");
 
-        let mut de = ByteDeserializer::new(ser.bytes());
+        let mut de = ByteDeserializer::new(ser.as_slice());
         for inp in inps {
             info!("de:x {de:x}");
             info!("inp: {inp}, ipn:x {inp:#06x}, inp:b {inp:016b}");

@@ -71,8 +71,8 @@ pub struct ByteSerializerStack<const CAP: usize> {
 impl<const CAP: usize> LowerHex for ByteSerializerStack<CAP> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bytes = match f.alternate() {
-            true => format!("\n{hex}", hex = to_hex_pretty(self.bytes())),
-            false => to_hex_line(self.bytes()),
+            true => format!("\n{hex}", hex = to_hex_pretty(self.as_slice())),
+            false => to_hex_line(self.as_slice()),
         };
         let len = self.len;
         let name = type_name::<Self>().split("::").last().unwrap();
@@ -115,12 +115,12 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     pub fn capacity(&self) -> usize {
         CAP
     }
-    /// Returns number of available slots in the beffer. [Self::capacity()] - [Self::len()]
+    /// Returns number of available slots in the buffer. [Self::capacity()] - [Self::len()]
     pub fn avail(&self) -> usize {
         CAP - self.len
     }
     /// Returns a slice of the buffer containing the bytes written, less any unused slots.
-    pub fn bytes(&self) -> &[u8] {
+    pub fn as_slice(&self) -> &[u8] {
         &self.bytes[0..self.len]
     }
 
@@ -251,12 +251,12 @@ pub trait ByteSerializeHeap {
 /// ```
 /// use ::byteserde::prelude::*;
 /// let mut ser = ByteSerializerHeap::default();
-/// 
+///
 /// ser.serialize_bytes_slice(&[0x01]).unwrap();
-/// 
+///
 /// assert_eq!(ser.len(), 1);
 /// assert_eq!(ser.is_empty(), false);
-/// 
+///
 /// ser.reset();
 /// assert_eq!(ser.is_empty(), true);
 #[derive(Debug, Default, Clone)]
@@ -274,7 +274,7 @@ pub struct ByteSerializerHeap {
 impl LowerHex for ByteSerializerHeap {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bytes = match f.alternate() {
-            true => format!("\n{hex}", hex = to_hex_pretty(self.bytes())),
+            true => format!("\n{hex}", hex = to_hex_pretty(self.as_slice())),
             false => to_hex_line(&self.bytes),
         };
         let len = self.len();
@@ -304,7 +304,7 @@ impl ByteSerializerHeap {
         self.bytes.capacity() - self.bytes.len()
     }
     /// Returns entire content of the buffer as a slice.
-    pub fn bytes(&self) -> &[u8] {
+    pub fn as_slice(&self) -> &[u8] {
         &self.bytes[0..]
     }
     /// Writes a slice of bytes into the buffer.

@@ -81,7 +81,7 @@ fn bench_from_bytes(c: &mut Criterion) {
     c.bench_function("from_bytes", |b| {
         b.iter(|| {
             black_box({
-                let _ = from_bytes::<StructBodyNested>(&ser.bytes());
+                let _ = from_bytes::<StructBodyNested>(&ser.as_slice());
             })
         })
     });

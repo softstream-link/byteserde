@@ -26,7 +26,7 @@ fn bytes() {
 
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_num).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     // deserialize
     let out_num: ArrBytes = from_serializer_stack(&ser_stack).unwrap();
@@ -61,14 +61,14 @@ fn numerics() {
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
     info!("ser_stack: {ser_stack:#x}");
 
-    assert_eq!(ser_stack.bytes()[0..=1], 1_u16.to_ne_bytes());
-    assert_eq!(ser_stack.bytes()[4..=5], 3_u16.to_le_bytes());
-    assert_eq!(ser_stack.bytes()[8..=9], 5_u16.to_be_bytes());
-    assert_eq!(ser_stack.bytes()[12..=13], 7_u16.to_be_bytes());
+    assert_eq!(ser_stack.as_slice()[0..=1], 1_u16.to_ne_bytes());
+    assert_eq!(ser_stack.as_slice()[4..=5], 3_u16.to_le_bytes());
+    assert_eq!(ser_stack.as_slice()[8..=9], 5_u16.to_be_bytes());
+    assert_eq!(ser_stack.as_slice()[12..=13], 7_u16.to_be_bytes());
 
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_num).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     // deserialize
     let out_num: ArrNumerics = from_serializer_stack(&ser_stack).unwrap();
@@ -107,7 +107,7 @@ fn other() {
     // heap
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_other).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     // deserialize
     let out_other: ArrOther = from_serializer_stack(&ser_stack).unwrap();

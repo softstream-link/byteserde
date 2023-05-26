@@ -165,7 +165,7 @@ mod test_string_ascii_fixed {
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
 
-        let des = &mut ByteDeserializer::new(ser_stack.bytes());
+        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
 
         // take half shall FAIL
         let out_err =
@@ -308,7 +308,7 @@ mod test_string_ascii {
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
 
-        let des = &mut ByteDeserializer::new(ser_stack.bytes());
+        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
 
         // take half + 1 shall SUCCESS first time
         let depleted = inp_str.len() / 2 + 1;
@@ -407,9 +407,9 @@ mod test_char_ascii {
 
         let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_char).unwrap();
         info!("ser_heap: {:#x}", ser_heap);
-        assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+        assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
-        let des = &mut ByteDeserializer::new(ser_stack.bytes());
+        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
         let out_char = CharAscii::byte_deserialize(des).unwrap();
         info!("out_char: {:?}", out_char);
     }
@@ -508,7 +508,7 @@ mod test_const_char_ascii {
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_bytes).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
 
-        let des = &mut ByteDeserializer::new(ser_stack.bytes());
+        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
         let out_plus: ConstCharAscii<b'+'> = des.deserialize().unwrap();
         info!("out_plus: {}", out_plus);
 

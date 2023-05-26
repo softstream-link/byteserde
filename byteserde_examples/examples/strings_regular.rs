@@ -40,7 +40,7 @@ fn ascii() {
     // heap
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_str).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
     // deserialize
     let out_str: AsciiStrings = from_serializer_heap(&ser_heap).unwrap();
     info!("inp_str: {:?}", inp_str);
@@ -78,7 +78,7 @@ fn strings() {
     // heap
     let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_str).unwrap();
     info!("ser_heap: {ser_heap:#x}");
-    assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
     // deserialize
     let out_str: Strings = from_serializer_heap(&ser_heap).unwrap();
     info!("inp_str: {:?}", inp_str);

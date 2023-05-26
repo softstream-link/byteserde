@@ -12,8 +12,8 @@ fn test_serializer_stack_primitive() {
     let _ = ser.serialize_bytes_slice(&[1_u8, 2]);
     info!("ser: {ser:#x}");
 
-    assert_eq!(ser.bytes().len(), 2);
-    assert_eq!(ser.bytes(), &[1_u8, 2]);
+    assert_eq!(ser.as_slice().len(), 2);
+    assert_eq!(ser.as_slice(), &[1_u8, 2]);
     assert_eq!(ser.capacity(), CAP_3);
 
     // make sure can write using chained method and can't write past capacity
