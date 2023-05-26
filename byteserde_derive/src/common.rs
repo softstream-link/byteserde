@@ -464,7 +464,7 @@ fn path_2_numeric_byte_or_other<'a>(path: &'a Path, ty: &'a Type) -> FieldType<'
     FieldType::Struct { ty }
 }
 
-pub fn get_generics(generics: &Generics) -> (TokenStream, TokenStream) {
+pub fn get_generics(generics: &Generics) -> (TokenStream, TokenStream, TokenStream) {
     let type_alias = generics
         .params
         .iter()
@@ -484,24 +484,12 @@ pub fn get_generics(generics: &Generics) -> (TokenStream, TokenStream) {
             // param
         })
         .collect::<Vec<_>>();
-    match generics.params.len() {
-        0 => (quote! {}, quote! {}),
-        _ => (quote! { #generics}, quote! { < #(#type_alias),* > }),
-    }
-}
-
-/// Returns a valid name to be used in when referencing structs within `byteserde` crate. Generates two options `crate` vs `::byteserde`.
-/// All `./tests/*.rs` need to refer to the `crait's` structs using fully qualified name which starts with `::byteserde`.
-/// All `crate's` internal references need to use relative path which when starts from root starts with `crate`. This is particularly relevant when using `#[deverive()]` macro.
-pub fn get_crate_name() -> TokenStream {
-    let cargo_crate_name = std::env::var("CARGO_CRATE_NAME").unwrap();
-    // for (key, value) in std::env::vars() {
-    //     eprintln!("{key}: {value}");
-    // }
-    // eprintln!("cargo_crate_name: {}", cargo_crate_name);
-    let crate_name = match cargo_crate_name.as_str() {
-        "byteserde" => quote!(crate),
-        _ => quote!(::byteserde),
+    let where_clause = match &generics.where_clause {
+        Some(where_clause) => quote! ( #where_clause ),
+        None => quote! (),
     };
-    crate_name
+    match generics.params.len() {
+        0 => (quote! (), quote! (), where_clause),
+        _ => (quote! ( #generics ), quote! ( < #(#type_alias),* > ), where_clause ),
+    }
 }

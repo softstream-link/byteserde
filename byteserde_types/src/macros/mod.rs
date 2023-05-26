@@ -22,9 +22,11 @@
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// // Align=Left / Len=10 / Padding=Minus
 /// string_ascii_fixed!(Password, 10, b'-', false,); // NOTE required comma after alignment when you dont provide a single derive argument
+/// let inp_pwd = Password::new(*b"1234567890");
+/// 
 /// let inp_pwd: Password = b"12345".as_slice().into(); // from slice
 /// println!("inp_pwd: {:?}, {}", inp_pwd, inp_pwd);
-/// assert_eq!(inp_pwd.as_bytes(), b"12345-----");
+/// assert_eq!(inp_pwd.value(), b"12345-----");
 ///
 /// // Align=Right / Len=10 / Padding=Space
 /// string_ascii_fixed!(Username, 10, b' ', true, PartialEq);
@@ -32,8 +34,8 @@
 /// let inp_usr2: Username = b"     12345".into(); // from array of matching len
 /// println!("inp_usr1: {:?}, {}", inp_usr1, inp_usr1);
 /// println!("inp_usr2: {:?}, {}", inp_usr2, inp_usr2);
-/// assert_eq!(inp_usr1.as_bytes(), b"     12345");
-/// assert_eq!(inp_usr2.as_bytes(), b"     12345");
+/// assert_eq!(inp_usr1.value(), b"     12345");
+/// assert_eq!(inp_usr2.value(), b"     12345");
 /// assert_eq!(inp_usr1, inp_usr2);
 /// # }
 /// ```
@@ -43,8 +45,11 @@ macro_rules! string_ascii_fixed {
         #[derive( $($DERIVE),* ) ]
         pub struct $NAME([u8; $LEN]);
         impl $NAME{
-            pub fn as_bytes(&self) -> &[u8; $LEN] { 
+            pub fn value(&self) -> &[u8; $LEN] { 
                 &self.0
+            }
+            pub fn new(value: [u8; $LEN]) -> Self {
+                $NAME(value)
             }
         }
         impl From<&[u8]> for $NAME {
@@ -102,11 +107,11 @@ macro_rules! string_ascii_fixed {
 /// char_ascii!(Char, PartialEq);
 /// let inp_char: Char = b'1'.into(); // from u8
 /// println!("inp_char: {:?}, {}", inp_char, inp_char);
-/// assert_eq!(inp_char.as_byte(), b'1');
+/// assert_eq!(inp_char.value(), b'1');
 /// 
 /// let inp_char: Char = [b'1'].into(); // from array
 /// println!("inp_char: {:?}, {}", inp_char, inp_char);
-/// assert_eq!(inp_char.as_byte(), b'1');
+/// assert_eq!(inp_char.value(), b'1');
 /// # }
 /// ```
 #[macro_export]
@@ -117,8 +122,11 @@ macro_rules! char_ascii {
         pub struct $NAME(u8);
         impl $NAME {
             /// proves access to the `u8` byte
-            pub fn as_byte(&self) -> u8 {
+            pub fn value(&self) -> u8 {
                 self.0
+            }
+            pub fn new(value: u8) -> Self {
+                $NAME(value)
             }
         }
         impl From<u8> for $NAME {
@@ -159,6 +167,9 @@ macro_rules! u32_tuple {
             pub fn value(&self) -> u32 {
                 self.0
             }
+            pub fn new(value: u32) -> Self {
+                $NAME(value)
+            }
         }
         impl From<u32> for $NAME {
             fn from(v: u32) -> Self {
@@ -183,6 +194,9 @@ macro_rules! u64_tuple {
         impl $NAME {
             pub fn value(&self) -> u64 {
                 self.0
+            }
+            pub fn new(value: u64) -> Self {
+                $NAME(value)
             }
         }
         impl From<u64> for $NAME {

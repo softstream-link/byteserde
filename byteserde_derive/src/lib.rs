@@ -1,4 +1,4 @@
-use common::{get_crate_name, get_generics, get_struct_ser_des_tokens};
+use common::{get_generics, get_struct_ser_des_tokens};
 use enum_map::get_enum_from_tokens;
 use proc_macro::TokenStream;
 use quote::quote;
@@ -13,7 +13,7 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
 
     // get struct name
     let struct_name = &ast.ident;
-    let (generics_declaration, generics_alias) = get_generics(&ast.generics);
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     let (ser_method, _) = get_struct_ser_des_tokens(&ast);
     // grap just stack presets
     let ser_vars = ser_method.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
@@ -23,14 +23,12 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
         .map(|f| &f.ser_uses_stck)
         .collect::<Vec<_>>();
 
-    let crate_name = get_crate_name();
-
     // generate stack serializer
     let output = quote! {
         #[automatically_derived]
-        impl #generics_declaration #crate_name::ser::ByteSerializeStack for #struct_name #generics_alias{
+        impl #generics_declaration ::byteserde::ser::ByteSerializeStack for #struct_name #generics_alias #where_clause{
         // impl byteserde::ser::ByteSerializeStack for #struct_name {
-            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut #crate_name::ser::ByteSerializerStack<CAP>) -> #crate_name::error::Result<()>{
+            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ::byteserde::ser::ByteSerializerStack<CAP>) -> ::byteserde::error::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?; -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?; -- for tuple
@@ -52,7 +50,7 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
     // get struct name
     let struct_name = &ast.ident;
-    let (generics_declaration, generics_alias) = get_generics(&ast.generics);
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
     let (ser_method, _) = get_struct_ser_des_tokens(&ast);
     // grap just heap presets
@@ -63,13 +61,11 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
         .map(|f| &f.ser_uses_heap)
         .collect::<Vec<_>>();
 
-    let crate_name = get_crate_name();
-
     // generate heap serializer
     let output = quote! {
         #[automatically_derived]
-        impl #generics_declaration #crate_name::ser::ByteSerializeHeap for #struct_name #generics_alias{
-            fn byte_serialize_heap(&self, ser: &mut #crate_name::ser::ByteSerializerHeap) -> #crate_name::error::Result<()>{
+        impl #generics_declaration ::byteserde::ser::ByteSerializeHeap for #struct_name #generics_alias #where_clause{
+            fn byte_serialize_heap(&self, ser: &mut ::byteserde::ser::ByteSerializerHeap) -> ::byteserde::error::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?;         -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?;         -- for tuple
@@ -91,7 +87,7 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
     // get struct name
     let struct_name = &ast.ident;
-    let (generics_declaration, generics_alias) = get_generics(&ast.generics);
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
     let (des_method, ty) = get_struct_ser_des_tokens(&ast);
     // grap just heap presets
@@ -103,13 +99,11 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
         common::StructType::Enum => quote! ( #struct_name::from( _struct )),
     };
 
-    let crate_name = get_crate_name();
-
     // generate deserializer
     let output = quote! {
         #[automatically_derived]
-        impl #generics_declaration #crate_name::des::ByteDeserialize<#struct_name #generics_alias> for #struct_name #generics_alias {
-            fn byte_deserialize(des: &mut #crate_name::des::ByteDeserializer) -> #crate_name::error::Result<#struct_name #generics_alias>{
+        impl #generics_declaration ::byteserde::des::ByteDeserialize<#struct_name #generics_alias> for #struct_name #generics_alias #where_clause{
+            fn byte_deserialize(des: &mut ::byteserde::des::ByteDeserializer) -> ::byteserde::error::Result<#struct_name #generics_alias>{
                 // let type_u16:    u16 = des.deserialize_[be|le|ne]()?; -- numerics
                 // let type_String: String = des.deserialize()?;          -- trait ByteDeserialize
                 // StructName { type_u16, type_String }
