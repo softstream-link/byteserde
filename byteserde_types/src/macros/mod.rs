@@ -23,7 +23,7 @@
 /// // Align=Left / Len=10 / Padding=Minus
 /// string_ascii_fixed!(Password, 10, b'-', false,); // NOTE required comma after alignment when you dont provide a single derive argument
 /// let inp_pwd = Password::new(*b"1234567890");
-/// 
+///
 /// let inp_pwd: Password = b"12345".as_slice().into(); // from slice
 /// println!("inp_pwd: {:?}, {}", inp_pwd, inp_pwd);
 /// assert_eq!(inp_pwd.value(), b"12345-----");
@@ -45,7 +45,7 @@ macro_rules! string_ascii_fixed {
         #[derive( $($DERIVE),* ) ]
         pub struct $NAME([u8; $LEN]);
         impl $NAME{
-            pub fn value(&self) -> &[u8; $LEN] { 
+            pub fn value(&self) -> &[u8; $LEN] {
                 &self.0
             }
             pub fn new(value: [u8; $LEN]) -> Self {
@@ -87,20 +87,20 @@ macro_rules! string_ascii_fixed {
 }
 
 /// Generates a `tuple` `struct` with a given name for managing an ascii char allocated on `stack` using `u8`.
-/// 
+///
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
 /// * `[derive, ...]` -- list of traits to derive for the struct, must be valid rust traits
-/// 
+///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
 /// * `Debug` & `Display` - provides a human readable sting view of the `u8` byte as utf-8 char
-/// 
+///
 /// # From
 /// Note that provided implementation already includes the following `From` implementations.
 /// * `From<u8>` - will take the `u8` byte and return tupe struct with type of `NAME` agrument.
 /// * `From<[u8; 1]>` - will take the first byte of the array and return tupe struct with type of `NAME` agrument.
-/// 
+///
 /// # Examples
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
@@ -108,7 +108,7 @@ macro_rules! string_ascii_fixed {
 /// let inp_char: Char = b'1'.into(); // from u8
 /// println!("inp_char: {:?}, {}", inp_char, inp_char);
 /// assert_eq!(inp_char.value(), b'1');
-/// 
+///
 /// let inp_char: Char = [b'1'].into(); // from array
 /// println!("inp_char: {:?}, {}", inp_char, inp_char);
 /// assert_eq!(inp_char.value(), b'1');
@@ -157,22 +157,22 @@ macro_rules! char_ascii {
 }
 
 #[macro_export]
-macro_rules! u32_tuple {
-    ($NAME:ident, $ENDIAN:literal, $($derive:ty),*) => {
-        /// Tuple struct with a `u32` value
-        #[derive( $($derive),* )]
+macro_rules! numeric_tuple {
+    ($NAME:ident, $TYPE:ty, $ENDIAN:literal, $($DERIVE:ty),* ) => {
+        // #[derive( $($derive),* )]
+        #[derive( $($DERIVE),* )]
         #[byteserde(endian = $ENDIAN )]
-        pub struct $NAME(u32);
+        pub struct $NAME($TYPE);
         impl $NAME {
-            pub fn value(&self) -> u32 {
+            pub fn value(&self) -> $TYPE {
                 self.0
             }
-            pub fn new(value: u32) -> Self {
+            pub fn new(value: $TYPE) -> Self {
                 $NAME(value)
             }
         }
-        impl From<u32> for $NAME {
-            fn from(v: u32) -> Self {
+        impl From<$TYPE> for $NAME {
+            fn from(v: $TYPE) -> Self {
                 $NAME(v)
             }
         }
@@ -185,29 +185,26 @@ macro_rules! u32_tuple {
 }
 
 #[macro_export]
+macro_rules! u16_tuple {
+    ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),*) => {
+        numeric_tuple!($NAME, u16, $ENDIAN, $($DERIVE),* );
+    };
+}
+#[macro_export]
+macro_rules! u32_tuple {
+    ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),*) => {
+        numeric_tuple!($NAME, u32, $ENDIAN, $($DERIVE),* );
+    };
+}
+#[macro_export]
+macro_rules! i32_tuple {
+    ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),* ) => {
+        numeric_tuple!($NAME, i32, $ENDIAN, $($DERIVE),* );
+    };
+}
+#[macro_export]
 macro_rules! u64_tuple {
-    ($NAME:ident, $ENDIAN:literal, $($derive:ty),*) => {
-        /// Tuple struct with a `u64` value
-        #[derive( $($derive),* )]
-        #[byteserde(endian = $ENDIAN )]
-        pub struct $NAME(u64);
-        impl $NAME {
-            pub fn value(&self) -> u64 {
-                self.0
-            }
-            pub fn new(value: u64) -> Self {
-                $NAME(value)
-            }
-        }
-        impl From<u64> for $NAME {
-            fn from(v: u64) -> Self {
-                $NAME(v)
-            }
-        }
-        impl std::fmt::Display for $NAME{
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}", &self.0)
-            }
-        }
-    }
+    ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),* ) => {
+        numeric_tuple!($NAME, u64, $ENDIAN, $($DERIVE),* );
+    };
 }

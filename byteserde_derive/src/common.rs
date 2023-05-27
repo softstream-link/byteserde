@@ -7,7 +7,7 @@ use quote::{
 use syn::{
     AngleBracketedGenericArguments, ConstParam, Data, DeriveInput, Expr, Field, Fields,
     GenericArgument, GenericParam, Generics, Ident, Index, Member, Path, PathArguments, Type,
-    TypeArray, TypeParam, TypePath,
+    TypeArray, TypeParam, TypePath, TypeGroup,
 };
 
 use crate::struct_shared::{
@@ -76,6 +76,8 @@ pub fn get_struct_ser_des_tokens(
                         let member = &MemberIdent::Unnamed(fld_index);
                         let var_name = &Ident::new(&format!("_{}", i), ast.ident.span());
                         let fld_type = map_field_type(&fld.ty);
+                        // eprintln!("name: {:?}", ast.ident);
+                        // eprintln!("\tfld_type: {:?}", fld_type);
                         match fld_type {
                             FieldType::Numeric { ty } | FieldType::Byte { ty, .. } => {
                                 setup_numeric(ast, fld, ty, var_name, member, &fld_type)
@@ -365,6 +367,7 @@ fn setup_struct(
     }
 }
 
+#[derive(Debug)]
 enum FieldType<'a> {
     Byte {
         ty: &'a Type,
@@ -418,6 +421,8 @@ fn map_field_type(ty: &Type) -> FieldType {
             },
             _ => FieldType::Struct { ty: arr_ty },
         },
+        // for some reason when usig macro_rules! to create a tuple struct ex: struct Me(u32) the type of the tuple comes in the TypeGroup instead of TypePath so we need to handle it here
+        Type::Group(TypeGroup { elem, .. }) => map_field_type(elem),
         _ => FieldType::Struct { ty },
     }
 }
@@ -469,7 +474,6 @@ pub fn get_generics(generics: &Generics) -> (TokenStream, TokenStream, TokenStre
         .params
         .iter()
         .map(|param| {
-            // eprintln!("\t\t param: {:?}", param);
             match param {
                 GenericParam::Const(ConstParam { ident, .. }) => {
                     quote! ( #ident )
