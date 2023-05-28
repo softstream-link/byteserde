@@ -1,10 +1,17 @@
 mod unittest;
+use std::mem::size_of;
+
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{
+    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteSerializedSizeOf,
+};
 use log::info;
 use unittest::setup;
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+        ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 struct Bytes(#[byteserde(replace(i8::MIN))] i8, u8);
 
 #[test]
@@ -35,7 +42,9 @@ fn bytes() {
     assert_eq!(out_bytes, Bytes(i8::MIN, inp_bytes.1,));
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+        ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 #[byteserde(endian = "le")]
 struct Numerics(
     #[byteserde(endian = "ne")] // ne test local attribute
@@ -49,6 +58,7 @@ struct Numerics(
     u32,
     i64,
     u64,
+    u8,  // this shall cause alignment padding used in struct size_of test
     i128,
     u128,
     f32,
@@ -62,7 +72,7 @@ fn numerics() {
     setup::log::configure();
 
     let inp_num = Numerics(
-        0x00FF_u16, 0x00FF_u16, 0x00FF_u16, 0x00FF_u16, -16, 16, -32, 32, -64, 64, -128, 128,
+        0x00FF_u16, 0x00FF_u16, 0x00FF_u16, 0x00FF_u16, -16, 16, -32, 32, -64, 64, 8_u8, -128, 128,
         -1.32, 1.64,
     );
 
@@ -94,7 +104,38 @@ fn numerics() {
     assert_eq!(inp_num, out_num);
 }
 
+#[test]
+fn test_size_and_len() {
+    size_len();
+}
+
+fn size_len() {
+    setup::log::configure();
+    let ln_of = Bytes::default().byte_len();
+    let sz_of = Bytes::byte_size();
+    let sz_of_aligned = size_of::<Bytes>();
+    info!("ln_of: {ln_of}");
+    info!("sz_of: {sz_of}");
+    info!("sz_of_aligned: {sz_of_aligned}");
+    
+    assert_eq!(ln_of, sz_of);
+    assert_eq!(sz_of, size_of::<Bytes>());
+
+    let ln_of = Numerics::default().byte_len();
+    let sz_of = Numerics::byte_size();
+    let sz_of_aligned = size_of::<Numerics>();
+    info!("ln_of: {ln_of}");
+    info!("sz_of: {sz_of}");
+    info!("sz_of_aligned: {sz_of_aligned}");
+    
+    assert_eq!(ln_of, sz_of);
+    assert_ne!(sz_of, sz_of_aligned);
+    assert_eq!(sz_of, 81);
+    assert_eq!(sz_of_aligned, 88);
+}
+
 fn main() {
     bytes();
     numerics();
+    size_len()
 }

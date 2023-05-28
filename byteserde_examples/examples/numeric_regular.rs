@@ -142,27 +142,27 @@ fn test_size_and_len() {
 
 fn size_len() {
     setup::log::configure();
-    let len_of_no_padding = Bytes::default().byte_len();
-    let size_of_no_padding = Bytes::byte_size();
-    let size_of_padding = size_of::<Bytes>();
-    info!("Bytes::byte_size(): {size_of_no_padding}");
-    info!("Bytes::default().byte_len(): {len_of_no_padding}");
-    info!("size_of::<Bytes>(): {size_of_padding}");
+    let ln_of = Bytes::default().byte_len();
+    let sz_of = Bytes::byte_size();
+    let sz_of_aligned = size_of::<Bytes>();
+    info!("ln_of: {ln_of}");
+    info!("sz_of: {sz_of}");
+    info!("sz_of_aligned: {sz_of_aligned}");
     
-    assert_eq!(len_of_no_padding, size_of_no_padding);
-    assert_eq!(size_of_no_padding, size_of::<Bytes>());
+    assert_eq!(ln_of, sz_of);
+    assert_eq!(sz_of, size_of::<Bytes>());
 
-    let len_of_no_padding = Numerics::default().byte_len();
-    let size_of_no_padding = Numerics::byte_size();
-    let size_of_padding = size_of::<Numerics>();
-    info!("Numerics::byte_size(): {size_of_no_padding}");
-    info!("Numerics::default().byte_len(): {len_of_no_padding}");
-    info!("size_of::<Numerics>(): {size_of_padding}");
+    let ln_of = Numerics::default().byte_len();
+    let sz_of = Numerics::byte_size();
+    let sz_of_aligned = size_of::<Numerics>();
+    info!("ln_of: {ln_of}");
+    info!("sz_of: {sz_of}");
+    info!("sz_of_aligned: {sz_of_aligned}");
     
-    assert_eq!(len_of_no_padding, size_of_no_padding);
-    assert_eq!(size_of_no_padding, 81);
-    assert_eq!(size_of_padding, 88);
-    assert_ne!(size_of_no_padding, size_of_padding);
+    assert_eq!(ln_of, sz_of);
+    assert_ne!(sz_of, sz_of_aligned);
+    assert_eq!(sz_of, 81);
+    assert_eq!(sz_of_aligned, 88);
 }
 
 fn main() {

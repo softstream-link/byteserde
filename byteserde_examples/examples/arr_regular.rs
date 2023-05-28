@@ -1,10 +1,17 @@
 mod unittest;
+use std::mem::size_of;
+
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{
+    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteSerializedSizeOf,
+};
 use log::info;
 use unittest::setup;
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize,
+        ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 struct ArrBytes {
     field_arr_u8: [u8; 2],
     field_arr_i8: [i8; 2],
@@ -49,7 +56,26 @@ fn bytes() {
     );
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
+#[test]
+fn test_bytes_size_len() {
+    bytes_size_len()
+}
+fn bytes_size_len() {
+    setup::log::configure();
+    let ln_of = ArrBytes::default().byte_len();
+    let sz_of = ArrBytes::byte_size();
+    let sz_of_aligned = size_of::<ArrBytes>();
+    info!("ln_of: {ln_of}");
+    info!("sz_of: {sz_of}");
+    info!("sz_of_aligned: {sz_of_aligned}");
+
+    assert_eq!(ln_of, sz_of);
+    assert_eq!(sz_of, sz_of_aligned);
+}
+
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+        ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 #[byteserde(endian = "be")]
 struct ArrNumerics {
     #[byteserde(endian = "ne")]
@@ -61,6 +87,7 @@ struct ArrNumerics {
     field_arr_be_global_macro: [u16; 2], // global macro
     #[byteserde(replace([10, 11]))]
     field_arr_relp: [u16; 2],
+    field_arr_break_alignment: [u8; 1],
 }
 
 #[test]
@@ -103,17 +130,47 @@ fn numerics() {
         }
     );
 }
+#[test]
+fn test_numerics_size_len() {
+    numerics_size_len()
+}
+fn numerics_size_len(){
+    setup::log::configure();
+    let ln_of = ArrNumerics::default().byte_len();
+    let sz_of = ArrNumerics::byte_size();
+    let sz_of_aligned = size_of::<ArrNumerics>();
+    info!("ln_of: {ln_of}");
+    info!("sz_of: {sz_of}");
+    info!("sz_of_aligned: {sz_of_aligned}");
 
-#[derive(
-    ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq, Copy, Clone,
-)]
+    assert_eq!(ln_of, sz_of);
+    assert_ne!(sz_of, sz_of_aligned);
+    assert_eq!(ln_of, 21);
+    assert_eq!(sz_of_aligned, 22);
+}
+
+
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+        ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq, Copy, Clone)]
 struct Other(u8);
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+        ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq, Copy, Clone)]
+struct OtherBreakAlignment(u16, u8);
+
+
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+        ByteSerializedSizeOf, ByteSerializedLenOf,
+        // ByteSerializedSizeOf, 
+        Default, Debug, PartialEq)]
 struct ArrOther {
     field_arr_other: [Other; 2],
     #[byteserde(replace([Other(3), Other(4)]))]
     filed_arr_other_repl: [Other; 2],
+    field_arr_other_break_alignment: [OtherBreakAlignment; 1],
 }
 
 #[test]
@@ -149,9 +206,31 @@ fn other() {
         }
     );
 }
+#[test]
+fn test_other_size_len() {
+    other_size_len()
+}
+
+fn other_size_len(){
+    setup::log::configure();
+    let ln_of = ArrOther::default().byte_len();
+    let sz_of = ArrOther::byte_size();
+    let sz_of_aligned = size_of::<ArrOther>();
+    info!("ln_of: {ln_of}");
+    info!("sz_of: {sz_of}");
+    info!("sz_of_aligned: {sz_of_aligned}");
+
+    assert_eq!(ln_of, sz_of);
+    assert_ne!(sz_of, sz_of_aligned);
+    assert_eq!(ln_of, 7);
+    assert_eq!(sz_of_aligned, 8);
+}
 
 fn main() {
     bytes();
+    bytes_size_len();
     numerics();
+    numerics_size_len();
     other();
+    other_size_len();
 }

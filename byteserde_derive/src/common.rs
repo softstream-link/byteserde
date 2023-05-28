@@ -263,7 +263,30 @@ fn setup_array(
             "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
         ),
     };
+    let size = match option{
+        FieldType::ArrBytes { .. } | FieldType::ArrNumerics { .. } =>  quote!( ::std::mem::size_of::<#arr_ty>() * #len ),
+        FieldType::ArrStructs { .. } => quote!( #arr_ty::byte_size() * #len ),
+        _ => panic!(
+            "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
+        ),
+    };
 
+    let len_var = match member {
+        MemberIdent::Named(fld_name) => {
+            quote!( self.#fld_name )
+        }
+        MemberIdent::Unnamed(fld_index) => {
+            quote!( self.#fld_index )
+        }
+    };
+    let len = match option{
+        FieldType::ArrBytes { .. } | FieldType::ArrNumerics { .. } =>  quote!( ::std::mem::size_of::<#arr_ty>() * #len ),
+        FieldType::ArrStructs { .. } => quote!( ({ let mut len = 0; for e in #len_var.iter() { len += e.byte_len(); } len }) ),
+        _ => panic!(
+            "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
+        ),
+    };
+    
     FldSerDesTokens {
         ser_vars,
         ser_repl,
@@ -271,8 +294,8 @@ fn setup_array(
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
         des_vars,
         des_uses: quote!( #var_name, ),
-        size: quote!( todo!("Please imlement") ), //TODO
-        len: quote!( todo!("Please imlement") ), //TODO
+        size,
+        len,
     }
 }
 fn setup_vec(
