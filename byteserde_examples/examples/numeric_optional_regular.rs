@@ -21,15 +21,15 @@ struct OptionalNumeric {
     // optional2: Option<u16>,
 }
 
-impl Default for OptionalNumeric {
-    fn default() -> Self {
-        Self {
-            overal_length: Default::default(),
-            // optional1: None,
-            // optional2: None,
-        }
-    }
-}
+// impl Default for OptionalNumeric {
+//     fn default() -> Self {
+//         Self {
+//             overal_length: Default::default(),
+//             // optional1: None,
+//             // optional2: None,
+//         }
+//     }
+// }
 
 #[test]
 fn test_debug() {
@@ -37,14 +37,14 @@ fn test_debug() {
 }
 fn all() {
     setup::log::configure();
-    let inp_debug = OptionalNumeric::default();
-    info!("inp_debug: {:?}", inp_debug);
+    // let inp_debug = OptionalNumeric::default();
+    // info!("inp_debug: {:?}", inp_debug);
 
-    let tail = &[0x01, 0x02, 0x3];
-    // stack
-    let mut ser_stack: ByteSerializerStack<135> = to_serializer_stack(&inp_debug).unwrap();
-    ser_stack.serialize_bytes_slice(tail).unwrap();
-    info!("ser_stack: {ser_stack:#x}");
+    // let tail = &[0x01, 0x02, 0x3];
+    // // stack
+    // let mut ser_stack: ByteSerializerStack<135> = to_serializer_stack(&inp_debug).unwrap();
+    // ser_stack.serialize_bytes_slice(tail).unwrap();
+    // info!("ser_stack: {ser_stack:#x}");
 
     // heap
     // let mut ser_heap = to_serializer_heap(&inp_debug).unwrap();

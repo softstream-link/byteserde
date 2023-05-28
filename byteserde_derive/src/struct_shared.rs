@@ -20,13 +20,13 @@ pub enum MemberIdent<'a> {
     Unnamed(&'a Member),
 }
 
-pub enum Length {
+pub enum Deplete {
     NotSet,
-    Len(Expr),
+    Size(Expr),
 }
-pub fn get_length_attribute(attrs: &[Attribute]) -> Length {
-    let (_, length, _, _, _) = get_attributes(attrs);
-    length
+pub fn get_deplete_attribute(attrs: &[Attribute]) -> Deplete {
+    let (_, deplete, _, _, _) = get_attributes(attrs);
+    deplete
 }
 
 #[derive(Debug)]
@@ -79,14 +79,14 @@ pub fn get_from_attributes(struct_attrs: &[Attribute]) -> Vec<From> {
     let (_, _, _, _, from) = get_attributes(struct_attrs);
     from
 }
-fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace, Bind, Vec<From>) {
+fn get_attributes(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Bind, Vec<From>) {
     let byteserde_attrs = attrs
         .iter()
         .filter(|atr| atr.meta.path().is_ident("byteserde"))
         .collect::<Vec<_>>();
 
     let mut endian = Endian::NotSet;
-    let mut length = Length::NotSet;
+    let mut deplete = Deplete::NotSet;
     let mut over = Replace::NotSet;
     let mut bind = Bind::NotSet;
     // let mut from = From::NotSet;
@@ -121,7 +121,7 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace, Bind, Vec<Fr
             if meta.path.is_ident("deplete") {
                 let content;
                 parenthesized!(content in meta.input);
-                length = Length::Len(content.parse::<Expr>()?);
+                deplete = Deplete::Size(content.parse::<Expr>()?);
                 return Ok(());
             }
             // only affects enums
@@ -150,5 +150,5 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Length, Replace, Bind, Vec<Fr
         }
     }
 
-    (endian, length, over, bind, from)
+    (endian, deplete, over, bind, from)
 }

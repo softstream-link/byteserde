@@ -127,11 +127,17 @@ pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let (size, _) = get_struct_ser_des_tokens(&ast);
+    let (size_methods, _) = get_struct_ser_des_tokens(&ast);
     // grap just heap presets
-    let size = size.iter().map(|f| &f.size).collect::<Vec<_>>();
-
-    // eprintln!("size: {:?}", size);
+    let size = size_methods.iter().map(|f| &f.size).collect::<Vec<_>>();
+    let _ = size_methods
+        .iter()
+        .map(|f| 
+            match f.size_error {
+                Some(ref e) => panic!("{}", e),
+                None => 0,
+            }
+        ).collect::<Vec<_>>();
 
     // generate deserializer
     let output = quote! {

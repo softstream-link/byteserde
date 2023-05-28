@@ -11,8 +11,8 @@ use syn::{
 };
 
 use crate::struct_shared::{
-    des_endian_method_xx, get_endian_attribute, get_bind_attribute, get_length_attribute,
-    get_replace_attribute, ser_endian_method_xx, Bind, Length, MemberIdent, Replace,
+    des_endian_method_xx, get_endian_attribute, get_bind_attribute, get_deplete_attribute,
+    get_replace_attribute, ser_endian_method_xx, Bind, Deplete, MemberIdent, Replace,
 };
 
 pub enum StructType {
@@ -34,6 +34,7 @@ pub struct FldSerDesTokens {
 
     // only used to create size
     pub size: TokenStream,
+    pub size_error: Option<String>,
     pub len: TokenStream,
 }
 pub fn get_struct_ser_des_tokens(
@@ -60,10 +61,10 @@ pub fn get_struct_ser_des_tokens(
                             | FieldType::ArrStructs { arr_ty, len } => {
                                 setup_array(ast, fld, arr_ty, var_name, len, member, &fld_type)
                             }
-                            FieldType::VecBytes { ty }
-                            | FieldType::VecNumerics { ty }
-                            | FieldType::VecStructs { ty } => {
-                                setup_vec(ast, fld, ty, var_name, member, &fld_type)
+                            FieldType::VecBytes { .. }
+                            | FieldType::VecNumerics { .. }
+                            | FieldType::VecStructs { .. } => {
+                                setup_vec(ast, fld, &fld.ty, var_name, member, &fld_type)
                             }
                             FieldType::Struct { ty } => setup_struct(fld, var_name, ty, member),
                         }
@@ -83,8 +84,6 @@ pub fn get_struct_ser_des_tokens(
                         let member = &MemberIdent::Unnamed(fld_index);
                         let var_name = &Ident::new(&format!("_{}", i), ast.ident.span());
                         let fld_type = map_field_type(&fld.ty);
-                        // eprintln!("name: {:?}", ast.ident);
-                        // eprintln!("\tfld_type: {:?}", fld_type);
                         match fld_type {
                             FieldType::Numeric { ty } | FieldType::Byte { ty, .. } => {
                                 setup_numeric(ast, fld, ty, var_name, member, &fld_type)
@@ -94,10 +93,10 @@ pub fn get_struct_ser_des_tokens(
                             | FieldType::ArrStructs { arr_ty, len } => {
                                 setup_array(ast, fld, arr_ty, var_name, len, member, &fld_type)
                             }
-                            FieldType::VecBytes { ty }
-                            | FieldType::VecNumerics { ty }
-                            | FieldType::VecStructs { ty } => {
-                                setup_vec(ast, fld, ty, var_name, member, &fld_type)
+                            FieldType::VecBytes { .. }
+                            | FieldType::VecNumerics { .. }
+                            | FieldType::VecStructs { .. } => {
+                                setup_vec(ast, fld, &fld.ty, var_name, member, &fld_type)
                             }
                             FieldType::Struct { ty } => setup_struct(fld, var_name, ty, member),
                         }
@@ -128,6 +127,7 @@ pub fn get_struct_ser_des_tokens(
                 des_vars: quote!( let _struct = des.deserialize::<#struct_type>()?; ),
                 des_uses: quote!(),
                 size: quote!( todo!("Please imlement") ), //TODO
+                size_error: None,
                 len: quote!( todo!("Please imlement") ), //TODO
             });
 
@@ -196,6 +196,7 @@ fn setup_numeric(
         des_vars,
         des_uses: quote!( #var_name, ),
         size,
+        size_error: None,
         len,
     }
 }
@@ -295,9 +296,11 @@ fn setup_array(
         des_vars,
         des_uses: quote!( #var_name, ),
         size,
+        size_error: None,
         len,
     }
 }
+
 fn setup_vec(
     ast: &DeriveInput,
     fld: &Field,
@@ -306,7 +309,7 @@ fn setup_vec(
     member: &MemberIdent,
     option: &FieldType,
 ) -> FldSerDesTokens {
-    let length = get_length_attribute(&fld.attrs);
+    let deplete = get_deplete_attribute(&fld.attrs);
     let replace = get_replace_attribute(&fld.attrs);
     let endian = get_endian_attribute(&ast.attrs, &fld.attrs);
     let ser_endian_method_xx = ser_endian_method_xx(&endian);
@@ -322,38 +325,54 @@ fn setup_vec(
         Replace::NotSet => quote!(),
     };
 
+    let struct_name = &ast.ident;
+    // TODO add run time test
+    let assert_error = match member {
+        MemberIdent::Named(fld_name) => {
+            format!("{}.{} field #[byteserde(deplete( .. ))] set higther then length of Vec instance", quote!(#struct_name), quote!( #fld_name ))
+        }
+        MemberIdent::Unnamed(fld_index) => {
+            format!("{}.{} field #[byteserde(deplete( .. ))] set higther then length of Vec instance", quote!(#struct_name), quote!( #fld_index ))
+        }
+    };
+    let assert_vec_len_gt_then_deplete = match deplete {
+        Deplete::Size(ref size) => {
+            quote!( assert!(#var_name.len() >= #size, #assert_error) )
+        }
+        Deplete::NotSet => quote!(),
+    };
     let ser_uses_xxx = |byte_serialize_xxx: &Ident| match option {
-        FieldType::VecBytes { .. } => quote!( ser.serialize_bytes_slice(&#var_name)?; ),
+        FieldType::VecBytes { .. } => quote!( #assert_vec_len_gt_then_deplete; ser.serialize_bytes_slice(&#var_name)?; ),
         FieldType::VecNumerics { .. } => {
-            quote!( for i in #var_name { ser.#ser_endian_method_xx(*i)?; })
+            quote!( #assert_vec_len_gt_then_deplete; for i in #var_name { ser.#ser_endian_method_xx(*i)?; })
         }
         FieldType::VecStructs { .. } => {
-            quote!( for i in #var_name { i.#byte_serialize_xxx(ser)?; })
+            quote!( #assert_vec_len_gt_then_deplete; for i in #var_name { i.#byte_serialize_xxx(ser)?; })
         }
         _ => panic!("this method should only be called with Vec[Bytes|Numerics|Structs] types"),
     };
 
-    let des_vars_byte = match length {
-        Length::Len(ref len) => {
-            quote!( let #var_name: #ty = des.deserialize_take::<#ty>( (#len) as usize )?.into(); )
+    let des_vars_byte = match deplete {
+        Deplete::Size(ref size) => {
+            quote!( let #var_name: #ty = des.deserialize_take::<#ty>( (#size) as usize )?.into(); )
         }
-        Length::NotSet => {
+        Deplete::NotSet => {
             quote!( let #var_name: #ty = des.deserialize_bytes_slice_remaining().into(); )
         }
     };
-    let des_vars_numerics = match length {
-        Length::Len(ref len) => {
-            quote!( let mut #var_name: #ty = vec![]; for _ in 0..#len { #var_name.push(des.#des_endian_method_xx()?); })
+    let des_vars_numerics = match deplete {
+        Deplete::Size(ref size) => {
+            quote!( let mut #var_name: #ty = vec![]; for _ in 0..#size { #var_name.push(des.#des_endian_method_xx()?); })
         }
-        Length::NotSet => {
+        Deplete::NotSet => {
             quote!( let mut #var_name: #ty = vec![]; while des.is_empty() == false { #var_name.push(des.#des_endian_method_xx()?); })
         }
     };
-    let des_vars_other = match length {
-        Length::Len(ref len) => {
-            quote!( let mut #var_name: #ty = vec![]; for _ in 0..#len { #var_name.push(des.deserialize()?); })
+    let des_vars_other = match deplete {
+        Deplete::Size(ref size) => {
+            quote!( let mut #var_name: #ty = vec![]; for _ in 0..#size { #var_name.push(des.deserialize()?); })
         }
-        Length::NotSet => {
+        Deplete::NotSet => {
             quote!( let mut #var_name: #ty = vec![]; while des.is_empty() == false { #var_name.push(des.deserialize()?); })
         }
     };
@@ -363,7 +382,28 @@ fn setup_vec(
         FieldType::VecStructs { .. } => des_vars_other,
         _ => panic!("this method should only be called with Vec types"),
     };
+    
+    let member_name = match member {
+        MemberIdent::Named(fld_name) => {
+            quote!( self.#fld_name )
+        }
+        MemberIdent::Unnamed(fld_index) => {
+            quote!( self.#fld_index )
+        }
+    };
 
+    let vec_deplete_len = match deplete{
+        Deplete::Size(ref size) => quote!( #size ),
+        Deplete::NotSet => quote!( #member_name.len() ),
+    };
+    let len = match option{
+        FieldType::VecBytes { vec_ty } | FieldType::VecNumerics { vec_ty } =>  quote!( ::std::mem::size_of::<#vec_ty>() * #vec_deplete_len ),
+        FieldType::VecStructs { .. } => quote!( ({ let mut len = 0; for e in #member_name.iter() { len += e.byte_len(); } len }) ),
+        _ => panic!(
+            "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
+        ),
+    };
+    let size_error = Some(format!("trait ByteSerializedLenOf can't be implemented for struct {} because it has a member {} of Vec type whose size is not know at compile time", &ast.ident, member_name));
     FldSerDesTokens {
         ser_vars,
         ser_repl,
@@ -371,8 +411,9 @@ fn setup_vec(
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
         des_vars: des_vars_xxx,
         des_uses: quote!( #var_name, ),
-        size: quote!( todo!("Please imlement") ), //TODO
-        len: quote!( todo!("Please imlement") ), //TODO
+        size: quote!( 0 ), 
+        size_error,
+        len,
     }
 }
 fn setup_struct(
@@ -381,7 +422,7 @@ fn setup_struct(
     ty: &Type,
     member: &MemberIdent,
 ) -> FldSerDesTokens {
-    let length = get_length_attribute(&fld.attrs);
+    let length = get_deplete_attribute(&fld.attrs);
     let replace = get_replace_attribute(&fld.attrs);
     let ser_vars = match member {
         MemberIdent::Named(_) => quote! { let #var_name = &self.#var_name; }, // let #var_name = &self.#var_name;
@@ -392,10 +433,10 @@ fn setup_struct(
         Replace::NotSet => quote!(),
     };
     let des_vars = match length {
-        Length::Len(len) => {
+        Deplete::Size(len) => {
             quote!( let #var_name: #ty = des.deserialize_take( (#len) as usize )?; )
         }
-        Length::NotSet => quote!( let #var_name: #ty = des.deserialize()?; ),
+        Deplete::NotSet => quote!( let #var_name: #ty = des.deserialize()?; ),
     };
     FldSerDesTokens {
         ser_vars,
@@ -405,6 +446,7 @@ fn setup_struct(
         des_vars,
         des_uses: quote!( #var_name, ),
         size: quote!( todo!("Please imlement") ), //TODO
+        size_error: None,
         len: quote!( todo!("Please imlement") ), //TODO
     }
 }
@@ -435,13 +477,13 @@ enum FieldType<'a> {
         len: &'a Expr,
     },
     VecBytes {
-        ty: &'a Type,
+        vec_ty: Type,
     },
     VecNumerics {
-        ty: &'a Type,
+        vec_ty: Type,
     },
     VecStructs {
-        ty: &'a Type,
+        vec_ty: Type,
     },
 }
 
@@ -499,11 +541,13 @@ fn path_2_numeric_byte_or_other<'a>(path: &'a Path, ty: &'a Type) -> FieldType<'
         if let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) = vec_args
         {
             if let GenericArgument::Type(Type::Path(path, ..)) = &args[0] {
-                return match path_2_numeric_byte_or_other(&path.path, ty) {
-                    FieldType::Numeric { .. } => FieldType::VecNumerics { ty },
-                    FieldType::Byte { .. } => FieldType::VecBytes { ty },
-                    _ => FieldType::VecStructs { ty },
+                let vec_ty = Type::Path(path.clone());
+                return match path_2_numeric_byte_or_other(&path.path, &vec_ty) {
+                    FieldType::Numeric { .. } => FieldType::VecNumerics { vec_ty  },
+                    FieldType::Byte { .. } => FieldType::VecBytes { vec_ty },
+                    _ => FieldType::VecStructs { vec_ty },
                 };
+        
             }
         };
     }

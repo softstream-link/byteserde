@@ -1,16 +1,27 @@
 mod unittest;
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
 use log::info;
 use unittest::setup;
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+        ByteSerializedLenOf, Debug, PartialEq)]
 struct VecByte {
     #[byteserde(deplete(3))]
     field_vec_u8_head: Vec<u8>,
     #[byteserde(deplete(2), replace( vec![10,11] ))]
     field_vec_u8_body: Vec<u8>,
     field_vec_u8_tail: Vec<u8>,
+}
+impl Default for VecByte{
+    fn default() -> Self {
+        VecByte {
+            field_vec_u8_head: vec![1, 2, 3],
+            field_vec_u8_body: vec![],
+            field_vec_u8_tail: vec![6, 7, 8],
+        }
+    }
 }
 
 #[test]
@@ -19,11 +30,7 @@ fn test_vec_u8() {
 }
 fn vec_u8() {
     setup::log::configure();
-    let inp_num = VecByte {
-        field_vec_u8_head: vec![1, 2, 3],
-        field_vec_u8_body: vec![],
-        field_vec_u8_tail: vec![6, 7, 8],
-    };
+    let inp_num = VecByte::default();
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
@@ -45,6 +52,17 @@ fn vec_u8() {
             ..inp_num
         }
     );
+}
+#[test]
+fn test_vec_len() {
+    vec_len()
+}
+fn vec_len(){
+    setup::log::configure();
+    let inp_num = VecByte::default();
+    let inp_num_len = inp_num.byte_len();
+    info!("inp_num_len: {}", inp_num_len);
+    assert_eq!(inp_num_len, 8); // 3 deplete + 2 deplete + 3 actual len
 }
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
@@ -141,6 +159,7 @@ fn vec_other() {
 
 fn main() {
     vec_u8();
+    vec_len();
     vec_u16();
     vec_other();
 }
