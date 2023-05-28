@@ -22,12 +22,19 @@ pub enum StructType {
 }
 #[derive(Debug)]
 pub struct FldSerDesTokens {
+    // only used to create serailizer
     pub ser_vars: TokenStream,
     pub ser_repl: TokenStream,
     pub ser_uses_stck: TokenStream,
     pub ser_uses_heap: TokenStream,
+
+    // only used to create deserailizer
     pub des_vars: TokenStream,
     pub des_uses: TokenStream,
+
+    // only used to create size
+    pub size: TokenStream,
+    pub len: TokenStream,
 }
 pub fn get_struct_ser_des_tokens(
     ast: &DeriveInput,
@@ -120,6 +127,8 @@ pub fn get_struct_ser_des_tokens(
                 ser_uses_heap: quote!(ser.serialize(&_from_enum)?;),
                 des_vars: quote!( let _struct = des.deserialize::<#struct_type>()?; ),
                 des_uses: quote!(),
+                size: quote!( todo!("Please imlement") ), //TODO
+                len: quote!( todo!("Please imlement") ), //TODO
             });
 
             tokens
@@ -177,6 +186,8 @@ fn setup_numeric(
         _ => panic!("this method should only be called Byte, Numeric types"),
     };
 
+    let size = quote!( ::std::mem::size_of::<#ty>() );
+    let len = quote!( ::std::mem::size_of::<#ty>() );
     FldSerDesTokens {
         ser_vars,
         ser_repl,
@@ -184,6 +195,8 @@ fn setup_numeric(
         ser_uses_heap: ser_uses_xxx,
         des_vars,
         des_uses: quote!( #var_name, ),
+        size,
+        len,
     }
 }
 
@@ -258,6 +271,8 @@ fn setup_array(
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
         des_vars,
         des_uses: quote!( #var_name, ),
+        size: quote!( todo!("Please imlement") ), //TODO
+        len: quote!( todo!("Please imlement") ), //TODO
     }
 }
 fn setup_vec(
@@ -333,6 +348,8 @@ fn setup_vec(
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
         des_vars: des_vars_xxx,
         des_uses: quote!( #var_name, ),
+        size: quote!( todo!("Please imlement") ), //TODO
+        len: quote!( todo!("Please imlement") ), //TODO
     }
 }
 fn setup_struct(
@@ -364,6 +381,8 @@ fn setup_struct(
         ser_uses_heap: quote!( #var_name.byte_serialize_heap(ser)?; ),
         des_vars,
         des_uses: quote!( #var_name, ),
+        size: quote!( todo!("Please imlement") ), //TODO
+        len: quote!( todo!("Please imlement") ), //TODO
     }
 }
 

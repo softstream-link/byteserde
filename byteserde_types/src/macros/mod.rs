@@ -187,24 +187,24 @@ macro_rules! numeric_tuple {
 #[macro_export]
 macro_rules! u16_tuple {
     ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),*) => {
-        numeric_tuple!($NAME, u16, $ENDIAN, $($DERIVE),* );
+        $crate::numeric_tuple!($NAME, u16, $ENDIAN, $($DERIVE),* );
     };
 }
 #[macro_export]
 macro_rules! u32_tuple {
     ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),*) => {
-        numeric_tuple!($NAME, u32, $ENDIAN, $($DERIVE),* );
+        $crate::numeric_tuple!($NAME, u32, $ENDIAN, $($DERIVE),* );
     };
 }
 #[macro_export]
 macro_rules! i32_tuple {
     ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),* ) => {
-        numeric_tuple!($NAME, i32, $ENDIAN, $($DERIVE),* );
+        $crate::numeric_tuple!($NAME, i32, $ENDIAN, $($DERIVE),* );
     };
 }
 #[macro_export]
 macro_rules! u64_tuple {
     ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),* ) => {
-        numeric_tuple!($NAME, u64, $ENDIAN, $($DERIVE),* );
+        $crate::numeric_tuple!($NAME, u64, $ENDIAN, $($DERIVE),* );
     };
 }

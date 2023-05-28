@@ -1,10 +1,17 @@
 mod unittest;
-use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use std::mem::size_of;
+
+use byteserde::{prelude::*, size::ByteSerializedSizeOf};
+use byteserde_derive::{
+    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteSerializedSizeOf,
+};
 use log::info;
 use unittest::setup;
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+        ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 struct Bytes {
     #[byteserde(replace(i8::MIN))]
     field_i8: i8,
@@ -47,7 +54,9 @@ fn bytes() {
     );
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Debug, PartialEq)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+        ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 #[byteserde(endian = "le")]
 struct Numerics {
     #[byteserde(endian = "ne")] // ne test local attribute
@@ -67,6 +76,7 @@ struct Numerics {
     field_u32: u32,
     field_i64: i64,
     field_u64: u64,
+    field_u8: u8,  // this shall cause alignment padding used in struct size_of test
     field_i128: i128,
     field_u128: u128,
     field_f32: f32,
@@ -125,7 +135,38 @@ fn numerics() {
     );
 }
 
+#[test]
+fn test_size_and_len() {
+    size_len();
+}
+
+fn size_len() {
+    setup::log::configure();
+    let len_of_no_padding = Bytes::default().byte_len();
+    let size_of_no_padding = Bytes::byte_size();
+    let size_of_padding = size_of::<Bytes>();
+    info!("Bytes::byte_size(): {size_of_no_padding}");
+    info!("Bytes::default().byte_len(): {len_of_no_padding}");
+    info!("size_of::<Bytes>(): {size_of_padding}");
+    
+    assert_eq!(len_of_no_padding, size_of_no_padding);
+    assert_eq!(size_of_no_padding, size_of::<Bytes>());
+
+    let len_of_no_padding = Numerics::default().byte_len();
+    let size_of_no_padding = Numerics::byte_size();
+    let size_of_padding = size_of::<Numerics>();
+    info!("Numerics::byte_size(): {size_of_no_padding}");
+    info!("Numerics::default().byte_len(): {len_of_no_padding}");
+    info!("size_of::<Numerics>(): {size_of_padding}");
+    
+    assert_eq!(len_of_no_padding, size_of_no_padding);
+    assert_eq!(size_of_no_padding, 81);
+    assert_eq!(size_of_padding, 88);
+    assert_ne!(size_of_no_padding, size_of_padding);
+}
+
 fn main() {
     bytes();
     numerics();
+    size_len();
 }

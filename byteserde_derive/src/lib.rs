@@ -94,9 +94,9 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     let des_vars = des_method.iter().map(|f| &f.des_vars).collect::<Vec<_>>();
     let des_uses = des_method.iter().map(|f| &f.des_uses).collect::<Vec<_>>();
     let impl_body = match ty {
-        common::StructType::Regular => quote!(#struct_name {#( #des_uses )*}),
-        common::StructType::Tuple => quote!  (#struct_name (#( #des_uses )*)),
-        common::StructType::Enum => quote! ( #struct_name::from( _struct )),
+        common::StructType::Regular => quote!(#struct_name {#( #des_uses )*}), // NOTE {}
+        common::StructType::Tuple => quote!  (#struct_name (#( #des_uses )*)), // NOTE ()
+        common::StructType::Enum => quote! ( #struct_name::from( _struct )),   // NOTE ::from()
     };
 
     // generate deserializer
@@ -117,6 +117,56 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
         }
     };
     output.into()
+}
+
+
+#[proc_macro_derive(ByteSerializedSizeOf, attributes(byteserde))]
+pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input).unwrap();
+    // get struct name
+    let struct_name = &ast.ident;
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
+    // get ser & des quote presets
+    let (size, _) = get_struct_ser_des_tokens(&ast);
+    // grap just heap presets
+    let size = size.iter().map(|f| &f.size).collect::<Vec<_>>();
+
+    // eprintln!("size: {:?}", size);
+
+    // generate deserializer
+    let output = quote! {
+        #[automatically_derived]
+        impl #generics_declaration ::byteserde::size::ByteSerializedSizeOf for #struct_name #generics_alias #where_clause{
+            fn byte_size() -> usize{
+                # ( #size )+*
+            }
+        }
+    };
+    output.into()    
+}
+#[proc_macro_derive(ByteSerializedLenOf, attributes(byteserde))]
+pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input).unwrap();
+    // get struct name
+    let struct_name = &ast.ident;
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
+    // get ser & des quote presets
+    let (len, _) = get_struct_ser_des_tokens(&ast);
+    // grap just heap presets
+    let len = len.iter().map(|f| &f.len).collect::<Vec<_>>();
+
+    // eprintln!("size: {:?}", size);
+
+    // generate deserializer
+    let output = quote! {
+        #[automatically_derived]
+        impl #generics_declaration ::byteserde::size::ByteSerializedLenOf for #struct_name #generics_alias #where_clause{
+            fn byte_len(&self) -> usize{
+                # ( #len )+*
+            }
+        }
+    };
+    output.into()    
 }
 
 #[proc_macro_derive(ByteEnumFromBinder, attributes(byteserde))]
