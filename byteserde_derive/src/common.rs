@@ -126,9 +126,9 @@ pub fn get_struct_ser_des_tokens(
                 ser_uses_heap: quote!(ser.serialize(&_from_enum)?;),
                 des_vars: quote!( let _struct = des.deserialize::<#struct_type>()?; ),
                 des_uses: quote!(),
-                size: quote!( todo!("Please imlement") ), //TODO
+                size: quote!( todo!("Please imlement") ), //TODO complete size_of for Enums
                 size_error: None,
-                len: quote!( todo!("Please imlement") ), //TODO
+                len: quote!( todo!("Please imlement") ), //TODO complete len_of for Enums
             });
 
             tokens
@@ -449,9 +449,9 @@ fn setup_struct(
         ser_uses_heap: quote!( #var_name.byte_serialize_heap(ser)?; ),
         des_vars,
         des_uses: quote!( #var_name, ),
-        size: quote!( todo!("Please imlement") ), //TODO
+        size: quote!( #ty.byte_size() ),
         size_error: None,
-        len: quote!( todo!("Please imlement") ), //TODO
+        len: quote!( self.#var_name.byte_len() ),
     }
 }
 
