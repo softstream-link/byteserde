@@ -281,7 +281,7 @@ fn setup_array(
         }
     };
     let len = match option{
-        FieldType::ArrBytes { .. } | FieldType::ArrNumerics { .. } =>  quote!( ::std::mem::size_of::<#arr_ty>() * #len ),
+        FieldType::ArrBytes { .. } | FieldType::ArrNumerics { .. } =>  quote!( (::std::mem::size_of::<#arr_ty>() * #len) ),
         FieldType::ArrStructs { .. } => quote!( ({ let mut len = 0; for e in #len_var.iter() { len += e.byte_len(); } len }) ),
         _ => panic!(
             "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
@@ -397,7 +397,7 @@ fn setup_vec(
         Deplete::NotSet => quote!( #member_name.len() ),
     };
     let len = match option{
-        FieldType::VecBytes { vec_ty } | FieldType::VecNumerics { vec_ty } =>  quote!( ::std::mem::size_of::<#vec_ty>() * #vec_deplete_len ),
+        FieldType::VecBytes { vec_ty } | FieldType::VecNumerics { vec_ty } =>  quote!( (::std::mem::size_of::<#vec_ty>() * #vec_deplete_len) ),
         FieldType::VecStructs { .. } => quote!( ({ let mut len = 0; for e in #member_name.iter() { len += e.byte_len(); } len }) ),
         _ => panic!(
             "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
