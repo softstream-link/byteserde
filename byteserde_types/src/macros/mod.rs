@@ -156,6 +156,8 @@ macro_rules! char_ascii {
     }
 }
 
+/// This is a short hand macro for generateing a new `tuple` `struct` type for numerics like u32, i32, u64, i64, f32, f64, ...
+/// Typically will not be used directly but instead will be called via one of the other macros like `u16_tuple`, `i16_tuple`, ...
 #[macro_export]
 macro_rules! numeric_tuple {
     ($NAME:ident, $TYPE:ty, $ENDIAN:literal, $($DERIVE:ty),* ) => {
@@ -176,6 +178,11 @@ macro_rules! numeric_tuple {
                 $NAME(v)
             }
         }
+        impl From<$NAME> for $TYPE {
+            fn from(v: $NAME) -> Self {
+                v.0
+            }
+        }
         impl std::fmt::Display for $NAME{
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", &self.0)
@@ -184,27 +191,83 @@ macro_rules! numeric_tuple {
     }
 }
 
+/// Generates a `tuple` `struct` with a given name for managing a Numeric type `u16` allocated on `stack`.
+/// 
+/// # Arguments
+/// * `NAME` - name of the struct to be generated
+/// * `ENDIAN` - endianess of the numeric type, must be either `le`, `be`, or `ne`, this will be passed directly to the `byteserde` attribute as #[byteserde(endian = "xx" )]
+/// * `[derive, ...]` -- `must include one of` the following `ByteSerializeStack`, `ByteSerializeHeap`, or `ByteDeserialize` other wise the `#[byteserde(endian = $ENDIAN)]` attribute will fail to compile. 
+/// Plus list of additional valid rust derive traits 
+/// 
+/// # Derives
+/// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
+/// * `Display` - provides a human readable sting view of the `u16` value
+/// 
+/// # From
+/// Note that provided implementation already includes the following `From` implementations.
+/// * `From<u16>` - will take the `u16` and return tupe struct with type of `NAME` agrument.
+/// * `From<Name>` - will take the `struct` type from the `NAME` argument and return the `u16` value.
+/// 
+/// # Examples
+/// ```
+/// # #[macro_use] extern crate byteserde_types; fn main() {
+/// u16_tuple!(Number, "be", byteserde_derive::ByteSerializeStack, PartialEq, Debug);
+/// 
+/// let inp_num: Number = 1_u16.into(); // from u16
+/// println!("inp_num: {:?}, {}", inp_num, inp_num);
+/// assert_eq!(inp_num.value(), 1_u16);
+///
+/// let inp_num: Number = Number::new(2); // using new
+/// println!("inp_num: {:?}, {}", inp_num, inp_num);
+/// assert_eq!(inp_num.value(), 2_u16);
+/// 
+/// let inp_num: u16 = inp_num.into(); // to u16
+/// assert_eq!(inp_num, 2_u16);
+/// # }
+/// ```
 #[macro_export]
 macro_rules! u16_tuple {
     ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),*) => {
         $crate::numeric_tuple!($NAME, u16, $ENDIAN, $($DERIVE),* );
     };
 }
+
+/// see [u16_tuple] for more details and examples.
+#[macro_export]
+macro_rules! i16_tuple {
+    ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),*) => {
+        $crate::numeric_tuple!($NAME, i16, $ENDIAN, $($DERIVE),* );
+    };
+}
+
+/// see [u16_tuple] for more details and examples.
 #[macro_export]
 macro_rules! u32_tuple {
     ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),*) => {
         $crate::numeric_tuple!($NAME, u32, $ENDIAN, $($DERIVE),* );
     };
 }
+
+/// see [u16_tuple] for more details and examples.
 #[macro_export]
 macro_rules! i32_tuple {
     ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),* ) => {
         $crate::numeric_tuple!($NAME, i32, $ENDIAN, $($DERIVE),* );
     };
 }
+
+/// see [u16_tuple] for more details and examples.
 #[macro_export]
 macro_rules! u64_tuple {
     ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),* ) => {
         $crate::numeric_tuple!($NAME, u64, $ENDIAN, $($DERIVE),* );
+    };
+}
+
+/// see [u16_tuple] for more details and examples.
+#[macro_export]
+macro_rules! i64_tuple {
+    ($NAME:ident, $ENDIAN:literal, $($DERIVE:ty),* ) => {
+        $crate::numeric_tuple!($NAME, i64, $ENDIAN, $($DERIVE),* );
     };
 }

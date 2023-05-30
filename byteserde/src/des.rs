@@ -241,7 +241,7 @@ pub trait ByteDeserialize<T> {
     }
 }
 
-/// Special case to support greedy vector of bytes deserialization
+/// Greedy deserialization of the remaining byte stream into a `Vec<u8>`
 impl ByteDeserialize<Vec<u8>> for Vec<u8> {
     fn byte_deserialize(des: &mut ByteDeserializer) -> Result<Vec<u8>> {
         Ok(des.deserialize_bytes_slice_remaining().into())
@@ -257,14 +257,14 @@ where
     T::byte_deserialize(de)
 }
 
-/// This is a short cut method that uses [`ByteSerializerStack<CAP>::bytes()`] method to issue a [from_bytes] call.
+/// This is a short cut method that uses [`ByteSerializerStack<CAP>::as_slice()`] method to issue a [from_bytes] call.
 pub fn from_serializer_stack<const CAP: usize, T>(ser: &ByteSerializerStack<CAP>) -> Result<T>
 where
     T: ByteDeserialize<T>,
 {
     from_bytes(ser.as_slice())
 }
-/// This is a short cut method that uses [`ByteSerializerHeap::bytes()`] method to issue a [from_bytes] call.
+/// This is a short cut method that uses [`ByteSerializerHeap::as_slice()`] method to issue a [from_bytes] call.
 pub fn from_serializer_heap<T>(ser: &ByteSerializerHeap) -> Result<T>
 where
     T: ByteDeserialize<T>,

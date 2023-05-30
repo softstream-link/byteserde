@@ -5,6 +5,11 @@ use crate::{
     utils::hex::to_hex_line,
 };
 
+/// Default String implementation for ByteSerializeStack
+/// 
+/// # Appoach
+/// * first `usize` bytes to store the length of the string
+/// * remaining bytes to store the string
 impl ByteSerializeStack for String {
     fn byte_serialize_stack<const CAP: usize>(
         &self,
@@ -17,6 +22,11 @@ impl ByteSerializeStack for String {
     }
 }
 
+/// Default String implementation for ByteSerializeHeap
+/// 
+/// # Appoach
+/// * first `usize` bytes to store the length of the string
+/// * remaining bytes to store the string
 impl ByteSerializeHeap for String {
     fn byte_serialize_heap(&self, ser: &mut crate::ser::ByteSerializerHeap) -> Result<()> {
         let len = self.len();
@@ -26,6 +36,11 @@ impl ByteSerializeHeap for String {
     }
 }
 
+/// Default String implementation for ByteDeserialize
+/// 
+/// # Appoach
+/// * first `usize` bytes to read the length of the string
+/// * remaining bytes to read the string
 impl ByteDeserialize<String> for String {
     fn byte_deserialize(deserializer: &mut ByteDeserializer) -> Result<String> {
         let len: usize = deserializer.deserialize_be()?;
@@ -41,6 +56,7 @@ impl ByteDeserialize<String> for String {
         }
     }
 }
+
 
 impl ByteSerializeStack for char {
     fn byte_serialize_stack<const CAP: usize>(
