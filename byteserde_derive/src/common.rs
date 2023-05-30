@@ -315,18 +315,25 @@ fn setup_vec(
     let ser_endian_method_xx = ser_endian_method_xx(&endian);
     let des_endian_method_xx = des_endian_method_xx(&endian);
 
+    let member_name = match member {
+        MemberIdent::Named(fld_name) => {
+            quote!( self.#fld_name )
+        }
+        MemberIdent::Unnamed(fld_index) => {
+            quote!( self.#fld_index )
+        }
+    };
     let ser_vars = match member {
         MemberIdent::Named(_) => quote!( let #var_name: &#ty = &self.#var_name; ),
         MemberIdent::Unnamed(fld_index) => quote! { let #var_name: &#ty = &self.#fld_index; },
     };
 
     let ser_repl = match replace {
-        Replace::Set(value) => quote!( let #var_name = &#value; ),
+        Replace::Set(ref value) => quote!( let #var_name = &#value; ),
         Replace::NotSet => quote!(),
     };
 
     let struct_name = &ast.ident;
-    // TODO add run time test
     let assert_error = match member {
         MemberIdent::Named(fld_name) => {
             format!("{}.{} field #[byteserde(deplete( .. ))] set higther then length of Vec instance", quote!(#struct_name), quote!( #fld_name ))
@@ -341,13 +348,17 @@ fn setup_vec(
         }
         Deplete::NotSet => quote!(),
     };
+    let vec_deplete_len = match deplete{
+        Deplete::Size(ref size) => quote!( #size ),
+        Deplete::NotSet => quote!( #member_name.len() ),
+    };
     let ser_uses_xxx = |byte_serialize_xxx: &Ident| match option {
-        FieldType::VecBytes { .. } => quote!( #assert_vec_len_gt_then_deplete; ser.serialize_bytes_slice(&#var_name)?; ),
+        FieldType::VecBytes { .. } => quote!( #assert_vec_len_gt_then_deplete; ser.serialize_bytes_slice(&#var_name[..#vec_deplete_len])?; ),
         FieldType::VecNumerics { .. } => {
-            quote!( #assert_vec_len_gt_then_deplete; for i in #var_name { ser.#ser_endian_method_xx(*i)?; })
+            quote!( #assert_vec_len_gt_then_deplete; for (idx, n) in #var_name.iter().enumerate() { if idx >= #vec_deplete_len {break;} ser.#ser_endian_method_xx(*n)?; })
         }
         FieldType::VecStructs { .. } => {
-            quote!( #assert_vec_len_gt_then_deplete; for i in #var_name { i.#byte_serialize_xxx(ser)?; })
+            quote!( #assert_vec_len_gt_then_deplete; for (idx, n) in #var_name.iter().enumerate() { if idx >= #vec_deplete_len {break;} n.#byte_serialize_xxx(ser)?; })
         }
         _ => panic!("this method should only be called with Vec[Bytes|Numerics|Structs] types"),
     };
@@ -383,22 +394,15 @@ fn setup_vec(
         _ => panic!("this method should only be called with Vec types"),
     };
     
-    let member_name = match member {
-        MemberIdent::Named(fld_name) => {
-            quote!( self.#fld_name )
-        }
-        MemberIdent::Unnamed(fld_index) => {
-            quote!( self.#fld_index )
-        }
-    };
 
-    let vec_deplete_len = match deplete{
-        Deplete::Size(ref size) => quote!( #size ),
-        Deplete::NotSet => quote!( #member_name.len() ),
-    };
+
     let len = match option{
         FieldType::VecBytes { vec_ty } | FieldType::VecNumerics { vec_ty } =>  quote!( (::std::mem::size_of::<#vec_ty>() * #vec_deplete_len) ),
-        FieldType::VecStructs { .. } => quote!( ({ let mut len = 0; for e in #member_name.iter() { len += e.byte_len(); } len }) ),
+        FieldType::VecStructs { .. } => 
+                    match replace {
+                        Replace::Set(ref value) => quote!( ({ let mut len = 0; for (idx, e) in #value.iter().enumerate() { if idx >= #vec_deplete_len {break} len += e.byte_len(); } len }) ),
+                        Replace::NotSet => quote!( ({ let mut len = 0; for (idx, e) in #member_name.iter().enumerate() { if idx >= #vec_deplete_len {break} len += e.byte_len(); } len }) ),
+                    },
         _ => panic!(
             "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
         ),
@@ -482,6 +486,7 @@ enum FieldType<'a> {
     VecNumerics {
         vec_ty: Type,
     },
+    #[allow(dead_code)] // TODO might be used later for now disable warning
     VecStructs {
         vec_ty: Type,
     },
