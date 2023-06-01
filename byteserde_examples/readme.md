@@ -8,14 +8,20 @@
 * [Regular](./examples/numeric_regular.rs)
 * [Tuple](./examples/numeric_tuple.rs)
 
-## `Strings` `ascii` / `utf-8`
-* [Regular](./examples/strings_regular.rs)
-* [Tuple](./examples/strings_tuple.rs)
+## `Fixed Length Strings` `ascii`
+* [Regular](examples/strings_fix_len_regular.rs)
+* [Tuple](examples/strings_fix_len_tuple.rs)
     * `ascii` types are included with the package
         * [StringAsciiFixed](../byteserde_types/src/strings/ascii/mod.rs#StringAsciiFixed) - fixed length string
-        * [StringAscii](../byteserde_types/src/strings/ascii/mod.rs#StringAscii) - variable length string
         * [CharAscii](../byteserde_types/src/strings/ascii/mod.rs#CharAscii) - char, one byte long
         * [ConstCharAscii](../byteserde_types/src/strings/ascii/mod.rs#ConstCharAscii) - constant char, one byte long
+
+## `Variable Length Strings` - `ascii` / `utf-8`
+* [Regular](examples/strings_var_len_regular.rs)
+* [Tuple](examples/strings_var_len_tuple.rs)
+    * `ascii` types are included with the package
+        * [StringAscii](../byteserde_types/src/strings/ascii/mod.rs#StringAscii) - variable length string
+
 
 ## `Arrays` of `u8`, `u16`, `i32`, .. / `ascii`, `utf-8` strings / other arbitrary types
 * [Regular](./examples/arr_regular.rs)
@@ -29,6 +35,3 @@
 * [Regular](./examples/generics_regular.rs)
 * [Tuple](./examples/generics_tuple.rs)
 
-## `Practical` example of an actual network packet message 
-* [Regular](./examples/practical_regular.rs)
-* [Tuple](./examples/practical_tuple.rs)

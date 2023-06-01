@@ -4,11 +4,11 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
 
-mod option_attr;
-mod enum_attr;
+mod attr_struct_option;
+mod attr_enum;
+mod attr_struct;
 mod common;
 mod enum_map;
-mod struct_shared;
 #[proc_macro_derive(ByteSerializeStack, attributes(byteserde))]
 pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();

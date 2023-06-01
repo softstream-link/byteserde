@@ -8,26 +8,26 @@ use unittest::setup;
 type Plus = ConstCharAscii<b'+'>;
 #[derive(ByteDeserialize, ByteSerializeStack, ByteSerializeHeap, Debug, PartialEq)]
 #[byteserde(endian = "be")]
-struct DebugMsg(
+struct VariableLenMsg(
     #[byteserde(replace( (_1.len() + _2.len()) as u16 ))] u16,
     Plus,
     #[byteserde(deplete( _0 as usize - _1.len() ))] StringAscii,
 );
 
-impl Default for DebugMsg {
+impl Default for VariableLenMsg {
     fn default() -> Self {
         Self(Default::default(), Default::default(), b"0123456789".into())
     }
 }
 
 #[test]
-fn test_all() {
-    all()
+fn test_strings_ascii() {
+    strings_ascii()
 }
 
-fn all() {
+fn strings_ascii() {
     setup::log::configure();
-    let inp_debug = DebugMsg::default();
+    let inp_debug = VariableLenMsg::default();
     info!("inp_debug: {:?}", inp_debug);
 
     let tail = &[0x01, 0x02, 0x3];
@@ -44,7 +44,7 @@ fn all() {
 
     let des = &mut ByteDeserializer::new(ser_stack.as_slice());
 
-    let out_debug = DebugMsg::byte_deserialize(des).unwrap();
+    let out_debug = VariableLenMsg::byte_deserialize(des).unwrap();
     info!("out_debug: {:?}", out_debug);
     info!("des: {:#x}", des);
 
@@ -54,6 +54,35 @@ fn all() {
     assert_eq!(des.remaining(), tail.len());
 }
 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+struct Strings(String, char);
+
+#[test]
+fn test_strings_utf8() {
+    strings_utf8()
+}
+fn strings_utf8() {
+    setup::log::configure();
+
+    let inp_str = Strings(
+        "whatever".to_string(),
+        '♥', // 3 bytes long
+    );
+
+    // stack
+    let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
+    info!("ser_stack: {ser_stack:#x}");
+    // heap
+    let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_str).unwrap();
+    info!("ser_heap: {ser_heap:#x}");
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
+    // deserialize
+    let out_str: Strings = from_serializer_stack(&ser_stack).unwrap();
+    info!("inp_str: {:?}", inp_str);
+    info!("out_str: {:?}", out_str);
+    assert_eq!(inp_str, out_str);
+}
 fn main() {
-    all()
+    strings_ascii();
+    strings_utf8();
 }

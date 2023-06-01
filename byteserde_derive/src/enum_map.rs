@@ -8,7 +8,7 @@ use syn::{
     Data, DeriveInput, Fields,
 };
 
-use crate::enum_attr::{enum_bind_attr, enum_from_attr,enum_replace_attr, Bind, Replace,From,};
+use crate::attr_enum::{enum_bind_attr, enum_from_attr,enum_replace_attr, Bind, Replace,From,};
 
 pub fn get_enum_from_tokens(
     ast: &DeriveInput,
