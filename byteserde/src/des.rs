@@ -98,6 +98,7 @@ impl<'x> ByteDeserializer<'x> {
         }
     }
 
+    #[cold]
     fn error(&mut self, n: usize) -> SerDesError {
         // moving error into a fn improves performance by 10%
         // from_bytes - reuse ByteDeserializer
@@ -128,24 +129,24 @@ impl<'x> ByteDeserializer<'x> {
 
     #[inline(always)]
     pub fn deserialize_u8(&mut self) -> Result<u8> {
-        match self.idx < self.bytes.len() {
-            true => {
-                let res = self.bytes.first().expect("Failed to one u8 from slice");
+        let res = self.bytes.first();
+        match res {
+            Some(v) => {
                 self.idx += 1;
-                Ok(*res)
-            },
-            false => Err(self.error(1))
+                Ok(*v)
+            }
+            None => Err(self.error(1)),
         }
     }
     #[inline(always)]
     pub fn deserialize_i8(&mut self) -> Result<i8> {
-        match self.idx < self.bytes.len() {
-            true => {
-                let res = self.bytes.first().expect("Failed to get one i8 from slice");
+        let res = self.bytes.first();
+        match res {
+            Some(v) => {
                 self.idx += 1;
-                Ok(*res as i8)
-            },
-            false => Err(self.error(1))
+                Ok(*v as i8)
+            }
+            None => Err(self.error(1)),
         }
     }
     /// moves the index forward by `len` bytes, intended to be used in combination with [Self::peek_bytes_slice()]
