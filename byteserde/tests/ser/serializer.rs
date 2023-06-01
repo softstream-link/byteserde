@@ -38,6 +38,7 @@ fn test_serializer_stack_primitive() {
 
     info!("res_err: {res_err:#?}");
     assert!(res_err.is_err());
+    assert!(res_err.unwrap_err().message.starts_with("Failed to add a slice size: 10 into ByteSerializerStack<22> { len: 20, cap: 22, bytes: 0000:"));
     assert_eq!(ser.len(), CAP_22 - 2);
     assert_eq!(ser.avail(), 2);
 }

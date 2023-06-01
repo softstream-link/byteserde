@@ -33,9 +33,8 @@ fn test_deserializer_u16() {
         let r: Result<u16> = de.deserialize_le();
         info!("r:? {r:?}");
         assert!(r.is_err());
-        assert_eq!(
-            r.unwrap_err().message,
-            "buffer len: 9, idx: 8, bytes avail: 1, bytes requested: 2"
+        assert!(
+            r.unwrap_err().message.starts_with("Failed to get a slice size: 2 bytes from ByteDeserializer { len: 9, idx: 8, bytes: 0000:")
         );
     }
 

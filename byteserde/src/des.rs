@@ -91,7 +91,6 @@ impl<'x> ByteDeserializer<'x> {
     }
 
     pub fn peek_bytes_array<const N: usize>(&mut self) -> Result<[u8; N]> {
-        // DON"T call .._slice as it halfs perforamnce let slice = self.deserialize_slice(N)?;
         match self.bytes.get(self.idx..self.idx + N) {
             Some(v) => Ok(v.try_into().expect("Failed to convert &[u8] into [u8; N]")),
             None => Err(self.error(N)),
@@ -129,7 +128,7 @@ impl<'x> ByteDeserializer<'x> {
 
     #[inline(always)]
     pub fn deserialize_u8(&mut self) -> Result<u8> {
-        let res = self.bytes.first();
+        let res = self.bytes[self.idx..].first();
         match res {
             Some(v) => {
                 self.idx += 1;
@@ -140,7 +139,7 @@ impl<'x> ByteDeserializer<'x> {
     }
     #[inline(always)]
     pub fn deserialize_i8(&mut self) -> Result<i8> {
-        let res = self.bytes.first();
+        let res = self.bytes[self.idx..].first();
         match res {
             Some(v) => {
                 self.idx += 1;

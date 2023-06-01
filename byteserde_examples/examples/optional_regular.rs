@@ -45,7 +45,7 @@ impl ByteDeserialize<OptionalSection> for OptionalSection {
         let mut optional2 = None;
         while !des.is_empty(){
             let x = des.peek_bytes_slice(1)?;
-            let y = peek(1)?;
+            // let x = peek(1)?;
             if x == &[1]{
                 optional1 = Some(des.deserialize()?);
             }

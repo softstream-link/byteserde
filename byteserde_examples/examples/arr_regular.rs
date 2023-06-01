@@ -196,7 +196,7 @@ fn other() {
 
     // deserialize
     let out_other: ArrOther = from_serializer_stack(&ser_stack).unwrap();
-    info!("inp_other: {inp_other:?}");
+    info!("inp_other: {inp_other:?}");    
     info!("out_other: {out_other:?}");
     assert_eq!(
         out_other,
