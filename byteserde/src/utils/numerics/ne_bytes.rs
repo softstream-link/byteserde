@@ -21,6 +21,8 @@ macro_rules! impl_ToNeBytes {
     };
 }
 const USIZE: usize = std::mem::size_of::<usize>();
+impl_ToNeBytes!(u8, 1);
+impl_ToNeBytes!(i8, 1);
 impl_ToNeBytes!(u16, 2);
 impl_ToNeBytes!(i16, 2);
 impl_ToNeBytes!(u32, 4);
@@ -56,6 +58,8 @@ macro_rules! impl_FromNeBytes {
         }
     };
 }
+impl_FromNeBytes!(u8, 1);
+impl_FromNeBytes!(i8, 1);
 impl_FromNeBytes!(u16, 2);
 impl_FromNeBytes!(i16, 2);
 impl_FromNeBytes!(u32, 4);

@@ -41,7 +41,7 @@ pub fn get_struct_ser_des_tokens(
     ast: &DeriveInput,
 ) -> (Vec<FldSerDesTokens>, StructType) {
     let ty: StructType;
-
+    // eprintln!("get_struct_ser_des_tokens: {:?}", &ast.ident);
     let tokens = match &ast.data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(flds) => {
@@ -66,6 +66,9 @@ pub fn get_struct_ser_des_tokens(
                             | FieldType::VecStructs { .. } => {
                                 setup_vec(ast, fld, &fld.ty, var_name, member, &fld_type)
                             }
+                            FieldType::OptionStructs { .. } => {
+                                setup_option(ast, fld, &fld.ty, var_name, member, &fld_type)
+                            },
                             FieldType::Struct { ty } => setup_struct(fld, var_name, ty, member),
                         }
                     })
@@ -98,6 +101,9 @@ pub fn get_struct_ser_des_tokens(
                             | FieldType::VecStructs { .. } => {
                                 setup_vec(ast, fld, &fld.ty, var_name, member, &fld_type)
                             }
+                            FieldType::OptionStructs { .. } => {
+                                setup_option(ast, fld, &fld.ty, var_name, member, &fld_type)
+                            },
                             FieldType::Struct { ty } => setup_struct(fld, var_name, ty, member),
                         }
                     })
@@ -179,8 +185,11 @@ fn setup_numeric(
     };
 
     let des_vars = match option {
-        FieldType::Byte { .. } => {
-            quote!( let #var_name: #ty = des.deserialize_bytes_slice(1)?[0] as #ty; )
+        FieldType::Byte {  signed, .. } => {
+            match signed {
+                true => quote!( let #var_name: #ty = des.deserialize_i8()?; ),
+                false => quote!( let #var_name: #ty = des.deserialize_u8()?; ),
+            }
         }
         FieldType::Numeric { .. } => quote!( let #var_name: #ty = des.#des_endian_method_xx()?; ),
         _ => panic!("this method should only be called Byte, Numeric types"),
@@ -455,6 +464,53 @@ fn setup_struct(
     }
 }
 
+fn setup_option(
+    ast: &DeriveInput,
+    fld: &Field,
+    fld_ty: &Type,
+    var_name: &Ident,
+    member: &MemberIdent,
+    option: &FieldType,
+) ->FldSerDesTokens{
+    let replace = get_replace_attribute(&fld.attrs);
+
+    // serializer
+    let ser_vars = match member {
+        MemberIdent::Named(_) => quote!( let #var_name: &#fld_ty = &self.#var_name; ),
+        MemberIdent::Unnamed(fld_index) => quote! { let #var_name: &#fld_ty = &self.#fld_index; },
+    };
+
+    let ser_repl = match replace {
+        Replace::Set(ref value) => quote!( let #var_name = &#value; ),
+        Replace::NotSet => quote!(),
+    };
+
+    let ser_uses_xxx = |byte_serialize_xxx: &Ident| match option {
+        FieldType::OptionStructs { .. } => {
+            quote!( match #var_name { Some(v) => v.#byte_serialize_xxx(ser)?, None => {}, } )
+        }
+        _ => panic!("this method should only be called with OptionStructs types"),
+    };
+
+    let size = match option{
+        FieldType::OptionStructs { opt_ty } => quote!( Option::<#opt_ty>::byte_size() ),
+        _ => panic!("this method should only be called with Option types"),
+    };
+    
+    // eprintln!("opt_ty: {:?}", format!("{}", quote!(#fld_ty)));
+    FldSerDesTokens {
+        ser_vars,
+        ser_repl,
+        ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
+        ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
+        des_vars: quote!( ),
+        des_uses: quote!( #var_name, ),
+        size, 
+        size_error: None,
+        len: quote!( self.#var_name.byte_len() ),
+    }
+}
+
 #[derive(Debug)]
 enum FieldType<'a> {
     Byte {
@@ -490,15 +546,20 @@ enum FieldType<'a> {
     VecStructs {
         vec_ty: Type,
     },
+    OptionStructs {
+        opt_ty: Type,
+    },
+
 }
 
 fn map_field_type(ty: &Type) -> FieldType {
+    // eprintln!("\tmap_field_type: {:?}", ty);
     match ty {
-        Type::Path(TypePath { path, .. }) => path_2_numeric_byte_or_other(path, ty),
+        Type::Path(TypePath { path, .. }) => path_2_byte_numeric_vec_struct(path, ty),
         Type::Array(TypeArray {
             elem: arr_ty, len, ..
         }) => match arr_ty.as_ref() {
-            Type::Path(TypePath { path, .. }) => match path_2_numeric_byte_or_other(path, arr_ty) {
+            Type::Path(TypePath { path, .. }) => match path_2_byte_numeric_vec_struct(path, arr_ty) {
                 FieldType::Byte { signed, .. } => FieldType::ArrBytes {
                     arr_ty,
                     len,
@@ -516,7 +577,7 @@ fn map_field_type(ty: &Type) -> FieldType {
     }
 }
 
-fn path_2_numeric_byte_or_other<'a>(path: &'a Path, ty: &'a Type) -> FieldType<'a> {
+fn path_2_byte_numeric_vec_struct<'a>(path: &'a Path, ty: &'a Type) -> FieldType<'a> {
     // byte
     if path.is_ident("u8") {
         return FieldType::Byte { ty, signed: false };
@@ -547,12 +608,29 @@ fn path_2_numeric_byte_or_other<'a>(path: &'a Path, ty: &'a Type) -> FieldType<'
         {
             if let GenericArgument::Type(Type::Path(path, ..)) = &args[0] {
                 let vec_ty = Type::Path(path.clone());
-                return match path_2_numeric_byte_or_other(&path.path, &vec_ty) {
+                return match path_2_byte_numeric_vec_struct(&path.path, &vec_ty) {
                     FieldType::Numeric { .. } => FieldType::VecNumerics { vec_ty  },
                     FieldType::Byte { .. } => FieldType::VecBytes { vec_ty },
                     _ => FieldType::VecStructs { vec_ty },
                 };
         
+            }
+        };
+    }
+    // Option
+    if path.segments.len() == 1 && path.segments[0].ident == "Option" {
+        let opt_args = &path.segments[0].arguments;
+        if let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) = opt_args
+        {
+            if let GenericArgument::Type(Type::Path(path, ..)) = &args[0] {
+                // eprintln!("\t\tOption: {:?}", path);
+                let opt_ty = Type::Path(path.clone());
+                return match path_2_byte_numeric_vec_struct(&path.path, &opt_ty) {
+                    FieldType::Struct { .. } => FieldType::OptionStructs { opt_ty },
+                    // FieldType::Byte { .. } => FieldType::OptionBytes { opt_ty } ,
+                    // FieldType::Numeric { .. } => FieldType::OptionNumerics { opt_ty },
+                    _ => panic!("Option of Byte & Numerics are not supported only of other struct types. Ex: Option<SomeStruct>"),
+                };
             }
         };
     }

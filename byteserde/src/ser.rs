@@ -149,13 +149,16 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
                 Result::Ok(self)
             }
             true => {
-                // panic!("blah"); // TODO format kills performance
-                Result::Err(SerDesError {
-                    message: format!(
-                        "adding {input_len} bytes, {avail} slots available. input: {bytes:?} buffer: {self:x}",
-                    ),
-                })
+                Err(self.error(bytes.len()))
             }
+        }
+    }
+
+    fn error(&self, n: usize) -> SerDesError{
+        SerDesError {
+            message: format!(
+                "Failed to add a slice size: {n} into {self:x}",
+            ),
         }
     }
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `native` endianess.

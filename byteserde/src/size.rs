@@ -1,13 +1,13 @@
 /// Trait type used in advanced cases when serializing and deserializing an optional block of a byte
 /// stream whose type is represented by a `struct` whose size is deterministict at compile time.
-/// 
+///
 /// Typically will be implemented using a `byteserde_derive::ByteSerializedSizeOf` proc macro.
-/// 
+///
 /// # Guarantees
-/// * Must return the number of bytes the implementing structure will occupy in a byte stream 
-///  when serialized. This is instance `independent` trait and may not be possible to implement for 
+/// * Must return the number of bytes the implementing structure will occupy in a byte stream
+///  when serialized. This is instance `independent` trait and may not be possible to implement for
 /// `struct`s whose elements might be allocated on the heap at run time, example String, Vec, etc.
-pub trait ByteSerializedSizeOf{
+pub trait ByteSerializedSizeOf {
     fn byte_size() -> usize;
 }
 macro_rules! size_of {
@@ -32,16 +32,22 @@ size_of!(i128);
 size_of!(usize);
 size_of!(isize);
 
+/// Returns strictly the size of the type `T` in bytes and ignores the None variant
+impl<T: ByteSerializedSizeOf> ByteSerializedSizeOf for Option<T> {
+    fn byte_size() -> usize {
+        T::byte_size()
+    }
+}
 /// Trait type used in advanced cases when serializing and deserializing an optional block of a byte
 /// stream whose type is represented by a `struct` whose size is `NOT` deterministict at compile time.
-/// 
+///
 /// Typically will be implemented using a `byteserde_derive::ByteSerializedLenOf` proc macro.
-/// 
+///
 /// # Guarantees
 /// * Must return the number of bytes a specific `instance` of implementing structure will occupy in a byte stream
 /// when serialized. This is instance `dependent` trait and might return a differet length for each instance,
 /// example String, Vec, etc.
-pub trait ByteSerializedLenOf{
+pub trait ByteSerializedLenOf {
     fn byte_len(&self) -> usize;
 }
 
@@ -53,5 +59,17 @@ impl ByteSerializedLenOf for String {
 impl ByteSerializedLenOf for char {
     fn byte_len(&self) -> usize {
         self.len_utf8()
+    }
+}
+
+impl<T> ByteSerializedLenOf for Option<T>
+where
+    T: ByteSerializedLenOf,
+{
+    fn byte_len(&self) -> usize {
+        match self {
+            Some(t) => t.byte_len(),
+            None => 0,
+        }
     }
 }
