@@ -4,6 +4,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
 
+mod option_attr;
+mod enum_attr;
 mod common;
 mod enum_map;
 mod struct_shared;

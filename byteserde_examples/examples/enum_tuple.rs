@@ -1,7 +1,9 @@
 mod unittest;
 
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteEnumFromBinder, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{
+    ByteDeserialize, ByteEnumFromBinder, ByteSerializeHeap, ByteSerializeStack,
+};
 use byteserde_types::char_ascii;
 use log::info;
 use unittest::setup;
@@ -79,21 +81,46 @@ fn test_enums_from_auto_impl() {
 }
 fn enums_from_auto_impl() {
     setup::log::configure();
-    
-    char_ascii!(Side, PartialEq);
 
-    #[derive(ByteEnumFromBinder, Debug, PartialEq)]
+    #[rustfmt::skip]
+    char_ascii!(Side, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq);
+
+    #[rustfmt::skip]
+    #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteEnumFromBinder, Debug, PartialEq,)]
     #[byteserde(bind(Side))]
-    #[byteserde(from(&SideEnum))]
-    #[byteserde(from(SideEnum))]
-    #[byteserde(from(Side))] // will panic on all cases besides covered by replace
-    #[byteserde(from(&Side))] // will panic on all cases besides covered by replace
+    #[byteserde(from(&SideEnum))] // REQUIRED to serialize `SideEnum` as `Side`
+    #[byteserde(from(Side))] // REQUIRED to deserialize `Side`  as `SideEnum` impl manually to avoid panic on Sides not in the replace attribute
+    #[byteserde(from(SideEnum))] // NOT required just example that it is possible
+    #[byteserde(from(&Side))] // NOT required just example, that it is possible impl manually to avoid panic on Sides not in the replace attribute
     enum SideEnum {
         #[byteserde(replace(Side(b'B')))]
         Buy,
         #[byteserde(replace(Side(b'S')))]
         Sell,
     }
+
+    // stack
+    let mut ser_stack = ByteSerializerStack::<128>::default();
+    let _ = ser_stack.serialize(&SideEnum::Buy).unwrap();
+    let _ = ser_stack.serialize(&SideEnum::Sell).unwrap();
+    info!("ser_stack: {ser_stack:#x}");
+
+    // heap
+    let mut ser_heap = ByteSerializerHeap::default();
+    let _ = ser_heap.serialize(&SideEnum::Buy).unwrap();
+    let _ = ser_heap.serialize(&SideEnum::Sell).unwrap();
+    info!("ser_heap: {ser_heap:#x}");
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
+
+    // deserialize
+    let mut des = ByteDeserializer::new(ser_stack.as_slice());
+    let out_enum_buy: SideEnum = des.deserialize().unwrap();
+    let out_enum_sel: SideEnum = des.deserialize().unwrap();
+    info!("out_enum_buy: {:?}", out_enum_buy);
+    info!("out_enum_sel: {:?}", out_enum_sel);
+
+    assert_eq!(out_enum_buy, SideEnum::Buy);
+    assert_eq!(out_enum_sel, SideEnum::Sell);
 
     // as a result of #[byteserde(from(&SideEnum))]
     let inp_buy: Side = (&SideEnum::Buy).into();
@@ -126,7 +153,6 @@ fn enums_from_auto_impl() {
     info!("inp_enum_sel: {:x?}", inp_enum_sel);
     assert_eq!(inp_enum_buy, SideEnum::Buy);
     assert_eq!(inp_enum_sel, SideEnum::Sell);
-
 }
 
 fn main() {

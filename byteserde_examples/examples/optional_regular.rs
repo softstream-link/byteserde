@@ -1,4 +1,6 @@
 mod unittest;
+use std::{rc::Rc, cell::RefCell};
+
 use byteserde::prelude::*;
 use byteserde_derive::{
     ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
@@ -9,50 +11,57 @@ use byteserde_derive::{
 use log::info;
 use unittest::setup;
 
-#[derive(ByteSerializeStack, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]
 #[byteserde(endian = "be")]
-struct Opt1(#[byteserde(replace( Opt1::tag() ))] u8, u16);
+struct Opt1(#[byteserde(replace( Opt1::tag() ))] u16, u16);
 impl Opt1{
-    fn tag() -> u8 { 1 }
+    fn tag() -> u16 { 1 }
 }
-#[derive(ByteSerializeStack, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]
 #[byteserde(endian = "be")]
-struct Opt2(#[byteserde(replace( Opt2::tag() ))] u8, u32);
+struct Opt2(#[byteserde(replace( Opt2::tag() ))] u16, u32);
 impl Opt2{
-    fn tag() -> u8 { 2 }
+    fn tag() -> u16 { 2 }
 }
 
-#[derive(ByteSerializeStack, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 #[byteserde(endian = "be")]
-struct OptionalBlock{
+struct SomeStruct{
+    anything_header: i8,
+
     #[byteserde(replace( body.byte_len() ))]
-    overal_length: u16,
-    #[byteserde(deplete( overal_length ))]
+    body_length: u16,
+    #[byteserde(deplete( body_length ))]
     body: OptionalSection,
+
+    anything_foter: i8,
 }
-#[derive(ByteSerializeStack, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]  // TODO  - ByteSerializedLenOf
+
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]  // TODO  - ByteSerializedLenOf
+// #[byteserde(peek(0, 2))]
 struct OptionalSection {
+    // #[byteserde(eq(Opt1::tag()))]
     optional1: Option<Opt1>,
+    // #[byteserde(eq(Opt2::tag()))]
     optional2: Option<Opt2>,
 }
 
 impl ByteDeserialize<OptionalSection> for OptionalSection {
     fn byte_deserialize(des: &mut ByteDeserializer) -> Result<OptionalSection> {
-        let peek = |len| des.peek_bytes_slice(len);
-
-        
         let mut optional1  = None;
         let mut optional2 = None;
         while !des.is_empty(){
-            let x = des.peek_bytes_slice(1)?;
-            // let x = peek(1)?;
-            if x == &[1]{
+            let peek = |start, len| -> Result<&[u8]> {
+                let p = des.peek_bytes_slice(len + start)?;
+                Ok(&p[start..])
+            };
+            let x = peek(0, 2)?;
+            if x == 1_u16.to_be_bytes() {
                 optional1 = Some(des.deserialize()?);
+                continue;
             }
-            else if x == &[2]{
+            if x == 2_u16.to_be_bytes() {
                 optional2 = Some(des.deserialize()?);
-            }
-            else{
                 continue;
             }
         }
@@ -67,16 +76,18 @@ impl Default for OptionalSection {
     fn default() -> Self {
         Self {
             // optional1: None,
-            optional1: Some(Opt1(0, 1_u16)),
-            optional2: Some(Opt2(0, 2_u32)),
+            optional1: Some(Opt1(Opt1::tag(), 1_u16)),
+            optional2: Some(Opt2(Opt1::tag(), 2_u32)),
         }
     }
 }
-impl Default for OptionalBlock{
+impl Default for SomeStruct{
     fn default() -> Self {
         Self {
-            overal_length: 0,
+            anything_header: -1,
+            body_length: 0,
             body: Default::default(),
+            anything_foter: -1,
         }
     }
 }
@@ -95,7 +106,7 @@ fn optional_block() {
     // assert_eq!(Option::<Opt1>::byte_size(), 1);
     // assert_eq!(Option::<Opt2>::byte_size(), 2);
 
-    let inp_opt = OptionalBlock::default();
+    let inp_opt = SomeStruct::default();
     info!("inp_opt: {:?}", inp_opt);
     let ln_of_opt1 = inp_opt.body.optional1.byte_len();
     let ln_of_opt2 = inp_opt.body.optional2.byte_len();
@@ -110,14 +121,14 @@ fn optional_block() {
     info!("ser_stack: {ser_stack:#x}");
 
     // heap
-    // let mut ser_heap = to_serializer_heap(&inp_debug).unwrap();
-    // ser_heap.serialize_bytes_slice(tail).unwrap();
-    // info!("ser_heap: {ser_heap:#x}");
-    // assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
+    let mut ser_heap = to_serializer_heap(&inp_opt).unwrap();
+    info!("ser_heap: {ser_heap:#x}");
+    assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     let des = &mut ByteDeserializer::new(ser_stack.as_slice());
     
-    let out_opt = OptionalBlock::byte_deserialize(des).unwrap();
+        
+    let out_opt = SomeStruct::byte_deserialize(des).unwrap();
     info!("out_opt: {:?}", out_opt);
     info!("des: {:#x}", des);
 

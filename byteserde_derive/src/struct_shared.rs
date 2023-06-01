@@ -1,4 +1,7 @@
-use quote::{__private::{Span, TokenStream}, quote, ToTokens};
+use quote::{
+    __private::{Span},
+    quote,
+};
 use syn::{parenthesized, Attribute, Expr, Ident, LitStr, Member};
 
 pub fn ser_endian_method_xx(endian: &Endian) -> Ident {
@@ -24,8 +27,8 @@ pub enum Deplete {
     NotSet,
     Size(Expr),
 }
-pub fn get_deplete_attribute(attrs: &[Attribute]) -> Deplete {
-    let (_, deplete, _, _, _) = get_attributes(attrs);
+pub fn deplete_attr(attrs: &[Attribute]) -> Deplete {
+    let (_, deplete, _) = get_attrs(attrs);
     deplete
 }
 
@@ -34,8 +37,8 @@ pub enum Replace {
     NotSet,
     Set(Expr),
 }
-pub fn get_replace_attribute(attrs: &[Attribute]) -> Replace {
-    let (_, _, replace, _, _) = get_attributes(attrs);
+pub fn replace_attr(attrs: &[Attribute]) -> Replace {
+    let (_, _, replace) = get_attrs(attrs);
     replace
 }
 
@@ -47,39 +50,18 @@ pub enum Endian {
     NotSet,
 }
 
-pub fn get_endian_attribute(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
-    let (fld_endian, _, _, _, _) = get_attributes(fld_attrs);
+pub fn endian_attr(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
+    let (fld_endian, _, _) = get_attrs(fld_attrs);
     match fld_endian {
         Endian::NotSet => {
-            let (struct_endian, _, _, _, _) = get_attributes(struc_attrs);
+            let (struct_endian, _, _) = get_attrs(struc_attrs);
             struct_endian
         }
         _ => fld_endian,
     }
 }
 
-pub enum Bind {
-    NotSet,
-    Set(Ident),
-}
-pub fn get_bind_attribute(struct_attrs: &[Attribute]) -> Bind {
-    let (_, _, _, bind, _) = get_attributes(struct_attrs);
-    bind
-}
-pub struct From(Expr);
-impl ToTokens for From {
-    fn to_token_stream(&self) -> TokenStream {
-        self.0.to_token_stream()
-    }
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        self.0.to_tokens(tokens)
-    }
-}
-pub fn get_from_attributes(struct_attrs: &[Attribute]) -> Vec<From> {
-    let (_, _, _, _, from) = get_attributes(struct_attrs);
-    from
-}
-fn get_attributes(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Bind, Vec<From>) {
+fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace) {
     let byteserde_attrs = attrs
         .iter()
         .filter(|atr| atr.meta.path().is_ident("byteserde"))
@@ -87,10 +69,7 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Bind, Vec<F
 
     let mut endian = Endian::NotSet;
     let mut deplete = Deplete::NotSet;
-    let mut over = Replace::NotSet;
-    let mut bind = Bind::NotSet;
-    // let mut from = From::NotSet;
-    let mut from = Vec::<From>::new();
+    let mut replace = Replace::NotSet;
 
     // https://docs.rs/syn/latest/syn/meta/struct.ParseNestedMeta.html
 
@@ -114,7 +93,7 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Bind, Vec<F
             if meta.path.is_ident("replace") {
                 let content;
                 parenthesized!(content in meta.input);
-                over = Replace::Set(content.parse::<Expr>()?);
+                replace = Replace::Set(content.parse::<Expr>()?);
                 return Ok(());
             }
             // only affects variable length fields like String
@@ -122,19 +101,6 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Bind, Vec<F
                 let content;
                 parenthesized!(content in meta.input);
                 deplete = Deplete::Size(content.parse::<Expr>()?);
-                return Ok(());
-            }
-            // only affects enums
-            if meta.path.is_ident("bind") {
-                let content;
-                parenthesized!(content in meta.input);
-                bind = Bind::Set(content.parse::<Ident>()?);
-                return Ok(());
-            }
-            if meta.path.is_ident("from") {
-                let content;
-                parenthesized!(content in meta.input);
-                from.push(From(content.parse::<Expr>()?));
                 return Ok(());
             }
 
@@ -150,5 +116,5 @@ fn get_attributes(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Bind, Vec<F
         }
     }
 
-    (endian, deplete, over, bind, from)
+    (endian, deplete, replace)
 }

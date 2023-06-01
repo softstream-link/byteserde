@@ -90,7 +90,7 @@ impl<'x> ByteDeserializer<'x> {
         Ok(a)
     }
 
-    pub fn peek_bytes_array<const N: usize>(&mut self) -> Result<[u8; N]> {
+    pub fn peek_bytes_array<const N: usize>(&self) -> Result<[u8; N]> {
         match self.bytes.get(self.idx..self.idx + N) {
             Some(v) => Ok(v.try_into().expect("Failed to convert &[u8] into [u8; N]")),
             None => Err(self.error(N)),
@@ -98,7 +98,7 @@ impl<'x> ByteDeserializer<'x> {
     }
 
     #[cold]
-    fn error(&mut self, n: usize) -> SerDesError {
+    fn error(&self, n: usize) -> SerDesError {
         // moving error into a fn improves performance by 10%
         // from_bytes - reuse ByteDeserializer
         // time:   [39.251 ns 39.333 ns 39.465 ns]
@@ -149,7 +149,7 @@ impl<'x> ByteDeserializer<'x> {
         }
     }
     /// moves the index forward by `len` bytes, intended to be used in combination with [Self::peek_bytes_slice()]
-    pub fn advance_idx(&mut self, len: usize) {
+    fn advance_idx(&mut self, len: usize) {
         self.idx += len;
     }
     /// produces with out consuming `len` bytes from the buffer and returns them as slice if successful.
@@ -157,7 +157,6 @@ impl<'x> ByteDeserializer<'x> {
         // TODO figure out why i can't call this method from deserialize_bytes_slice and just increment the indexif sucess
         match self.bytes.get(self.idx..self.idx + len) {
             Some(v) => Ok(v),
-            // matched when N is greater then self.buffer.len()
             None => Err(SerDesError {
                 message: format!(
                     "ByteDeserializer len: {len}, idx: {idx}, remaining: {rem}, requested: {req}",

@@ -8,10 +8,7 @@ use syn::{
     Data, DeriveInput, Fields,
 };
 
-use crate::struct_shared::{
-    get_bind_attribute,
-    get_replace_attribute, Bind, Replace, get_from_attributes, From,
-};
+use crate::enum_attr::{enum_bind_attr, enum_from_attr,enum_replace_attr, Bind, Replace,From,};
 
 pub fn get_enum_from_tokens(
     ast: &DeriveInput,
@@ -22,7 +19,7 @@ pub fn get_enum_from_tokens(
     let enum_type_str = format!("{}", quote!(#enum_type));
     let enum_ref_type_str = format!("{}", quote!(&#enum_type));
 
-    let bind = get_bind_attribute(&ast.attrs);
+    let bind = enum_bind_attr(&ast.attrs);
     let bind_type = match bind {
         Bind::Set(value) => quote!(#value),
         _ => panic!("Enum {enum_type} needs to be bound to a struct type using bind attribute. Example: `#[byteserde(bind( MyStructName ))]`"),
@@ -30,7 +27,7 @@ pub fn get_enum_from_tokens(
     let bind_type_str = format!("{}", quote!(#bind_type));
     let bind_ref_type_str = format!("{}", quote!(&#bind_type));
 
-    let from_types: Vec<From> = get_from_attributes(&ast.attrs);
+    let from_types: Vec<From> = enum_from_attr(&ast.attrs);
     if from_types.len() == 0 {
         panic!(
             "Enum {enum_type} is missing at least one from attribute,
@@ -58,7 +55,7 @@ pub fn get_enum_from_tokens(
                 let match_arms = data.variants
                     .iter()
                     .map(|var| {
-                        let replace = match get_replace_attribute(&var.attrs){
+                        let replace = match enum_replace_attr(&var.attrs){
                             Replace::Set(value) => {
                                 quote!(#value)
                             }

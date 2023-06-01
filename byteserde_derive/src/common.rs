@@ -10,10 +10,10 @@ use syn::{
     TypeArray, TypeParam, TypePath, TypeGroup,
 };
 
-use crate::struct_shared::{
-    des_endian_method_xx, get_endian_attribute, get_bind_attribute, get_deplete_attribute,
-    get_replace_attribute, ser_endian_method_xx, Bind, Deplete, MemberIdent, Replace,
-};
+use crate::{struct_shared::{
+    des_endian_method_xx, endian_attr, deplete_attr,
+    replace_attr, ser_endian_method_xx,  Deplete, MemberIdent, Replace,
+}, enum_attr::{enum_bind_attr, Bind}};
 
 pub enum StructType {
     Regular,
@@ -116,7 +116,7 @@ pub fn get_struct_ser_des_tokens(
         },
         Data::Enum(_) => {
             let enum_type = &ast.ident;
-            let bind = get_bind_attribute(&ast.attrs);
+            let bind = enum_bind_attr(&ast.attrs);
             let struct_type = match bind {
                 Bind::Set(value) => {
                     quote!(#value)
@@ -163,8 +163,8 @@ fn setup_numeric(
     member: &MemberIdent,
     option: &FieldType,
 ) -> FldSerDesTokens {
-    let replace = get_replace_attribute(&fld.attrs);
-    let endian = get_endian_attribute(&ast.attrs, &fld.attrs);
+    let replace = replace_attr(&fld.attrs);
+    let endian = endian_attr(&ast.attrs, &fld.attrs);
     let ser_endian_method_xx = ser_endian_method_xx(&endian);
     let des_endian_method_xx = des_endian_method_xx(&endian);
 
@@ -219,8 +219,8 @@ fn setup_array(
     member: &MemberIdent,
     option: &FieldType,
 ) -> FldSerDesTokens {
-    let replace = get_replace_attribute(&fld.attrs);
-    let endian = get_endian_attribute(&ast.attrs, &fld.attrs);
+    let replace = replace_attr(&fld.attrs);
+    let endian = endian_attr(&ast.attrs, &fld.attrs);
     let ser_endian_method_xx = ser_endian_method_xx(&endian);
     let des_endian_method_xx = des_endian_method_xx(&endian);
 
@@ -318,9 +318,9 @@ fn setup_vec(
     member: &MemberIdent,
     option: &FieldType,
 ) -> FldSerDesTokens {
-    let deplete = get_deplete_attribute(&fld.attrs);
-    let replace = get_replace_attribute(&fld.attrs);
-    let endian = get_endian_attribute(&ast.attrs, &fld.attrs);
+    let deplete = deplete_attr(&fld.attrs);
+    let replace = replace_attr(&fld.attrs);
+    let endian = endian_attr(&ast.attrs, &fld.attrs);
     let ser_endian_method_xx = ser_endian_method_xx(&endian);
     let des_endian_method_xx = des_endian_method_xx(&endian);
 
@@ -435,8 +435,8 @@ fn setup_struct(
     ty: &Type,
     member: &MemberIdent,
 ) -> FldSerDesTokens {
-    let length = get_deplete_attribute(&fld.attrs);
-    let replace = get_replace_attribute(&fld.attrs);
+    let length = deplete_attr(&fld.attrs);
+    let replace = replace_attr(&fld.attrs);
     let ser_vars = match member {
         MemberIdent::Named(_) => quote! { let #var_name = &self.#var_name; }, // let #var_name = &self.#var_name;
         MemberIdent::Unnamed(fld_index) => quote! { let #var_name = &self.#fld_index; }, // let #var_name = &self.#fld_index;
@@ -472,7 +472,7 @@ fn setup_option(
     member: &MemberIdent,
     option: &FieldType,
 ) ->FldSerDesTokens{
-    let replace = get_replace_attribute(&fld.attrs);
+    let replace = replace_attr(&fld.attrs);
 
     // serializer
     let ser_vars = match member {
@@ -492,6 +492,7 @@ fn setup_option(
         _ => panic!("this method should only be called with OptionStructs types"),
     };
 
+    // TODO does it make sense to default Option size to Some size?
     let size = match option{
         FieldType::OptionStructs { opt_ty } => quote!( Option::<#opt_ty>::byte_size() ),
         _ => panic!("this method should only be called with Option types"),
@@ -503,7 +504,7 @@ fn setup_option(
         ser_repl,
         ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
-        des_vars: quote!( ),
+        des_vars: quote!( let mut #var_name: #fld_ty = None; ),
         des_uses: quote!( #var_name, ),
         size, 
         size_error: None,
