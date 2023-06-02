@@ -1,7 +1,4 @@
-use quote::{
-    __private::{Span},
-    quote,
-};
+use quote::{__private::Span, quote};
 use syn::{parenthesized, Attribute, Expr, Ident, LitStr, Member};
 
 pub fn ser_endian_method_xx(endian: &Endian) -> Ident {
@@ -28,7 +25,7 @@ pub enum Deplete {
     Size(Expr),
 }
 pub fn deplete_attr(attrs: &[Attribute]) -> Deplete {
-    let (_, deplete, _) = get_attrs(attrs);
+    let (_, deplete, _, _, _) = get_attrs(attrs);
     deplete
 }
 
@@ -38,7 +35,7 @@ pub enum Replace {
     Set(Expr),
 }
 pub fn replace_attr(attrs: &[Attribute]) -> Replace {
-    let (_, _, replace) = get_attrs(attrs);
+    let (_, _, replace, _, _) = get_attrs(attrs);
     replace
 }
 
@@ -51,17 +48,35 @@ pub enum Endian {
 }
 
 pub fn endian_attr(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
-    let (fld_endian, _, _) = get_attrs(fld_attrs);
+    let (fld_endian, _, _, _, _) = get_attrs(fld_attrs);
     match fld_endian {
         Endian::NotSet => {
-            let (struct_endian, _, _) = get_attrs(struc_attrs);
+            let (struct_endian, _, _, _, _) = get_attrs(struc_attrs);
             struct_endian
         }
         _ => fld_endian,
     }
 }
 
-fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace) {
+pub enum Peek {
+    NotSet,
+    Set(Expr),
+}
+pub fn peek_attr(struct_attrs: &[Attribute]) -> Peek {
+    let (_, _, _, peek, _) = get_attrs(struct_attrs);
+    peek
+}
+
+pub enum PeekEq {
+    NotSet,
+    Set(Expr),
+}
+pub fn eq_attr(fld_attr: &[Attribute]) -> PeekEq {
+    let (_, _, _, _, eq) = get_attrs(fld_attr);
+    eq
+}
+
+fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Peek, PeekEq) {
     let byteserde_attrs = attrs
         .iter()
         .filter(|atr| atr.meta.path().is_ident("byteserde"))
@@ -70,6 +85,8 @@ fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace) {
     let mut endian = Endian::NotSet;
     let mut deplete = Deplete::NotSet;
     let mut replace = Replace::NotSet;
+    let mut peek = Peek::NotSet;
+    let mut eq = PeekEq::NotSet;
 
     // https://docs.rs/syn/latest/syn/meta/struct.ParseNestedMeta.html
 
@@ -104,17 +121,29 @@ fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace) {
                 return Ok(());
             }
 
+            // Option<type>
+            if meta.path.is_ident("peek") {
+                let content;
+                parenthesized!(content in meta.input);
+                eprintln!("peek: {}", content.to_string());
+                peek = Peek::Set(content.parse::<Expr>()?);
+                return Ok(());
+            }
+            // Option<type>
+            if meta.path.is_ident("eq") {
+                let content;
+                parenthesized!(content in meta.input);
+                eq = PeekEq::Set(content.parse::<Expr>()?);
+                return Ok(());
+            }
+
             Err(meta.error(format!("Unexpected attribute. {}", quote!(#attr))))
         });
 
         if res.is_err() {
-            panic!(
-                "Failed to process attrs: {} {}",
-                quote!( #(#attrs)* ),
-                res.unwrap_err()
-            );
+            panic!("Failed to process attributes. \n{}", res.unwrap_err());
         }
     }
 
-    (endian, deplete, replace)
+    (endian, deplete, replace, peek, eq)
 }

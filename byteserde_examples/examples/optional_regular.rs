@@ -1,5 +1,4 @@
 mod unittest;
-use std::{rc::Rc, cell::RefCell};
 
 use byteserde::prelude::*;
 use byteserde_derive::{
@@ -37,40 +36,40 @@ struct SomeStruct{
     anything_foter: i8,
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]  // TODO  - ByteSerializedLenOf
-// #[byteserde(peek(0, 2))]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]  // TODO  - ByteSerializedLenOf
+#[byteserde(peek(0, 2))]
 struct OptionalSection {
-    // #[byteserde(eq(Opt1::tag()))]
+    #[byteserde(eq( Opt1::tag() ))]
     optional1: Option<Opt1>,
-    // #[byteserde(eq(Opt2::tag()))]
+    #[byteserde(eq( Opt2::tag() ))]
     optional2: Option<Opt2>,
 }
 
-impl ByteDeserialize<OptionalSection> for OptionalSection {
-    fn byte_deserialize(des: &mut ByteDeserializer) -> Result<OptionalSection> {
-        let mut optional1  = None;
-        let mut optional2 = None;
-        while !des.is_empty(){
-            let peek = |start, len| -> Result<&[u8]> {
-                let p = des.peek_bytes_slice(len + start)?;
-                Ok(&p[start..])
-            };
-            let x = peek(0, 2)?;
-            if x == 1_u16.to_be_bytes() {
-                optional1 = Some(des.deserialize()?);
-                continue;
-            }
-            if x == 2_u16.to_be_bytes() {
-                optional2 = Some(des.deserialize()?);
-                continue;
-            }
-        }
-        Ok(OptionalSection{
-            optional1,
-            optional2,
-        })
-    }
-}
+// impl ByteDeserialize<OptionalSection> for OptionalSection {
+//     fn byte_deserialize(des: &mut ByteDeserializer) -> Result<OptionalSection> {
+//         let mut optional1  = None;
+//         let mut optional2 = None;
+//         while !des.is_empty(){
+//             let peek = |start, len| -> Result<&[u8]> {
+//                 let p = des.peek_bytes_slice(len + start)?;
+//                 Ok(&p[start..])
+//             };
+//             let __peeked = peek(0, 2)?;
+//             if __peeked == 1_u16.to_be_bytes() {
+//                 optional1 = Some(des.deserialize()?);
+//                 continue;
+//             }
+//             if __peeked == 2_u16.to_be_bytes() {
+//                 optional2 = Some(des.deserialize()?);
+//                 continue;
+//             }
+//         }
+//         Ok(OptionalSection{
+//             optional1,
+//             optional2,
+//         })
+//     }
+// }
 
 impl Default for OptionalSection {
     fn default() -> Self {

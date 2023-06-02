@@ -1,14 +1,23 @@
-use common::{get_generics, get_struct_ser_des_tokens};
-use enum_map::get_enum_from_tokens;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
+use tokens_enum::get_enum_from_tokens;
+use tokens_struct::{get_generics, get_struct_ser_des_tokens};
 
-mod attr_struct_option;
+use crate::{
+    attr_struct::{peek_attr, Peek},
+    common::{StructType},
+};
+// test only
+#[cfg(test)]
+pub mod unittest;
+
 mod attr_enum;
 mod attr_struct;
 mod common;
-mod enum_map;
+mod tokens_enum;
+mod tokens_struct;
+mod validate_struct;
 #[proc_macro_derive(ByteSerializeStack, attributes(byteserde))]
 pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
@@ -16,14 +25,11 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     // get struct name
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
-    let (ser_method, _) = get_struct_ser_des_tokens(&ast);
+    let res = get_struct_ser_des_tokens(&ast);
     // grap just stack presets
-    let ser_vars = ser_method.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
-    let ser_over = ser_method.iter().map(|f| &f.ser_repl).collect::<Vec<_>>();
-    let ser_uses_stack = ser_method
-        .iter()
-        .map(|f| &f.ser_uses_stck)
-        .collect::<Vec<_>>();
+    let ser_vars = res.ser_vars();
+    let ser_relp = res.ser_repl();
+    let ser_uses_stck = res.ser_uses_stck();
 
     // generate stack serializer
     let output = quote! {
@@ -38,8 +44,8 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
                 //      self.field_name.byte_serialize_stack(ser)?;     -- for regular
                 //      self.0         .byte_serialize_stack(ser)?;     -- for tuple
                 #( #ser_vars )*
-                #( #ser_over )*
-                #( #ser_uses_stack )*
+                #( #ser_relp )*
+                #( #ser_uses_stck )*
                 Ok(())
             }
         }
@@ -54,11 +60,12 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let (ser_method, _) = get_struct_ser_des_tokens(&ast);
+    let res = get_struct_ser_des_tokens(&ast);
     // grap just heap presets
-    let ser_vars = ser_method.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
-    let ser_over = ser_method.iter().map(|f| &f.ser_repl).collect::<Vec<_>>();
-    let ser_uses_heap = ser_method
+    let ser_vars = res.flds.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
+    let ser_over = res.flds.iter().map(|f| &f.ser_repl).collect::<Vec<_>>();
+    let ser_uses_heap = res
+        .flds
         .iter()
         .map(|f| &f.ser_uses_heap)
         .collect::<Vec<_>>();
@@ -88,24 +95,60 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
 pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
     // get struct name
-    let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let (des_method, ty) = get_struct_ser_des_tokens(&ast);
-    // grap just heap presets
-    let des_vars = des_method.iter().map(|f| &f.des_vars).collect::<Vec<_>>();
-    let des_uses = des_method.iter().map(|f| &f.des_uses).collect::<Vec<_>>();
-    let impl_body = match ty {
-        common::StructType::Regular => quote!(#struct_name {#( #des_uses )*}), // NOTE {}
-        common::StructType::Tuple => quote!  (#struct_name (#( #des_uses )*)), // NOTE ()
-        common::StructType::Enum => quote! ( #struct_name::from( _struct )),   // NOTE ::from()
+    let res = get_struct_ser_des_tokens(&ast);
+
+    if let Some(msg) = res.des_errs() {
+        panic!("Error \n{}", msg);
+    }
+    let des_vars = res.des_vars();
+    let des_option = res.des_option();
+    let des_uses = res.des_uses();
+    let (name, id) = match res.struct_type {
+        StructType::Regular(ref name, ref id)
+        | StructType::Tuple(ref name, ref id)
+        | StructType::Enum(ref name, ref id) => (name, id),
     };
 
+    let impl_body = match res.struct_type {
+        StructType::Regular(..) => quote!(#id {#( #des_uses )*}), // NOTE {}
+        StructType::Tuple(..) => quote!  (#id (#( #des_uses )*)), // NOTE ()
+        StructType::Enum(..) => quote! ( #id::from( _struct )),   // NOTE ::from()
+    };
+
+    let start_len = match peek_attr(&ast.attrs) {
+        Peek::Set(v) => quote!(#v),
+        Peek::NotSet => {
+            match name.contains("OptionalSection"){// !des_option.is_empty() {
+                true => panic!("{name} requires `#[byteserde(peek( start, len ))]` attribute because it has option members defined with `#[byteserde(eq( .. ))]`"),
+                false => quote!(),
+            }
+        } // panic if o
+    };
+    eprintln!("struct_name: {}", name);
+    eprintln!("start_len: {}", start_len);
+    let option = match name.to_string().contains("OptionalSection") {
+        // !des_option.is_empty() {
+        true => quote!(
+                    while !des.is_empty() {
+                        let peek = |start, len| -> Result<&[u8]> {
+                            let p = des.peek_bytes_slice(len+start)?;
+                            Ok(&p[start..])
+                        };
+                        let __peeked = peek(#start_len)?;
+                        #( #des_option )*
+                    }
+        ),
+        false => quote!(),
+    };
+    eprintln!("option: {}", option);
     // generate deserializer
-    let output = quote! {
+
+    let output = quote!(
         #[automatically_derived]
-        impl #generics_declaration ::byteserde::des::ByteDeserialize<#struct_name #generics_alias> for #struct_name #generics_alias #where_clause{
-            fn byte_deserialize(des: &mut ::byteserde::des::ByteDeserializer) -> ::byteserde::error::Result<#struct_name #generics_alias>{
+        impl #generics_declaration ::byteserde::des::ByteDeserialize<#id #generics_alias> for #id #generics_alias #where_clause{
+            fn byte_deserialize(des: &mut ::byteserde::des::ByteDeserializer) -> ::byteserde::error::Result<#id #generics_alias>{
                 // let type_u16:    u16 = des.deserialize_[be|le|ne]()?; -- numerics
                 // let type_String: String = des.deserialize()?;          -- trait ByteDeserialize
                 // StructName { type_u16, type_String }
@@ -114,13 +157,13 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
                 // let _1  = des.deserialize()?;          -- trait ByteDeserialize
                 // TupleName ( _0, _1 )
                 #( #des_vars )*
+                #option
                 Ok(#impl_body)
             }
         }
-    };
+    );
     output.into()
 }
-
 
 #[proc_macro_derive(ByteSerializedSizeOf, attributes(byteserde))]
 pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
@@ -129,17 +172,13 @@ pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let (size_methods, _) = get_struct_ser_des_tokens(&ast);
+    let res = get_struct_ser_des_tokens(&ast);
     // grap just heap presets
-    let size = size_methods.iter().map(|f| &f.size).collect::<Vec<_>>();
-    let _ = size_methods
-        .iter()
-        .map(|f| 
-            match f.size_error {
-                Some(ref e) => panic!("{}", e),
-                None => 0,
-            }
-        ).collect::<Vec<_>>();
+    let size = res.size_of();
+    let size_errors = res.size_errors();
+    if let Some(msg) = size_errors {
+        panic!("Error \n{}", msg);
+    }
 
     // generate deserializer
     let output = quote! {
@@ -150,7 +189,7 @@ pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
             }
         }
     };
-    output.into()    
+    output.into()
 }
 #[proc_macro_derive(ByteSerializedLenOf, attributes(byteserde))]
 pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
@@ -159,9 +198,9 @@ pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let (len, _) = get_struct_ser_des_tokens(&ast);
+    let res = get_struct_ser_des_tokens(&ast);
     // grap just heap presets
-    let len = len.iter().map(|f| &f.len).collect::<Vec<_>>();
+    let len = res.flds.iter().map(|f| &f.len_of).collect::<Vec<_>>();
 
     // eprintln!("size: {:?}", size);
 
@@ -174,13 +213,13 @@ pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
             }
         }
     };
-    output.into()    
+    output.into()
 }
 
 #[proc_macro_derive(ByteEnumFromBinder, attributes(byteserde))]
 pub fn byte_enum_from(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
-    
+
     let froms = get_enum_from_tokens(&ast);
     // generate From
     let output = quote! {
