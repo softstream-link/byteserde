@@ -31,6 +31,13 @@ pub struct SerDesTokens {
     pub flds: Vec<FldSerDesTokens>,
 }
 impl SerDesTokens {
+    pub fn struct_name(&self) -> String{
+        match self.struct_type {
+            StructType::Regular(ref name, ref id)
+            | StructType::Tuple(ref name, ref id)
+            | StructType::Enum(ref name, ref id) => name.clone(),
+        }
+    }
     // SERIALIAZER
 
     pub fn ser_vars(&self) -> Vec<TokenStream> {

@@ -6,7 +6,7 @@ use tokens_struct::{get_generics, get_struct_ser_des_tokens};
 
 use crate::{
     attr_struct::{peek_attr, Peek},
-    common::{StructType},
+    common::{StructType}, validate_struct::has_option_flds,
 };
 // test only
 #[cfg(test)]
@@ -62,13 +62,9 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     // get ser & des quote presets
     let res = get_struct_ser_des_tokens(&ast);
     // grap just heap presets
-    let ser_vars = res.flds.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
-    let ser_over = res.flds.iter().map(|f| &f.ser_repl).collect::<Vec<_>>();
-    let ser_uses_heap = res
-        .flds
-        .iter()
-        .map(|f| &f.ser_uses_heap)
-        .collect::<Vec<_>>();
+    let ser_vars = res.ser_vars();
+    let ser_repl = res.ser_repl();
+    let ser_uses_heap = res.ser_uses_heap();
 
     // generate heap serializer
     let output = quote! {
@@ -82,7 +78,7 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
                 //      self.field_name.byte_serialize_heap(ser)?;          -- for regular
                 //      self.0         .byte_serialize_heap(ser)?;          -- for tuple
                 #( #ser_vars)*
-                #( #ser_over)*
+                #( #ser_repl)*
                 #( #ser_uses_heap)*
                 Ok(())
             }
@@ -97,30 +93,31 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     // get struct name
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let res = get_struct_ser_des_tokens(&ast);
+    let sdt = get_struct_ser_des_tokens(&ast);
 
-    if let Some(msg) = res.des_errs() {
+    if let Some(msg) = sdt.des_errs() {
         panic!("Error \n{}", msg);
     }
-    let des_vars = res.des_vars();
-    let des_option = res.des_option();
-    let des_uses = res.des_uses();
-    let (name, id) = match res.struct_type {
+    let des_vars = sdt.des_vars();
+    let des_option = sdt.des_option();
+    let des_uses = sdt.des_uses();
+    let (name, id) = match sdt.struct_type {
         StructType::Regular(ref name, ref id)
         | StructType::Tuple(ref name, ref id)
         | StructType::Enum(ref name, ref id) => (name, id),
     };
 
-    let impl_body = match res.struct_type {
+    let impl_body = match sdt.struct_type {
         StructType::Regular(..) => quote!(#id {#( #des_uses )*}), // NOTE {}
         StructType::Tuple(..) => quote!  (#id (#( #des_uses )*)), // NOTE ()
         StructType::Enum(..) => quote! ( #id::from( _struct )),   // NOTE ::from()
     };
 
+    let has_option_flds = has_option_flds(&sdt);
     let start_len = match peek_attr(&ast.attrs) {
         Peek::Set(v) => quote!(#v),
         Peek::NotSet => {
-            match name.contains("OptionalSection"){// !des_option.is_empty() {
+            match has_option_flds{
                 true => panic!("{name} requires `#[byteserde(peek( start, len ))]` attribute because it has option members defined with `#[byteserde(eq( .. ))]`"),
                 false => quote!(),
             }
@@ -128,8 +125,7 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     };
     eprintln!("struct_name: {}", name);
     eprintln!("start_len: {}", start_len);
-    let option = match name.to_string().contains("OptionalSection") {
-        // !des_option.is_empty() {
+    let option = match has_option_flds {
         true => quote!(
                     while !des.is_empty() {
                         let peek = |start, len| -> Result<&[u8]> {
