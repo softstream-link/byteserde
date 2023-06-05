@@ -1,6 +1,9 @@
 use quote::{__private::Span, quote};
-use syn::{parenthesized, Attribute, Expr, Ident, LitStr, Member};
-
+use syn::parse::Parse;
+use syn::{
+    parenthesized, punctuated::Punctuated, token::Comma, Attribute, Expr, Ident, LitInt, LitStr,
+    Member, Token,
+};
 pub fn ser_endian_method_xx(endian: &Endian) -> Ident {
     match endian {
         Endian::Big => Ident::new("serialize_be", Span::call_site()),
@@ -60,7 +63,7 @@ pub fn endian_attr(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian
 
 pub enum Peek {
     NotSet,
-    Set(Expr),
+    Set(Punctuated<LitInt, Comma>),
 }
 pub fn peek_attr(struct_attrs: &[Attribute]) -> Peek {
     let (_, _, _, peek, _) = get_attrs(struct_attrs);
@@ -125,8 +128,7 @@ fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Peek, PeekEq) {
             if meta.path.is_ident("peek") {
                 let content;
                 parenthesized!(content in meta.input);
-                eprintln!("peek: {}", content.to_string());
-                peek = Peek::Set(content.parse::<Expr>()?);
+                peek = Peek::Set(content.parse_terminated(LitInt::parse, Token![,])?);
                 return Ok(());
             }
             // Option<type>
@@ -139,9 +141,13 @@ fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Peek, PeekEq) {
 
             Err(meta.error(format!("Unexpected attribute. {}", quote!(#attr))))
         });
-
+        use quote::ToTokens;
         if res.is_err() {
-            panic!("Failed to process attributes. \n{}", res.unwrap_err());
+            panic!(
+                "Failed to process attributes.\nattr: `{}`\n{}",
+                attr.to_token_stream(),
+                res.unwrap_err()
+            );
         }
     }
 

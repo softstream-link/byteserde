@@ -19,7 +19,7 @@ use crate::{
 };
 
 
-pub fn get_struct_ser_des_tokens(ast: &DeriveInput) -> SerDesTokens {
+pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
     let ty: StructType;
     let id = &ast.ident;
     // eprintln!("get_struct_ser_des_tokens: {:?}", &ast.ident);
@@ -509,7 +509,7 @@ fn setup_option(
     };
 
     // TODO does it make sense to default Option size to Some size?
-    let size = match option {
+    let size_of = match option {
         FieldType::OptionStructs { opt_ty } => quote!( Option::<#opt_ty>::byte_size() ),
         _ => panic!("this method should only be called with Option types"),
     };
@@ -524,7 +524,7 @@ fn setup_option(
         des_option: quote!(if __peeked == #eq { #var_name = Some(des.deserialize()?); continue; }), // does not apply here
         des_uses: quote!( #var_name, ),
         des_errors: des_error,
-        size_of: size,
+        size_of,
         size_errors: vec![],
         len_of: quote!( self.#var_name.byte_len() ),
     }

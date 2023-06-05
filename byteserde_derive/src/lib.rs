@@ -2,11 +2,11 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
 use tokens_enum::get_enum_from_tokens;
-use tokens_struct::{get_generics, get_struct_ser_des_tokens};
+use tokens_struct::{get_generics, get_struct_tokens};
 
 use crate::{
     attr_struct::{peek_attr, Peek},
-    common::{StructType}, validate_struct::has_option_flds,
+    common::StructType,
 };
 // test only
 #[cfg(test)]
@@ -17,7 +17,7 @@ mod attr_struct;
 mod common;
 mod tokens_enum;
 mod tokens_struct;
-mod validate_struct;
+
 #[proc_macro_derive(ByteSerializeStack, attributes(byteserde))]
 pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
@@ -25,7 +25,7 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     // get struct name
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
-    let res = get_struct_ser_des_tokens(&ast);
+    let res = get_struct_tokens(&ast);
     // grap just stack presets
     let ser_vars = res.ser_vars();
     let ser_relp = res.ser_repl();
@@ -60,7 +60,7 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let res = get_struct_ser_des_tokens(&ast);
+    let res = get_struct_tokens(&ast);
     // grap just heap presets
     let ser_vars = res.ser_vars();
     let ser_repl = res.ser_repl();
@@ -93,9 +93,9 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     // get struct name
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let sdt = get_struct_ser_des_tokens(&ast);
+    let sdt = get_struct_tokens(&ast);
 
-    if let Some(msg) = sdt.des_errs() {
+    if let Some(msg) = sdt.des_collated_errs() {
         panic!("Error \n{}", msg);
     }
     let des_vars = sdt.des_vars();
@@ -113,19 +113,15 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
         StructType::Enum(..) => quote! ( #id::from( _struct )),   // NOTE ::from()
     };
 
-    let has_option_flds = has_option_flds(&sdt);
-    let start_len = match peek_attr(&ast.attrs) {
+
+    let peek = peek_attr(&ast.attrs);
+    sdt.des_validate(&peek);
+    let start_len = match peek {
         Peek::Set(v) => quote!(#v),
-        Peek::NotSet => {
-            match has_option_flds{
-                true => panic!("{name} requires `#[byteserde(peek( start, len ))]` attribute because it has option members defined with `#[byteserde(eq( .. ))]`"),
-                false => quote!(),
-            }
-        } // panic if o
+        Peek::NotSet => quote!(),
     };
-    eprintln!("struct_name: {}", name);
-    eprintln!("start_len: {}", start_len);
-    let option = match has_option_flds {
+    
+    let des_option_special = match sdt.has_option_flds() {
         true => quote!(
                     while !des.is_empty() {
                         let peek = |start, len| -> Result<&[u8]> {
@@ -138,7 +134,7 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
         ),
         false => quote!(),
     };
-    eprintln!("option: {}", option);
+
     // generate deserializer
 
     let output = quote!(
@@ -153,7 +149,7 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
                 // let _1  = des.deserialize()?;          -- trait ByteDeserialize
                 // TupleName ( _0, _1 )
                 #( #des_vars )*
-                #option
+                #des_option_special
                 Ok(#impl_body)
             }
         }
@@ -168,13 +164,11 @@ pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let res = get_struct_ser_des_tokens(&ast);
+    let res = get_struct_tokens(&ast);
     // grap just heap presets
+    res.size_validate();
     let size = res.size_of();
-    let size_errors = res.size_errors();
-    if let Some(msg) = size_errors {
-        panic!("Error \n{}", msg);
-    }
+    
 
     // generate deserializer
     let output = quote! {
@@ -194,9 +188,9 @@ pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let res = get_struct_ser_des_tokens(&ast);
+    let res = get_struct_tokens(&ast);
     // grap just heap presets
-    let len = res.flds.iter().map(|f| &f.len_of).collect::<Vec<_>>();
+    let len = res.len_of();
 
     // eprintln!("size: {:?}", size);
 

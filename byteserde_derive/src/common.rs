@@ -1,6 +1,8 @@
 use quote::__private::TokenStream;
 use syn::Ident;
 
+use crate::attr_struct::Peek;
+
 pub enum StructType {
     Regular(String, Ident),
     Tuple(String, Ident),
@@ -31,20 +33,26 @@ pub struct SerDesTokens {
     pub flds: Vec<FldSerDesTokens>,
 }
 impl SerDesTokens {
-    pub fn struct_name(&self) -> String{
+    pub fn struct_name(&self) -> String {
         match self.struct_type {
-            StructType::Regular(ref name, ref id)
-            | StructType::Tuple(ref name, ref id)
-            | StructType::Enum(ref name, ref id) => name.clone(),
+            StructType::Regular(ref name, _)
+            | StructType::Tuple(ref name, _)
+            | StructType::Enum(ref name, _) => name.clone(),
         }
     }
     // SERIALIAZER
 
     pub fn ser_vars(&self) -> Vec<TokenStream> {
-        self.flds.iter().map(|f| f.ser_vars.clone()).collect::<Vec<_>>()
+        self.flds
+            .iter()
+            .map(|f| f.ser_vars.clone())
+            .collect::<Vec<_>>()
     }
     pub fn ser_repl(&self) -> Vec<TokenStream> {
-        self.flds.iter().map(|f| f.ser_repl.clone()).collect::<Vec<_>>()
+        self.flds
+            .iter()
+            .map(|f| f.ser_repl.clone())
+            .collect::<Vec<_>>()
     }
     pub fn ser_uses_stck(&self) -> Vec<TokenStream> {
         self.flds
@@ -60,7 +68,7 @@ impl SerDesTokens {
     }
 
     // DESERIALIZER
-    pub fn des_errs(&self) -> Option<String>{
+    pub fn des_collated_errs(&self) -> Option<String> {
         let des_errors = self
             .flds
             .iter()
@@ -69,20 +77,38 @@ impl SerDesTokens {
         collate_errors(des_errors)
     }
     pub fn des_vars(&self) -> Vec<TokenStream> {
-        self.flds.iter().map(|f| f.des_vars.clone()).collect::<Vec<_>>()
+        self.flds
+            .iter()
+            .map(|f| f.des_vars.clone())
+            .collect::<Vec<_>>()
     }
     pub fn des_option(&self) -> Vec<TokenStream> {
-        self.flds.iter().map(|f| f.des_option.clone()).collect::<Vec<_>>()
+        self.flds
+            .iter()
+            .filter(|f| !f.des_option.is_empty())
+            .map(|f| f.des_option.clone())
+            .collect::<Vec<_>>()
+    }
+    pub fn has_option_flds(&self) -> bool {
+        self.des_option().len() > 0
     }
     pub fn des_uses(&self) -> Vec<TokenStream> {
-        self.flds.iter().map(|f| f.des_uses.clone()).collect::<Vec<_>>()
+        self.flds
+            .iter()
+            .filter(|f| !f.des_uses.is_empty())
+            .map(|f| f.des_uses.clone())
+            .collect::<Vec<_>>()
     }
 
     // SIZE
     pub fn size_of(&self) -> Vec<TokenStream> {
-        self.flds.iter().map(|f| f.size_of.clone()).collect::<Vec<_>>()
+        self.flds
+            .iter()
+            .filter(|f| !f.size_of.is_empty())
+            .map(|f| f.size_of.clone())
+            .collect::<Vec<_>>()
     }
-    pub fn size_errors(&self) -> Option<String>{
+    pub fn size_errors(&self) -> Option<String> {
         let size_errors = self
             .flds
             .iter()
@@ -92,10 +118,58 @@ impl SerDesTokens {
     }
 
     pub fn len_of(&self) -> Vec<TokenStream> {
-        self.flds.iter().map(|f| f.len_of.clone()).collect::<Vec<_>>()
+        self.flds
+            .iter()
+            .map(|f| f.len_of.clone())
+            .collect::<Vec<_>>()
     }
-    
 
+    pub fn des_validate(&self, peek: &Peek) {
+        // validate struct with Option<T> fields
+        if self.has_option_flds() || matches!(peek, Peek::Set(..)) {
+            if !self.has_option_flds() || !matches!(peek, Peek::Set(..))  {
+                panic!("struct `{}` `#[byteserde(peek( start, len ))]` and `#[byteserde(eq( .. ))]` have to be used together.",
+                    self.struct_name());
+            }
+            if self.des_vars().len() != self.des_option().len() {
+                let val_err = format!(
+                    "struct `{}` has a mix of Option<T> other types, which can't be mixed, please move all Option<T> types into a seperate struct", 
+                    self.struct_name() );
+                let fld_errors = match self.des_collated_errs() {
+                    Some(msg) => format!("\n{}", msg),
+                    None => format!(""),
+                };
+                panic!(
+                    "struct `{}` ByteDeserialize error:\n{}{}",
+                    self.struct_name(),
+                    val_err,
+                    fld_errors
+                );
+            }
+        // Validate struct with out Option<T> fields
+        } else {
+            match self.des_collated_errs() {
+                Some(msg) => panic!(
+                    "struct `{}` ByteDeserialize error:\n{}",
+                    self.struct_name(),
+                    msg
+                ),
+                None => (),
+            }
+        }
+    }
+
+    pub fn size_validate(&self) {
+        let errors = self.size_errors();
+        match errors {
+            Some(msg) => panic!(
+                "struct `{}` ByteSerializedSizeOf error:\n{}",
+                self.struct_name(),
+                msg,
+            ),
+            None => (),
+        }
+    }
 }
 
 pub fn collate_errors(field_errors: Vec<Vec<String>>) -> Option<String> {
