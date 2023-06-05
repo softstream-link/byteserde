@@ -11,10 +11,9 @@ use syn::{
 };
 
 use crate::{
-    attr_enum::{enum_bind_attr, Bind},
     attr_struct::{
         deplete_attr, des_endian_method_xx, endian_attr, replace_attr, ser_endian_method_xx,
-        Deplete, MemberIdent, Replace, eq_attr, PeekEq,
+        Deplete, MemberIdent, Replace, eq_attr, PeekEq, enum_bind_attr, Bind,
     }, common::{StructType, FldSerDesTokens, SerDesTokens},
 };
 

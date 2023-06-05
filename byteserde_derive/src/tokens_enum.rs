@@ -8,7 +8,8 @@ use syn::{
     Data, DeriveInput, Fields,
 };
 
-use crate::attr_enum::{enum_bind_attr, enum_from_attr,enum_replace_attr, Bind, Replace,From,};
+use crate::attr_struct::{Bind, enum_bind_attr, enum_from_attr, From, Replace, replace_attr};
+
 
 pub fn get_enum_from_tokens(
     ast: &DeriveInput,
@@ -55,7 +56,7 @@ pub fn get_enum_from_tokens(
                 let match_arms = data.variants
                     .iter()
                     .map(|var| {
-                        let replace = match enum_replace_attr(&var.attrs){
+                        let replace = match replace_attr(&var.attrs){
                             Replace::Set(value) => {
                                 quote!(#value)
                             }

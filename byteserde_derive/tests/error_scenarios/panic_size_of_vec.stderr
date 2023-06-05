@@ -4,7 +4,8 @@ error: proc-macro derive panicked
 3 | #[derive(ByteSerializedSizeOf)]
   |          ^^^^^^^^^^^^^^^^^^^^
   |
-  = help: message: trait ByteSerializedLenOf can't be implemented for struct VecRegular because it has a member self.field of Vec type whose size is not know at compile time
+  = help: message: struct `VecRegular` ByteSerializedSizeOf error:
+          trait ByteSerializedLenOf can't be implemented for struct VecRegular because it has a member self.field of Vec type whose size is not know at compile time
 
 error: proc-macro derive panicked
  --> tests/error_scenarios/panic_size_of_vec.rs:8:10
@@ -12,4 +13,5 @@ error: proc-macro derive panicked
 8 | #[derive(ByteSerializedSizeOf)]
   |          ^^^^^^^^^^^^^^^^^^^^
   |
-  = help: message: trait ByteSerializedLenOf can't be implemented for struct VecTuple because it has a member self.0 of Vec type whose size is not know at compile time
+  = help: message: struct `VecTuple` ByteSerializedSizeOf error:
+          trait ByteSerializedLenOf can't be implemented for struct VecTuple because it has a member self.0 of Vec type whose size is not know at compile time

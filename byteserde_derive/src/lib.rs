@@ -12,7 +12,6 @@ use crate::{
 #[cfg(test)]
 pub mod unittest;
 
-mod attr_enum;
 mod attr_struct;
 mod common;
 mod tokens_enum;
@@ -95,17 +94,13 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     // get ser & des quote presets
     let sdt = get_struct_tokens(&ast);
 
-    if let Some(msg) = sdt.des_collated_errs() {
-        panic!("Error \n{}", msg);
-    }
+    let peek = peek_attr(&ast.attrs);
+    sdt.des_validate(&peek);
+
     let des_vars = sdt.des_vars();
     let des_option = sdt.des_option();
     let des_uses = sdt.des_uses();
-    let (name, id) = match sdt.struct_type {
-        StructType::Regular(ref name, ref id)
-        | StructType::Tuple(ref name, ref id)
-        | StructType::Enum(ref name, ref id) => (name, id),
-    };
+    let id = sdt.struct_ident();
 
     let impl_body = match sdt.struct_type {
         StructType::Regular(..) => quote!(#id {#( #des_uses )*}), // NOTE {}
@@ -113,14 +108,11 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
         StructType::Enum(..) => quote! ( #id::from( _struct )),   // NOTE ::from()
     };
 
-
-    let peek = peek_attr(&ast.attrs);
-    sdt.des_validate(&peek);
     let start_len = match peek {
         Peek::Set(v) => quote!(#v),
         Peek::NotSet => quote!(),
     };
-    
+
     let des_option_special = match sdt.has_option_flds() {
         true => quote!(
                     while !des.is_empty() {
@@ -168,7 +160,6 @@ pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
     // grap just heap presets
     res.size_validate();
     let size = res.size_of();
-    
 
     // generate deserializer
     let output = quote! {
@@ -191,8 +182,6 @@ pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
     let res = get_struct_tokens(&ast);
     // grap just heap presets
     let len = res.len_of();
-
-    // eprintln!("size: {:?}", size);
 
     // generate deserializer
     let output = quote! {

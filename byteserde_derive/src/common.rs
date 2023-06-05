@@ -40,6 +40,13 @@ impl SerDesTokens {
             | StructType::Enum(ref name, _) => name.clone(),
         }
     }
+    pub fn struct_ident(&self) -> &Ident{
+        match self.struct_type {
+            StructType::Regular(_, ref ident)
+            | StructType::Tuple(_, ref ident)
+            | StructType::Enum(_, ref ident) => ident,
+        }
+    }
     // SERIALIAZER
 
     pub fn ser_vars(&self) -> Vec<TokenStream> {
