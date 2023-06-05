@@ -10,7 +10,8 @@ use log::info;
 use unittest::setup;
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, 
+        Debug, PartialEq, Clone)]
 #[byteserde(endian = "be")]
 struct Opt1(#[byteserde(replace( Opt1::tag() ))] u16, u16);
 impl Opt1 {
@@ -20,7 +21,8 @@ impl Opt1 {
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, 
+        Debug, PartialEq, Clone)]
 #[byteserde(endian = "be")]
 struct Opt2(#[byteserde(replace( Opt2::tag() ))] u16, u32);
 impl Opt2 {
@@ -29,7 +31,7 @@ impl Opt2 {
     }
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
 #[byteserde(endian = "be")]
 struct SomeStruct {
     anything_header: i8,
@@ -42,7 +44,7 @@ struct SomeStruct {
 
 #[rustfmt::skip]
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf,
-    Debug, PartialEq)] 
+    Debug, PartialEq, Clone)] 
 #[byteserde(peek(0, 2))]
 struct OptionalSection {
     #[byteserde(eq( Opt1::tag().to_be_bytes() ))]
@@ -83,11 +85,21 @@ fn optional_block() {
     assert_eq!(Option::<Opt1>::byte_size(), 4);
     assert_eq!(Option::<Opt2>::byte_size(), 6);
 
-    let inp_opt = SomeStruct::default();
-    info!("inp_opt: {:?}", inp_opt);
-    let ln_of_inp_opt = inp_opt.optional_section.byte_len();
-    let ln_of_opt1 = inp_opt.optional_section.optional1.byte_len();
-    let ln_of_opt2 = inp_opt.optional_section.optional2.byte_len();
+    let inp_opt1 = SomeStruct::default();
+    let mut inp_opt2 = SomeStruct::default();
+    inp_opt2.optional_section.optional1 = Some(Opt1(Opt1::tag(), 1_u16));
+    inp_opt2.optional_section.optional2 = None;
+    let mut inp_opt3 = SomeStruct::default();
+    inp_opt3.optional_section.optional1 = Some(Opt1(Opt1::tag(), 1_u16));
+    let mut inp_opt4 = SomeStruct::default();
+    inp_opt4.optional_section.optional2 = None;
+    info!("inp_opt1: {:?}", inp_opt1); // off / on 
+    info!("inp_opt2: {:?}", inp_opt2); // on / off
+    info!("inp_opt3: {:?}", inp_opt3); // on / on
+    info!("inp_opt4: {:?}", inp_opt4); // off / off
+    let ln_of_inp_opt = inp_opt1.optional_section.byte_len();
+    let ln_of_opt1 = inp_opt1.optional_section.optional1.byte_len();
+    let ln_of_opt2 = inp_opt1.optional_section.optional2.byte_len();
     info!("ln_of_inp_opt: {:?}", ln_of_inp_opt);
     info!("ln_of_opt1: {:?}", ln_of_opt1);
     info!("ln_of_opt2: {:?}", ln_of_opt2);
@@ -95,25 +107,61 @@ fn optional_block() {
     assert_eq!(ln_of_opt2, 6); // defaulted to Some(Opt2(2, 2_16))
     assert_eq!(ln_of_inp_opt, 6);
 
-    // // stack
-    let ser_stack: ByteSerializerStack<135> = to_serializer_stack(&inp_opt).unwrap();
+    
+    // stack
+    let mut ser_stack: ByteSerializerStack<135> = to_serializer_stack(&inp_opt1).unwrap();
+    // inp_opt.optional_section.optional1 = Some(Opt1(Opt1::tag(), 1_u16));
+    ser_stack.serialize(&inp_opt2).unwrap();
+    ser_stack.serialize(&inp_opt3).unwrap();
+    ser_stack.serialize(&inp_opt4).unwrap();
     info!("ser_stack: {ser_stack:#x}");
 
     // heap
-    let ser_heap = to_serializer_heap(&inp_opt).unwrap();
+    let mut ser_heap = to_serializer_heap(&inp_opt1).unwrap();
+    ser_heap.serialize(&inp_opt2).unwrap();
+    ser_heap.serialize(&inp_opt3).unwrap();
+    ser_heap.serialize(&inp_opt4).unwrap();
     info!("ser_heap: {ser_heap:#x}");
     assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     let des = &mut ByteDeserializer::new(ser_stack.as_slice());
 
-    let out_opt = SomeStruct::byte_deserialize(des).unwrap();
-    info!("out_opt: {:?}", out_opt);
+    let out_opt1 = SomeStruct::byte_deserialize(des).unwrap();
+    let out_opt2 = SomeStruct::byte_deserialize(des).unwrap();
+    let out_opt3 = SomeStruct::byte_deserialize(des).unwrap();
+    let out_opt4 = SomeStruct::byte_deserialize(des).unwrap();
+    info!("out_opt1: {:?}", out_opt1);
+    info!("out_opt2: {:?}", out_opt2);
+    info!("out_opt3: {:?}", out_opt3);
+    info!("out_opt4: {:?}", out_opt4);
+    
     info!("des: {:#x}", des);
     assert_eq!(
-        out_opt,
+        out_opt1,
         SomeStruct {
             optional_section_length: 6,
-            ..inp_opt
+            ..inp_opt1
+        }
+    );
+    assert_eq!(
+        out_opt2,
+        SomeStruct {
+            optional_section_length: 4,
+            ..inp_opt2
+        }
+    );
+    assert_eq!(
+        out_opt3,
+        SomeStruct {
+            optional_section_length: 10,
+            ..inp_opt3
+        }
+    );
+    assert_eq!(
+        out_opt4,
+        SomeStruct {
+            optional_section_length: 0,
+            ..inp_opt4
         }
     );
 }
