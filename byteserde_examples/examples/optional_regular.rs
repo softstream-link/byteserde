@@ -56,7 +56,7 @@ struct OptionalSection {
 impl Default for OptionalSection {
     fn default() -> Self {
         Self {
-            optional1: None,
+            optional1: Some(Opt1(Opt1::tag(), 1_u16)),
             optional2: Some(Opt2(Opt2::tag(), 2_u32)),
         }
     }
@@ -87,25 +87,26 @@ fn optional_block() {
 
     let inp_opt1 = SomeStruct::default();
     let mut inp_opt2 = SomeStruct::default();
-    inp_opt2.optional_section.optional1 = Some(Opt1(Opt1::tag(), 1_u16));
     inp_opt2.optional_section.optional2 = None;
     let mut inp_opt3 = SomeStruct::default();
-    inp_opt3.optional_section.optional1 = Some(Opt1(Opt1::tag(), 1_u16));
+    inp_opt3.optional_section.optional1 = None;
     let mut inp_opt4 = SomeStruct::default();
+    inp_opt4.optional_section.optional1 = None;
     inp_opt4.optional_section.optional2 = None;
-    info!("inp_opt1: {:?}", inp_opt1); // off / on 
-    info!("inp_opt2: {:?}", inp_opt2); // on / off
-    info!("inp_opt3: {:?}", inp_opt3); // on / on
-    info!("inp_opt4: {:?}", inp_opt4); // off / off
+    info!("inp_opt1: {:?}", inp_opt1); // some / some
+    info!("inp_opt2: {:?}", inp_opt2); // some / none
+    info!("inp_opt3: {:?}", inp_opt3); // none / some
+    info!("inp_opt4: {:?}", inp_opt4); // none / none
+    
     let ln_of_inp_opt = inp_opt1.optional_section.byte_len();
     let ln_of_opt1 = inp_opt1.optional_section.optional1.byte_len();
     let ln_of_opt2 = inp_opt1.optional_section.optional2.byte_len();
     info!("ln_of_inp_opt: {:?}", ln_of_inp_opt);
     info!("ln_of_opt1: {:?}", ln_of_opt1);
     info!("ln_of_opt2: {:?}", ln_of_opt2);
-    assert_eq!(ln_of_opt1, 0); // defaulted to None
-    assert_eq!(ln_of_opt2, 6); // defaulted to Some(Opt2(2, 2_16))
-    assert_eq!(ln_of_inp_opt, 6);
+    assert_eq!(ln_of_inp_opt, 10);
+    assert_eq!(ln_of_opt1, 4); // defaulted 
+    assert_eq!(ln_of_opt2, 6); // defaulted 
 
     
     // stack
@@ -139,7 +140,7 @@ fn optional_block() {
     assert_eq!(
         out_opt1,
         SomeStruct {
-            optional_section_length: 6,
+            optional_section_length: 10,
             ..inp_opt1
         }
     );
@@ -153,7 +154,7 @@ fn optional_block() {
     assert_eq!(
         out_opt3,
         SomeStruct {
-            optional_section_length: 10,
+            optional_section_length: 6,
             ..inp_opt3
         }
     );
