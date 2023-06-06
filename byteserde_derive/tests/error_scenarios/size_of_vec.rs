@@ -7,4 +7,5 @@ struct VecRegular {
 
 #[derive(ByteSerializedSizeOf)]
 struct VecTuple(Vec<u8>);
+
 fn main() {}

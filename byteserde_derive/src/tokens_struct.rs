@@ -472,7 +472,7 @@ fn setup_option(
     member: &MemberIdent,
     option: &FieldType,
 ) -> FldSerDesTokens {
-    let mut des_error = vec![];
+    let mut des_errors = vec![];
     let struct_name = &ast.ident;
     let fld_name = match member {
         MemberIdent::Named(fld_name) => quote!(#fld_name),
@@ -482,8 +482,8 @@ fn setup_option(
     let eq = match eq_attr(&fld.attrs) {
         PeekEq::Set(value) => quote!(#value),
         PeekEq::NotSet => {
-            des_error.push(format!(
-                "{struct_name}.{fld_name} is an option and requires `#[byteserde(eq( ... ))] attribute it will complared with &[u8] of `#[byteserde(peek( start, len ))]` expression",
+            des_errors.push(format!(
+                "{struct_name}.{fld_name} is Option<T> type and hence requires `#[byteserde(eq( ... ))] attribute it that evalutes to a byte slice and complared with &[u8] of `#[byteserde(peek( start, len ))]` expression",
             ));
             quote!()
         }
@@ -522,7 +522,7 @@ fn setup_option(
         des_vars: quote!( let mut #var_name: #fld_ty = None; ),
         des_option: quote!(if __peeked == #eq { #var_name = Some(des.deserialize()?); continue; }), // does not apply here
         des_uses: quote!( #var_name, ),
-        des_errors: des_error,
+        des_errors,
         size_of,
         size_errors: vec![],
         len_of: quote!( self.#var_name.byte_len() ),

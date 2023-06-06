@@ -52,24 +52,28 @@ impl SerDesTokens {
     pub fn ser_vars(&self) -> Vec<TokenStream> {
         self.flds
             .iter()
+            .filter(|f| !f.ser_vars.is_empty())
             .map(|f| f.ser_vars.clone())
             .collect::<Vec<_>>()
     }
     pub fn ser_repl(&self) -> Vec<TokenStream> {
         self.flds
             .iter()
+            .filter(|f| !f.ser_repl.is_empty())
             .map(|f| f.ser_repl.clone())
             .collect::<Vec<_>>()
     }
     pub fn ser_uses_stck(&self) -> Vec<TokenStream> {
         self.flds
             .iter()
+            .filter(|f| !f.ser_uses_stck.is_empty())
             .map(|f| f.ser_uses_stck.clone())
             .collect::<Vec<_>>()
     }
     pub fn ser_uses_heap(&self) -> Vec<TokenStream> {
         self.flds
             .iter()
+            .filter(|f| !f.ser_uses_heap.is_empty())
             .map(|f| f.ser_uses_heap.clone())
             .collect::<Vec<_>>()
     }
@@ -86,6 +90,7 @@ impl SerDesTokens {
     pub fn des_vars(&self) -> Vec<TokenStream> {
         self.flds
             .iter()
+            .filter(|f| !f.des_vars.is_empty())
             .map(|f| f.des_vars.clone())
             .collect::<Vec<_>>()
     }
@@ -127,20 +132,34 @@ impl SerDesTokens {
     pub fn len_of(&self) -> Vec<TokenStream> {
         self.flds
             .iter()
+            .filter(|f| !f.len_of.is_empty())
             .map(|f| f.len_of.clone())
             .collect::<Vec<_>>()
     }
 
     pub fn des_validate(&self, peek: &Peek) {
-        // validate struct with Option<T> fields
+        // if flds produce errors, panic and don't worry about further validation
+        match self.des_collated_errs() {
+            Some(msg) => panic!(
+                "struct `{}` ByteDeserialize error:\n{}",
+                self.struct_name(),
+                msg
+            ),
+            None => (),
+        }
+
+        // you are an option section if you have any member of type Option<T> or Peek::Set is set
         if self.has_option_flds() || matches!(peek, Peek::Set(..)) {
-            if !self.has_option_flds() || !matches!(peek, Peek::Set(..))  {
-                panic!("struct `{}` `#[byteserde(peek( start, len ))]` and `#[byteserde(eq( .. ))]` have to be used together.",
+
+            // forgot to set peek
+            if self.has_option_flds() && matches!(peek, Peek::NotSet){
+                panic!("struct `{}` missing required `#[byteserde(peek( start, len ))]` annotation to be able to identify which optional fields are present in the bytestream",
                     self.struct_name());
             }
+            // all fileds in the optional section must be Option<T> can't mix with non Option types
             if self.des_vars().len() != self.des_option().len() {
                 let val_err = format!(
-                    "struct `{}` has a mix of Option<T> other types, which can't be mixed, please move all Option<T> types into a seperate struct", 
+                    "struct `{}` has a mix of Option<T> and Non Option<T> types, which is not allowed. Consider moving all Option<T> types into a seperate struct", 
                     self.struct_name() );
                 let fld_errors = match self.des_collated_errs() {
                     Some(msg) => format!("\n{}", msg),
@@ -153,17 +172,7 @@ impl SerDesTokens {
                     fld_errors
                 );
             }
-        // Validate struct with out Option<T> fields
-        } else {
-            match self.des_collated_errs() {
-                Some(msg) => panic!(
-                    "struct `{}` ByteDeserialize error:\n{}",
-                    self.struct_name(),
-                    msg
-                ),
-                None => (),
-            }
-        }
+        } 
     }
 
     pub fn size_validate(&self) {

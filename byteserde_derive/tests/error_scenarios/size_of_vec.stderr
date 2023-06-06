@@ -1,5 +1,5 @@
 error: proc-macro derive panicked
- --> tests/error_scenarios/panic_size_of_vec.rs:3:10
+ --> tests/error_scenarios/size_of_vec.rs:3:10
   |
 3 | #[derive(ByteSerializedSizeOf)]
   |          ^^^^^^^^^^^^^^^^^^^^
@@ -8,7 +8,7 @@ error: proc-macro derive panicked
           trait ByteSerializedLenOf can't be implemented for struct VecRegular because it has a member self.field of Vec type whose size is not know at compile time
 
 error: proc-macro derive panicked
- --> tests/error_scenarios/panic_size_of_vec.rs:8:10
+ --> tests/error_scenarios/size_of_vec.rs:8:10
   |
 8 | #[derive(ByteSerializedSizeOf)]
   |          ^^^^^^^^^^^^^^^^^^^^
