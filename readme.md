@@ -23,17 +23,11 @@
         * [ByteDeserialize***r***](byteserde/src/des.rs#ByteDeserialize) - takes a `byte stream` `&[u8]` irrespctive of heap vs stack allocation and turns it into a `struct`
 
     * [byteserde_derive@crates.io](https://crates.io/crates/byteserde_derive) - [byteserde_derive/Cargo.toml](byteserde_derive/Cargo.toml)
-        * contains procedural macro that generaters implementation of these traits on regular & tuple rust structure. 
-        * This crate supports three attributes:
-          * `#[byteserde( endian = "le" )]` - this will cause entire `struct` or `member` to serialize in desired endian. Valid options are `le`, `be`, `ne`
-        
-          * `#[byteserde( replace( ... ))]` - this only affects `serialization` of the `member` whose value will be ignored and value of `...` expresion will instead be serialized used . Ex: This is usefull when one of the fields contains length of the packet but you don't know its value until the instance is created. Using this attribute you can create an expression which will be evaluated  during serialization. See: Examples for more details.
-        
-          * `#[byteserde( deplete( ... ) )]` - this only affects `deserialization` of the `member` by limiting the number of bytes the member is allowed to read from the stream. Must evaluate to `usize`. Ex: This is usefull when part of the `byte stream` contains infomation about numbers of bytes representing one of following members. See: Examples for more details. 
-        * NOTE: that Union, Enum, and Unit structure are not not currently supported
+        * contains procedural macro that generates `byteserde` trait implementations on `regular`, `tuple`, `enum` rust structure. 
+        * NOTE: that Union and Unit structure are not supported ,this might change in the future.
     
     * [byteserde_types@crates.io](https://crates.io/crates/byteserde_types) - [byteserde_types/Cargo.toml](byteserde_types/Cargo.toml)
-        * contains optional ascii string related types, which are typically usefull when dealing with fixed length strings while parsing a `byte stream`, see examples section for more details.
+        * contains optional ascii string related types and macros, which are typically usefull when dealing with fixed length strings while parsing a `byte stream`, see examples section for more details.
 
 # Examples & Overview
 * Please refer to [this document](byteserde_examples/readme.md) for a number of helpfull examples and feature review.
