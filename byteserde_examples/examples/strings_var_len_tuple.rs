@@ -1,17 +1,18 @@
 mod unittest;
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
-use byteserde_types::prelude::*;
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
+use byteserde_types::{prelude::*, const_char_ascii};
 use log::info;
 use unittest::setup;
 
-type Plus = ConstCharAscii<b'+'>;
+const_char_ascii!(Plus, b'+', ByteSerializeStack, ByteSerializeHeap, ByteSerializedLenOf, PartialEq);
+
 #[derive(ByteDeserialize, ByteSerializeStack, ByteSerializeHeap, Debug, PartialEq)]
 #[byteserde(endian = "be")]
 struct VariableLenMsg(
-    #[byteserde(replace( (_1.len() + _2.len()) as u16 ))] u16,
+    #[byteserde(replace( (_1.byte_len() + _2.byte_len()) as u16 ))] u16,
     Plus,
-    #[byteserde(deplete( _0 as usize - _1.len() ))] StringAscii,
+    #[byteserde(deplete( _0 as usize - _1.byte_len() ))] StringAscii,
 );
 
 impl Default for VariableLenMsg {

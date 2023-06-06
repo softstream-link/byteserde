@@ -1,6 +1,6 @@
 use byteserde::prelude::*;
 use byteserde::utils::hex::{to_hex_line, to_hex_pretty};
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
 use std::any::type_name;
 use std::cmp::min;
 use std::fmt;
@@ -246,7 +246,7 @@ mod test_string_ascii_fixed {
 /// println!("out_str: {:x}", out_str);
 /// assert_eq!(StringAscii::from(b"ABCDEABCDE"), out_str);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedLenOf, PartialEq)]
 pub struct StringAscii(Vec<u8>);
 impl StringAscii {
     pub fn len(&self) -> usize {
@@ -430,15 +430,6 @@ impl<const CHAR: u8> ConstCharAscii<CHAR> {
     pub fn bytes(&self) -> [u8; 1] {
         [CHAR]
     }
-    pub fn is_empty(&self) -> bool {
-        false
-    }
-    pub fn len(&self) -> usize {
-        1
-    }
-    pub fn size() -> usize {
-        1
-    }
     pub fn to_char() -> char {
         char::from_u32(u32::from(CHAR)).unwrap()
     }
@@ -446,7 +437,7 @@ impl<const CHAR: u8> ConstCharAscii<CHAR> {
 impl<const CHAR: u8> ByteDeserialize<ConstCharAscii<CHAR>> for ConstCharAscii<CHAR> {
     #[allow(clippy::just_underscores_and_digits)]
     fn byte_deserialize(des: &mut ByteDeserializer) -> Result<ConstCharAscii<CHAR>> {
-        let _0 = des.deserialize_bytes_slice(1)?[0];
+        let _0 = des.deserialize_u8()?;
         match _0 == CHAR {
             true => Ok(Default::default()),
             false => {

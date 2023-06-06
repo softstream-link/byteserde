@@ -67,7 +67,7 @@ struct Numerics {
 
     #[byteserde(endian = "be")]
     field_be_local_macro: u16, // be test local attribute
-    field_be_global_macro: u16, // le test global attribute
+    field_le_global_macro: u16, // le test global attribute
 
     #[byteserde(replace(i16::MIN))]
     field_i16: i16,
@@ -93,7 +93,7 @@ fn numerics() {
         field_ne_local_macro: 0x00FF_u16,
         field_le_local_macro: 0x00FF_u16,
         field_be_local_macro: 0x00FF_u16,
-        field_be_global_macro: 0x00FF_u16,
+        field_le_global_macro: 0x00FF_u16,
         field_i16: -1,
         field_i32: -1,
         field_i64: -1,

@@ -1,20 +1,20 @@
 mod unittest;
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
-use byteserde_types::prelude::*;
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
+use byteserde_types::{prelude::*, string_ascii_fixed, char_ascii, const_char_ascii};
 use log::info;
 use unittest::setup;
 
-type UsernameAscii = StringAsciiFixed<10, b' ', true>;
-type AnyCharAscii = CharAscii;
-type XCharAscii = ConstCharAscii<b'X'>;
+string_ascii_fixed!(UsernameAscii, 10, b' ', true,  ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedLenOf, PartialEq);
+char_ascii!(AnyCharAscii, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedLenOf, PartialEq);
+const_char_ascii!(XConstCharAscii, b'X', ByteSerializeStack, ByteSerializeHeap, PartialEq);
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
 struct AsciiStrings(
     UsernameAscii,
     #[byteserde(replace(AnyCharAscii::from(b'R')))] AnyCharAscii,
-    XCharAscii,
-    #[byteserde(deplete( _0.len() ))] StringAscii,
+    XConstCharAscii,
+    #[byteserde(deplete( _0.byte_len() ))] StringAscii,
 );
 
 #[test]

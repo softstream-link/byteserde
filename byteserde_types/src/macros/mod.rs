@@ -116,9 +116,9 @@ macro_rules! string_ascii_fixed {
 /// ```
 #[macro_export]
 macro_rules! char_ascii {
-    ($NAME:ident, $($derive:ty),*) => {
+    ($NAME:ident, $($DERIVE:ty),*) => {
         /// Tuple struct with a `u8` buffer to represent an ascii char.
-        #[derive( $($derive),* )]
+        #[derive( $($DERIVE),* )]
         pub struct $NAME(u8);
         impl $NAME {
             /// proves access to the `u8` byte
@@ -154,6 +154,86 @@ macro_rules! char_ascii {
             }
         }
     }
+}
+
+/// Generates a `tuple` `struct` with a given name and a private ascii char allocated on `stack` using `u8` whose
+/// value always set to parameter `CONST`.
+/// 
+/// # Arguments
+/// * `NAME` - name of the struct to be generated
+/// * `CONST` - `u8` byte value to be used as the value behind this struct
+/// * `[derive, ...]` -- list of traits to derive for the struct, must be valid rust traits
+/// 
+/// # Derives
+/// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
+/// * `Debug` & `Display` - provides a human readable sting view of the `u8` byte as utf-8 char
+/// * `ByteDeserialize`- provides an implementation for deserializing from a byte stream, which `will panic` if value on the 
+/// stream does `not` match the `CONST` value.
+/// 
+/// # Examples
+/// ```
+/// # #[macro_use] extern crate byteserde_types; fn main() {
+/// use byteserde::prelude::*;
+/// const_char_ascii!(One, b'1', PartialEq);
+/// let inp_const = One::default();
+/// println!("inp_const: {:?}, {}", inp_const, inp_const);
+/// assert_eq!(inp_const.value(), b'1');
+/// # }
+/// ```
+#[macro_export]
+macro_rules! const_char_ascii {
+    ($NAME:ident, $CONST:literal, $($DERIVE:ty),*) => {
+        #[derive( $($DERIVE),* )]
+        pub struct $NAME(u8);
+        impl $NAME {
+            pub fn to_char() -> char {
+                char::from_u32($CONST as u32).ok_or(std::fmt::Error).unwrap()
+            }
+            pub fn value(&self) -> u8 {
+                self.0
+            }
+        }
+        impl Default for $NAME {
+            fn default() -> Self {
+                $NAME($CONST)
+            }
+        }
+        impl std::fmt::Debug for $NAME {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_tuple( stringify! ($NAME) )
+                    .field(&char::from_u32(u32::from( $CONST )).ok_or(std::fmt::Error)?)
+                    .finish()
+            }
+        }
+        impl std::fmt::Display for $NAME {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(
+                    f,
+                    "{}",
+                    &char::from_u32(u32::from( $CONST )).ok_or(std::fmt::Error)?
+                )
+            }
+        }
+        impl ::byteserde::des::ByteDeserialize<$NAME> for $NAME {
+            #[allow(clippy::just_underscores_and_digits)]
+            fn byte_deserialize(des: &mut ByteDeserializer) -> ::byteserde::error::Result<$NAME> {
+                let _0 = des.deserialize_u8()?;
+                match _0 == $CONST {
+                    true => Ok($NAME::default()),
+                    false => {
+                        let ty = $NAME::default();
+        
+                        Err(SerDesError {
+                            message: format!(
+                                "Type {:?} expected: 0x{:02x} actual: 0x{:02x}",
+                                ty, $CONST, _0
+                            ),
+                        })
+                    }
+                }
+            }
+        }
+    };
 }
 
 /// This is a short hand macro for generateing a new `tuple` `struct` type for numerics like u32, i32, u64, i64, f32, f64, ...
