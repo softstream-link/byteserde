@@ -1,8 +1,8 @@
 # Examples
-* The following list of examples is available in the order of incremental complexity.
-* All examples are implemented in the form of a test, where the structure of a given complexity is `initialized`, `serialized`, and then `deserialized` with the expectation that starting and resulting `structs` are identical. 
+* The following list of examples is listed in the order of incremental complexity.
+* All examples are implemented in the form of a test, where the structure of a given complexity is `initialized`, `serialized`, and then `deserialized` with the expectation that starting and resulting `structs` are identical, with a few desired exceptions.
 * All examples provide both `stack` & `heap` serializers for refernce. 
-    *  NOTE: In each case an example is available in Rust's `regular` & `tuple` `struct` format
+    
 
 ## `Numerics` ( `u8`, `u16`, `i32`, ..)
 * Comprehensive Examples & Tests - [Named](numeric_regular.rs) / [Tuple](numeric_tuple.rs)
@@ -21,7 +21,7 @@
 
   * `#[byteserde(endian = "be" )]` - this attribute affect both `serialization` and `deserialization` and can be used at both `struct` and `field` level. It will affect all `rust` numeric types (signed, unsigned, floating point, and integers). `be`, `le`, `ne` stand for `Big Endian`, `Little Endian`, and `Native Endian` (default) respectively
 
-    * Example: In below calling `let ser = to_serializer_stack( &WithEndian{ be: 1, le: 2} )` will produce a byte stream `0x00 0x01 0x02 0x01` with first pair bytes representing `WithEndian.be` field and second pari of bytes reprenseting `WithEndian.le` field. Note, that this attribute also affects `deserialization`, which is a good thing because it means that both pair of bytes will be correctly interpreted when calling `let x: WithEndian = from_serializer_stack(&ser)`
+    * Example: In below calling `let ser = to_serializer_stack( &WithEndian{ be: 1, le: 2} )` will produce a byte stream `0x00 0x01 0x02 0x00` with first pair bytes representing `WithEndian.be` field and second pari of bytes reprenseting `WithEndian.le` field. Note, that this attribute also affects `deserialization`, which is a good thing because it means that both pair of bytes will be correctly interpreted when calling `let x: WithEndian = from_serializer_stack(&ser)`
         ```rust
         #[derive(ByteSerializeStack, ByteDeserialize)]
         #[byteserde(endian = "be")]
@@ -34,12 +34,12 @@
   
 ## `Fixed & Variable Length Strings` - `asci` & `utf-8`
 * Comprehensive Examples & tests 
-  * [Regular](strings_fix_len_regular.rs) / [Tuple](strings_fix_len_tuple.rs) - `fixed legth, mostly :)`
-  * [Regular](strings_var_len_regular.rs) / [Tuple](strings_var_len_tuple.rs) - `variable length`
+  * [Regular](strings_fix_len_regular.rs) / [Tuple](strings_fix_len_tuple.rs) - `fixed length strings/ascii, mostly :)`
+  * [Regular](strings_var_len_regular.rs) / [Tuple](strings_var_len_tuple.rs) - `variable length strings/utf-8`
 
 * Just like for numerics both examples are identicalw with exception of using a `struct` with `named fields` vs a `tuple`. This example expands on numerics and introduces one additional `byteserde` attribute, namely:
 
-    * `#[byteserde(deplete( ... ))]` - unlike `replace` this attribute only affects `deserialization` by limiting the number of bytes available to the annotated `struct` member during deserialization. `( ... )` expresion need to evaluate to `usize` and can reference other `struct` members by name. This is usefully when the protocol has variable length strings whose length is expressed as a value of other struct members. 
+    * `#[byteserde(deplete( ... ))]` - unlike `replace` this attribute only affects `deserialization` by limiting the number of bytes available to the annotated `struct` member during deserialization. `( ... )` expresion need to evaluate to `usize` and can reference other `struct` members by name. This is usefull when the protocol has variable length strings whose length is expressed as a value of an other struct member. 
     
       * Example: In below calling `let x: WithDeplete = from_serializer_stack(&ser)` will ensure that a `msg` member cannot see beyond value of the `msg_length` during deserialization, whose value is guaranteed to always be set to `msg.len()` during serialization
           ```rust
@@ -77,18 +77,18 @@
 ## `Option<T>` support
 * Comprehensive Examples & tests [Regular](optional_regular.rs)
 * Until now all of the examples relied on two key assumptions to serialize and deserialize a byte stream. These two assumptions are:
-  1. Types have a well defined `size` in bytes required to represent them on the byte stream, less `alignment`, and this size is know at compile time.
+  1. Types have a well defined `size` in bytes required to represent them on the byte stream, less [type layout alignment](https://doc.rust-lang.org/reference/type-layout.html), and this size is know at compile time.
   1. Where the `size` is NOT known at compile time we were able to use `depelete` attribute to prevent `greedy` deserializaiton
   
 * On the contrary `Option<T>` types have a `size` that can have two different states, `zero` or defined by one of two rules above. Hence to be able to deal with `Option<T>` 
 on byte streams we introduce two new `byteserde` attributes, namely:
 
-    * `#[byteserde(peek( start, len ))]` - this is a `struct` level attribute which allows us to peek into the byte stream and `yields` a byte slice `&[u8]`
-    * `#[byteserde(eq( ... ))]` - this is a `field` level  attribute which allows us to define a byte slice expression which identifies specific member whose option following bytes represent
+    * `#[byteserde(peek( start, len ))]` - this is a `struct` level attribute and us allows to peek into the byte stream and `yields` a byte slice `&[u8]`
+    * `#[byteserde(eq( ... ))]` - this is a `field` level  attribute it allows us to define a byte slice expression which identifies specific member whose option type follows in the byte stream.
 
 
     * Example: Key considerations:
-      * All optional elements must have a common byte or serveral bytes in a fixed location to dfferenctiate it from other optional types, in this case it is `u8` in first position
+      * All optional elements must have a common byte or serveral bytes in a fixed location to dfferenctiate it from other optional types, in this example it is one byte `u8` in first position
       * All Option<T> members must be defined in a single `struct` / section
       * `OptionalSection` member is `greedy` and must be annotated with `deplete` instruction to know when to stop deserialization
         ```rust
@@ -110,7 +110,7 @@ on byte streams we introduce two new `byteserde` attributes, namely:
         #[derive(...)]
         #[byteserde(peek( 0, 1 ))] // peek one byte, yields a slice `&[u8]` of len 1
         struct OptionalSection{
-
+            // all members in this struct must be of Option<X>  form
             #[byteserde(eq( &[1] ))] // if peeked value eq to this expression deserialize as Opt1
             opt1: Option<Opt1>,
 
