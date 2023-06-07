@@ -10,7 +10,11 @@
 
 ### Results
   
-### `byteserde` - takes about ~`30ns` to read or write to a byte stream
+### `byteserde` - takes about ~`17ns` to read or write to a byte stream
+
+![alt text](readme/byteserde_bench.png)
+
+### `bincode` - takes about ~`100ns` to write and ~`15ns` to read from a byte stream
 
 ![alt text](readme/byteserde_bench.png)
 

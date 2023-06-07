@@ -191,14 +191,14 @@ pub fn collate_errors(field_errors: Vec<Vec<String>>) -> Option<String> {
         .map(|f| {
             f.iter()
                 .filter(|v| !v.is_empty())
-                .map(|v| v.clone())
+                .cloned()
                 .collect::<Vec<String>>()
                 .join("\n")
         })
         .collect::<Vec<String>>()
         .iter()
         .filter(|v| !v.is_empty())
-        .map(|v| v.clone())
+        .cloned()
         .collect::<Vec<String>>()
         .join("\n");
     if result.len() > 1 {

@@ -25,13 +25,13 @@ pub struct Integers {
 #[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Serialize, Deserialize)]
 #[byteserde(endian = "le")]
 pub struct Floats {
-    type_f32: f32,
+    pub type_f32: f32,
     #[byteserde(endian = "be")]
-    type_f64: f64,
+    pub type_f64: f64,
 }
 #[rustfmt::skip]
 #[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Serialize, Deserialize)]
 pub struct Numbers {
-    type_header: Integers,
-    type_footer: Floats,
+    pub type_header: Integers,
+    pub type_footer: Floats,
 }

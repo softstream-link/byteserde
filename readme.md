@@ -5,7 +5,11 @@
   
   * To be able to define rust `struct` that represent application data models while at the same time not having to write code and instead using `derive` annotations and attributes auto-generate code to put these models on the wire for `new` or `existing` `latency` sensetive network protocols. Hence any and all auto generated serialization code should be as fast as one can possibly write by hand. 
   
-* Benchmark results show a reference structure takes `~30ns` to read or write using this product, vs `~215ns` using `rmp-serde`, vs `~600ns` using `serde_json`. 
+* Benchmark results show a reference structure takes:
+  * `byteserde` - `~17ns` read/write 
+  * `bincode` - `~100ns` write / `~15ns` read - looks like write has a perfomance bug.
+  * `rmp-serde` - `~215ns` read/write
+  * `serde_json` - `~600ns` read/write.
   * refer to [this document](./byteserde_examples/readme.md) for further details.
 
 

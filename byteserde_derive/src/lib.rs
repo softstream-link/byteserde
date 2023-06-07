@@ -35,6 +35,7 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
         #[automatically_derived]
         impl #generics_declaration ::byteserde::ser::ByteSerializeStack for #struct_name #generics_alias #where_clause{
         // impl byteserde::ser::ByteSerializeStack for #struct_name {
+            #[inline]
             fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ::byteserde::ser::ByteSerializerStack<CAP>) -> ::byteserde::error::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?; -- for regular
@@ -69,6 +70,7 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     let output = quote! {
         #[automatically_derived]
         impl #generics_declaration ::byteserde::ser::ByteSerializeHeap for #struct_name #generics_alias #where_clause{
+            #[inline]
             fn byte_serialize_heap(&self, ser: &mut ::byteserde::ser::ByteSerializerHeap) -> ::byteserde::error::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?;         -- for regular
@@ -132,6 +134,7 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     let output = quote!(
         #[automatically_derived]
         impl #generics_declaration ::byteserde::des::ByteDeserialize<#id #generics_alias> for #id #generics_alias #where_clause{
+            #[inline]
             fn byte_deserialize(des: &mut ::byteserde::des::ByteDeserializer) -> ::byteserde::error::Result<#id #generics_alias>{
                 // let type_u16:    u16 = des.deserialize_[be|le|ne]()?; -- numerics
                 // let type_String: String = des.deserialize()?;          -- trait ByteDeserialize
@@ -165,6 +168,7 @@ pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
     let output = quote! {
         #[automatically_derived]
         impl #generics_declaration ::byteserde::size::ByteSerializedSizeOf for #struct_name #generics_alias #where_clause{
+            #[inline]
             fn byte_size() -> usize{
                 # ( #size )+*
             }
@@ -187,6 +191,7 @@ pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
     let output = quote! {
         #[automatically_derived]
         impl #generics_declaration ::byteserde::size::ByteSerializedLenOf for #struct_name #generics_alias #where_clause{
+            #[inline]
             fn byte_len(&self) -> usize{
                 # ( #len )+*
             }

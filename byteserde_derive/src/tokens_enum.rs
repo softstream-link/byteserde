@@ -29,7 +29,7 @@ pub fn get_enum_from_tokens(
     let bind_ref_type_str = format!("{}", quote!(&#bind_type));
 
     let from_types: Vec<From> = enum_from_attr(&ast.attrs);
-    if from_types.len() == 0 {
+    if from_types.is_empty() {
         panic!(
             "Enum {enum_type} is missing at least one from attribute,
                 Example: 
@@ -79,7 +79,7 @@ pub fn get_enum_from_tokens(
                     )
                     .collect::<Vec<_>>();
                 // eprintln!("match_arms: {}", quote!(#(#match_arms)*));
-                let impl_from = match from_type_str.contains(&enum_type_str){
+                match from_type_str.contains(&enum_type_str){
                     true => {
                         quote! {
                             #[automatically_derived]
@@ -105,10 +105,7 @@ pub fn get_enum_from_tokens(
                             }
                         }
                     }
-                };
-                // eprintln!("impl_from: {}", quote!(#impl_from));
-                impl_from
-                
+                }
             }
             _ => panic!("This feature is only supported for enum types")
             };
