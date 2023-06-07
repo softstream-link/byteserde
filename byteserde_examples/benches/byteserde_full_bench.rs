@@ -1,6 +1,6 @@
-mod common;
+mod sample;
 use byteserde::prelude::*;
-use common::StructBodyNested;
+use sample::StructBodyNested;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 

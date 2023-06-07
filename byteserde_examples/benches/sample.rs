@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[rustfmt::skip]
 #[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Serialize, Deserialize)]
 #[byteserde(endian = "le")]
-pub struct StructHeaderInteger {
+pub struct Integers {
     type_i8: i8,
     #[byteserde(endian = "be")]
     type_u8: u8,
@@ -24,14 +24,14 @@ pub struct StructHeaderInteger {
 #[rustfmt::skip]
 #[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Serialize, Deserialize)]
 #[byteserde(endian = "le")]
-pub struct StructFooterFloat {
+pub struct Floats {
     type_f32: f32,
     #[byteserde(endian = "be")]
     type_f64: f64,
 }
 #[rustfmt::skip]
 #[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default, Serialize, Deserialize)]
-pub struct StructBodyNested {
-    type_header: StructHeaderInteger,
-    type_footer: StructFooterFloat,
+pub struct Numbers {
+    type_header: Integers,
+    type_footer: Floats,
 }

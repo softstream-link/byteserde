@@ -1,18 +1,24 @@
 # Motivation
-* This product is for [bit steam](https://en.wikipedia.org/wiki/Bitstream) what [serde](https://serde.rs) is for [json](https://www.json.org)
 
-* The goal of this product is to provide a set of utilities that enable frictionless transitioning between a `byte stream`, ex: `&[u8]`, and an arbitrary `struct`. In other words, the project provides a set of `traits` and `impl`'s that can be used to manually `serialize` an arbitrary `struct` into a `byte stream` as well as to `deserialize` a given `byte stream` into it original `struct`. 
-
-* In addition to be able to custom serialize an arbitrary `struct`, you can leverage an included `#[derive(..)]` `proc_macro` and a number usefull `macro attributes` to create automatically generated serialize and deserialize `trait` implementation that covers most of typical usecases.
+* The motivation for this product is two fold:
+  * To be the `fastest` byte stream serializer/deserializer on the market for latency sensetive usecases.
+  
+  * To be able to define rust `struct` that represent application data models while at the same time not having to write code and instead using `derive` annotations and attributes auto-generate code to put these models on the wire for `new` or `existing` `latency` sensetive network protocols. Hence any and all auto generated serialization code should be as fast as one can possibly write by hand. 
+  
+* Benchmark results show a reference structure takes `~30ns` to read or write using this product, vs `~215ns` using `rmp-serde`, vs `~600ns` using `serde_json`. 
+  * refer to [this document](./byteserde_examples/readme.md) for further details.
 
 
 # Benefit case
-* If you work with network streams which deliver data in `byte stream` format and a well defined sequence you can use this product to quickly and efficently map your `byte stream` into a `struct` of your choice and focus on the business logic instead of parsing and mapping.
+* If you work with network protocols that deliver data in `byte stream` format and a well defined sequence you can use this product to quickly and efficently map your `byte stream` into a `struct` of your choice at zero performance cost and focus on the business logic instead of parsing and mapping.
+  * Example:
+    * [Ouch5](http://nasdaqtrader.com/content/technicalsupport/specifications/TradingProducts/Ouch5.0.pdf)
+    * [SoupBinTCP](https://www.nasdaq.com/docs/SoupBinTCP%204.1.pdf)
+    * etc..
 
-* if you have two or more systems which need to communicate with each other, either over a network socket or a shared memory, but at a very `low latency`/`cpu cost`, this product is a good choice for you.
 
 
-# Structure
+# Project Structure
 * The project contains three craits
     * [byteserde@crates.io](https://crates.io/crates/byteserde) - [byteserde/Cargo.toml](byteserde/Cargo.toml)
         * contains [ByteSerializeStack](byteserde/src/ser.rs#ByteSerializeStack), [ByteSerializeHeap](byteserde/src/ser.rs#ByteSerializeHeap) & [ByteDeserialize`<T>`](byteserde/src/des.rs#ByteDeserialize) `traits` and helper `struct`'s that make it easy to manually create custom `byte stream` serailizer and deserializer

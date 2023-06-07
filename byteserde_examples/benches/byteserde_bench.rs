@@ -1,11 +1,11 @@
-mod common;
+mod sample;
 use byteserde::prelude::*;
-use common::StructBodyNested;
+use sample::Numbers;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn to_bytes(c: &mut Criterion) {
-    let inp = StructBodyNested::default();
+    let inp = Numbers::default();
     c.bench_function("byteserde::to_bytes_stack", |b| {
         b.iter(|| {
             black_box({
@@ -16,12 +16,12 @@ fn to_bytes(c: &mut Criterion) {
 }
 
 fn from_bytes(c: &mut Criterion) {
-    let inp = StructBodyNested::default();
+    let inp = Numbers::default();
     let ser: ByteSerializerStack<128> = to_serializer_stack(&inp).unwrap();
     c.bench_function("byteserde::from_bytes", |b| {
         b.iter(|| {
             black_box({
-                let _ : StructBodyNested = byteserde::prelude::from_bytes(&ser.as_slice()).unwrap();
+                let _ : Numbers = byteserde::prelude::from_bytes(&ser.as_slice()).unwrap();
             })
         })
     });

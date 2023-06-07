@@ -1,10 +1,10 @@
-mod common;
-use common::StructBodyNested;
+mod sample;
+use sample::Numbers;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn to_string(c: &mut Criterion) {
-    let inp = StructBodyNested::default();
+    let inp = Numbers::default();
     c.bench_function("serde_json::to_string", |b| {
         b.iter(|| {
             black_box({
@@ -15,12 +15,12 @@ fn to_string(c: &mut Criterion) {
 }
 
 fn from_string(c: &mut Criterion) {
-    let inp = StructBodyNested::default();
+    let inp = Numbers::default();
     let json = serde_json::to_string(&inp).unwrap();
     c.bench_function("serde_json::from_str", |b| {
         b.iter(|| {
             black_box({
-                let _ : StructBodyNested = serde_json::from_str(&json).unwrap();
+                let _ : Numbers = serde_json::from_str(&json).unwrap();
             })
         })
     });
