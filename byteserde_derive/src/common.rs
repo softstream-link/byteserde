@@ -102,7 +102,7 @@ impl SerDesTokens {
             .collect::<Vec<_>>()
     }
     pub fn has_option_flds(&self) -> bool {
-        self.des_option().len() > 0
+        !self.des_option().is_empty()
     }
     pub fn des_uses(&self) -> Vec<TokenStream> {
         self.flds
@@ -139,13 +139,12 @@ impl SerDesTokens {
 
     pub fn des_validate(&self, peek: &Peek) {
         // if flds produce errors, panic and don't worry about further validation
-        match self.des_collated_errs() {
-            Some(msg) => panic!(
+        if let Some(msg) = self.des_collated_errs() {
+            panic!(
                 "struct `{}` ByteDeserialize error:\n{}",
                 self.struct_name(),
                 msg
-            ),
-            None => (),
+            );
         }
 
         // you are an option section if you have any member of type Option<T> or Peek::Set is set
@@ -163,7 +162,7 @@ impl SerDesTokens {
                     self.struct_name() );
                 let fld_errors = match self.des_collated_errs() {
                     Some(msg) => format!("\n{}", msg),
-                    None => format!(""),
+                    None => String::new(),
                 };
                 panic!(
                     "struct `{}` ByteDeserialize error:\n{}{}",
@@ -176,14 +175,12 @@ impl SerDesTokens {
     }
 
     pub fn size_validate(&self) {
-        let errors = self.size_errors();
-        match errors {
-            Some(msg) => panic!(
+        if let Some(msg) = self.size_errors() {
+            panic!(
                 "struct `{}` ByteSerializedSizeOf error:\n{}",
                 self.struct_name(),
                 msg,
-            ),
-            None => (),
+            );
         }
     }
 }

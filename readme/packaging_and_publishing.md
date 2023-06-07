@@ -10,6 +10,11 @@ cargo test
 cargo test --examples
 ```
 
+## clippy
+```shell
+cargo clippy
+```
+
 ## on branch then master
 ```shell
 pushd ./byteserde 
