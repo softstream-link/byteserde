@@ -333,7 +333,9 @@ impl ByteSerializerHeap {
     /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerHeap::default();
     /// ser.serialize_le(0x1_u16);
-    /// ser.serialize_le(0x1_i16);
+    /// ser.serialize_le(0x2_i16);
+    /// println!("{:x}", ser);
+    /// assert_eq!(ser.len(), 4);
     /// ```
     pub fn serialize_le<const N: usize, T: ToLeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
@@ -344,7 +346,9 @@ impl ByteSerializerHeap {
     /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerHeap::default();
     /// ser.serialize_be(0x1_u16);
-    /// ser.serialize_be(0x1_i16);
+    /// ser.serialize_be(0x2_i16);
+    /// println!("{:x}", ser);
+    /// assert_eq!(ser.len(), 4);
     /// ```
     pub fn serialize_be<const N: usize, T: ToBeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())

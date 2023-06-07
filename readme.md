@@ -30,6 +30,6 @@
         * contains optional ascii string related types and macros, which are typically usefull when dealing with fixed length strings while parsing a `byte stream`, see examples section for more details.
 
 # Examples & Overview
-* Please refer to [this document](byteserde_examples/readme.md) for a number of helpfull examples and feature review.
+* Please refer to [this document](byteserde_examples/examples/readme.md) for a number of helpfull examples and feature review.
 
 

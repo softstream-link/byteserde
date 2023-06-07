@@ -1,41 +1,8 @@
+mod common;
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use common::StructBodyNested;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-
-#[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default)]
-// #[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, Default)]
-#[byteserde(endian = "le")]
-pub struct StructHeaderInteger {
-    type_i8: i8,
-    #[byteserde(endian = "be")]
-    type_u8: u8,
-    type_i16: i16,
-    #[byteserde(endian = "be")]
-    type_u16: u16,
-    type_i32: i32,
-    #[byteserde(endian = "be")]
-    type_u32: u32,
-    type_i64: i64,
-    #[byteserde(endian = "be")]
-    type_u64: u64,
-    type_i128: i128,
-    #[byteserde(endian = "be")]
-    type_u128: u128,
-}
-
-#[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default)]
-#[byteserde(endian = "le")]
-pub struct StructFooterFloat {
-    type_f32: f32,
-    #[byteserde(endian = "be")]
-    type_f64: f64,
-}
-#[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Default)]
-pub struct StructBodyNested {
-    type_header: StructHeaderInteger,
-    type_footer: StructFooterFloat,
-}
 
 fn reset_byte_serialize_stack(c: &mut Criterion) {
     let inp = StructBodyNested::default();
@@ -44,7 +11,7 @@ fn reset_byte_serialize_stack(c: &mut Criterion) {
         b.iter(|| {
             black_box({
                 ser.reset();
-                let _ = inp.byte_serialize_stack(ser);
+                let _ = inp.byte_serialize_stack(ser).unwrap();
             })
         })
     });
@@ -68,7 +35,7 @@ fn reset_byte_serialize_heap(c: &mut Criterion) {
         b.iter(|| {
             black_box({
                 ser.reset();
-                let _ = inp.byte_serialize_heap(ser);
+                let _ = inp.byte_serialize_heap(ser).unwrap();
             })
         })
     });
@@ -106,7 +73,7 @@ fn new_from_bytes(c: &mut Criterion) {
     c.bench_function("from_bytes - new ByteDeserializer", |b| {
         b.iter(|| {
             black_box({
-                let _ = from_bytes::<StructBodyNested>(&ser.as_slice());
+                let _: StructBodyNested = from_bytes(&ser.as_slice()).unwrap();
             })
         })
     });
