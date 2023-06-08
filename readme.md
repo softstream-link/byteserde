@@ -5,21 +5,21 @@
   
   * To be able to define rust `struct` that represent application data models while at the same time not having to write code and instead using `derive` annotations and attributes auto-generate code to put these models on the wire for `new` or `existing` `latency` sensetive network protocols. Hence any and all auto generated serialization code should be as fast as one can possibly write by hand. 
   
-* Benchmark results show a reference structure takes:
-  * `byteserde` - `~17ns` read/write 
-  * `bincode` - `~100ns` write / `~15ns` read - looks like write has a perfomance bug.
+* Benchmark results below show a performance summary of serializing & deserializing identical `sample` struct with only numeric fields using different frameworkds available:
+  * `byteserde` - `~15ns` read/write 
+  * `bincode` - `~15ns` read / `~100ns` write - this is likely result of the of the write producing a heap allocated vector
   * `rmp-serde` - `~215ns` read/write
-  * `serde_json` - `~600ns` read/write.
-  * refer to [this document](./byteserde_examples/readme.md) for further details.
+  * `serde_json` - `~600ns` read/write - understandably slow due to strings usage
+  * refer to [this document](./byteserde_examples/readme.md) for full benchmark details.
 
 
 # Benefit case
-* If you work with network protocols that deliver data in `byte stream` format and a well defined sequence you can use this product to quickly and efficently map your `byte stream` into a `struct` of your choice at zero performance cost and focus on the business logic instead of parsing and mapping.
-  * Example:
+* If you work with network protocols that deliver data in `byte stream` format you can use this product to efficently map your `byte stream` into a `struct` of your choice at zero performance cost and focus on the business logic instead of parsing and mapping. 
+* Please note that unlike `bincode`, which comes with its own [wire specification](https://github.com/bincode-org/bincode/blob/trunk/docs/spec.md) for language `primitives`, which you can then use to enchode a `message/action` and send it across the wire, this product is designed to take an existing `message/action` specificaiton and map it to a a rust `struct`.
+  * See example specifications which are posssible to map to a rust struct using this product but not `bincode`:
     * [Ouch5](http://nasdaqtrader.com/content/technicalsupport/specifications/TradingProducts/Ouch5.0.pdf)
     * [SoupBinTCP](https://www.nasdaq.com/docs/SoupBinTCP%204.1.pdf)
     * etc..
-
 
 
 # The project contains three craits

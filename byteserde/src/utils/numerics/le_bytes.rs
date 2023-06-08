@@ -13,7 +13,7 @@ pub trait ToLeBytes<const N: usize> {
 macro_rules! impl_ToLeBytes {
     ($name:ty, $len:expr) => {
         impl $crate::utils::numerics::le_bytes::ToLeBytes<$len> for $name {
-            #[inline(always)]
+            #[inline]
             fn to_bytes(&self) -> [u8; $len] {
                 self.to_le_bytes()
             }
@@ -37,6 +37,7 @@ impl_ToLeBytes!(isize, USIZE);
 // //////////////////////////////////////////////////////////////////////
 pub trait FromLeBytes<const N: usize, T> {
     fn from_bytes(v: [u8; N]) -> T;
+    fn from_bytes_ref(v: &[u8; N]) -> T;
 }
 
 /// calling
@@ -50,9 +51,13 @@ pub trait FromLeBytes<const N: usize, T> {
 macro_rules! impl_FromLeBytes {
     ($name:ty, $len:expr) => {
         impl $crate::utils::numerics::le_bytes::FromLeBytes<$len, $name> for $name {
-            #[inline(always)]
+            #[inline]
             fn from_bytes(v: [u8; $len]) -> $name {
                 <$name>::from_le_bytes(v)
+            }
+            #[inline]
+            fn from_bytes_ref(v: &[u8; $len]) -> $name {
+                <$name>::from_le_bytes(*v)
             }
         }
     };

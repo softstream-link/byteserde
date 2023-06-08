@@ -237,9 +237,9 @@ fn setup_array(
 
     let des_vars = match option {
         FieldType::ArrBytes { signed, .. } => match signed {
-            false => quote!( let #var_name: [#arr_ty; #len] = des.deserialize_bytes_array()?; ),
+            false => quote!( let #var_name: [#arr_ty; #len] = *des.deserialize_bytes_array_ref()?; ),
             true => {
-                quote!( let #var_name: [u8; #len] = des.deserialize_bytes_array()?; 
+                quote!( let #var_name: [u8; #len] = *des.deserialize_bytes_array_ref()?; 
                         let #var_name: [#arr_ty; #len] = unsafe { ::std::mem::transmute(#var_name) }; )
             }
         },

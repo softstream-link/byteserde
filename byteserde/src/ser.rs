@@ -125,18 +125,14 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     }
 
     /// Serializes entire slice into the buffer, returns [SerDesError] if required capacity is exceeded.
+    // #[inline]
     pub fn serialize_bytes_slice(&mut self, bytes: &[u8]) -> Result<&mut Self> {
         let input_len = bytes.len();
         let avail = self.avail();
         match input_len > avail {
             false => {
-                // TODO try using copy from slice as safer alternative
-                // T.serialize(&serializer) - reuse serializer each iter
-                //         time:   [62.164 ns 64.446 ns 67.565 ns]
-                // self.bytes[self.len..self.len+input_len].copy_from_slice(&bytes);
-                // 50% improvement using unsafe
-                // T.serialize(&serializer) - reuse serializer each iter
-                //         time:   [29.611 ns 30.166 ns 30.881 ns]
+                // safe -> self.bytes[self.len..self.len+bytes.len()].copy_from_slice(bytes); 
+                // safe 60ns vs 15ns unsafe using bench and reference struct
                 unsafe {
                     std::ptr::copy_nonoverlapping(
                         bytes.as_ptr(),
@@ -144,13 +140,10 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
                         bytes.len(),
                     );
                 }
-
                 self.len += bytes.len();
                 Result::Ok(self)
             }
-            true => {
-                Err(self.error(bytes.len()))
-            }
+            true => Err(self.error(bytes.len())),
         }
     }
 
@@ -204,6 +197,19 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     }
 }
 
+#[cfg(test)]
+mod tests{
+    #[test]
+    fn run(){
+        let mut dest = [0_u8;10];
+        let src = &[1_u8, 2][..];
+        println!("{:?}", dest);
+        let from = 3;
+        let to = from + src.len();
+        dest[from..to].copy_from_slice(src);
+        println!("{:?}", dest);
+    }
+}
 /// Analogous to [`to_bytes_stack::<CAP>()`], but returns an instance of [`ByteSerializerStack<CAP>`].
 pub fn to_serializer_stack<const CAP: usize, T>(v: &T) -> Result<ByteSerializerStack<CAP>>
 where
@@ -262,9 +268,16 @@ pub trait ByteSerializeHeap {
 ///
 /// ser.reset();
 /// assert_eq!(ser.is_empty(), true);
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct ByteSerializerHeap {
     bytes: Vec<u8>,
+}
+impl Default for ByteSerializerHeap{
+    fn default() -> Self {
+        ByteSerializerHeap{
+            bytes: Vec::with_capacity(1024),
+        }
+    }
 }
 /// Provides a convenient way to view buffer content as both HEX and ASCII bytes where prinable.
 /// supports both forms of alternate formatting `{:x}` and `{:#x}`.
