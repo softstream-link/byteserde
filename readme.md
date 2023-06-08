@@ -1,3 +1,5 @@
+[![Master CI](https://github.com/softstream-link/byteserde/actions/workflows/push_master.io.yml/badge.svg)](https://github.com/softstream-link/byteserde/actions/workflows/push_master.io.yml)
+
 # Motivation
 
 * The motivation for this product is two fold:
