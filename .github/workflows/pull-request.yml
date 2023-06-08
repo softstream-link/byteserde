@@ -22,6 +22,8 @@ jobs:
         run: cargo clippy --all-features -- --deny warnings
       - name: Publish Dry Run to crates.io
         run: |
+          pwd
+          ls -la
           pushd byteserde
           cargo publish --dry-run
           popd
