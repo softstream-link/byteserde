@@ -197,19 +197,6 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     }
 }
 
-#[cfg(test)]
-mod tests{
-    #[test]
-    fn run(){
-        let mut dest = [0_u8;10];
-        let src = &[1_u8, 2][..];
-        println!("{:?}", dest);
-        let from = 3;
-        let to = from + src.len();
-        dest[from..to].copy_from_slice(src);
-        println!("{:?}", dest);
-    }
-}
 /// Analogous to [`to_bytes_stack::<CAP>()`], but returns an instance of [`ByteSerializerStack<CAP>`].
 pub fn to_serializer_stack<const CAP: usize, T>(v: &T) -> Result<ByteSerializerStack<CAP>>
 where

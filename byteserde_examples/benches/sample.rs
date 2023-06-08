@@ -34,7 +34,7 @@ impl Default for Integers{
 }
 #[rustfmt::skip]
 #[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Serialize, Deserialize)]
-// #[byteserde(endian = "be")]
+// #[byteserde(endian = "le")]
 pub struct Floats {
     pub type_f32: f32,
     pub type_f64: f64,

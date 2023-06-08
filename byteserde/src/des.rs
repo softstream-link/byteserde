@@ -160,12 +160,13 @@ impl<'x> ByteDeserializer<'x> {
 
     #[inline]
     pub fn deserialize_bytes_array_ref<const N: usize>(&mut self) -> Result<&[u8; N]> {
-        let arr: Result<&[u8; N]> = match self.bytes.get(self.idx..self.idx + N) {
-            Some(v) => Ok(v.try_into().expect("Failed to convert &[u8] into &[u8; N]")),
+        match self.bytes.get(self.idx..self.idx + N) {
+            Some(v) => {
+                self.idx += N;
+                Ok(v.try_into().expect("Failed to convert &[u8] into &[u8; N]"))
+            },
             None => Err(self.error(N)),
-        };
-        self.idx += N;
-        arr
+        }
     }
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `native` endianess
     /// FromNeBytes trait is already implemented for all rust's numeric primitives in this crate
@@ -188,7 +189,7 @@ impl<'x> ByteDeserializer<'x> {
     /// let v: u16 = des.deserialize_le().unwrap();
     /// // ... etc
     /// ```
-    #[inline]
+    // #[inline]
     pub fn deserialize_le<const N: usize, T: FromLeBytes<N, T>>(&mut self) -> Result<T> {
         let r = self.deserialize_bytes_array_ref::<N>()?;
         Ok(T::from_bytes_ref(r))
