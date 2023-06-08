@@ -23,8 +23,8 @@ use super::ser::ByteSerializerStack;
 /// let first: u8 = des.deserialize_bytes_slice(1).unwrap()[0];
 /// assert_eq!(first , 1);
 ///
-/// let second: [u8; 2] = des.deserialize_bytes_array().unwrap();
-/// assert_eq!(second, [0x00, 0x02]);
+/// let second: &[u8; 2] = des.deserialize_bytes_array_ref().unwrap();
+/// assert_eq!(second, &[0x00, 0x02]);
 ///
 /// let remaining: &[u8] = des.deserialize_bytes_slice_remaining();
 /// assert_eq!(remaining, &[0x00, 0x00, 0x03]);
