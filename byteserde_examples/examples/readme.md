@@ -1,5 +1,5 @@
 # Examples
-* The following list of examples is listed in the order of incremental complexity.
+* The following list of examples are listed in the order of incremental complexity.
 * All examples are implemented in the form of a test, where the structure of a given complexity is `initialized`, `serialized`, and then `deserialized` with the expectation that starting and resulting `structs` are identical, with a few desired exceptions.
 * All examples provide both `stack` & `heap` serializers for refernce. 
     

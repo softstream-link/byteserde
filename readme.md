@@ -3,7 +3,7 @@
 * The motivation for this product is two fold:
   * To be the `fastest` byte stream serializer/deserializer on the market for latency sensetive usecases.
   
-  * To be able to define rust `struct` that represent application data models while at the same time not having to write code and instead using `derive` annotations and attributes auto-generate code to put these models on the wire for `new` or `existing` `latency` sensetive network protocols. Hence any and all auto generated serialization code should be as fast as one can possibly write by hand. 
+  * To be able to define rust `struct` that represent application data models while at the same time not having to write code and instead using `derive` annotations and attributes auto-generate code to put these models on the wire for `new` or `existing` `latency` sensitive network protocols. Hence any and all auto generated serialization code should be as fast as one can possibly write by hand. 
   
 * Benchmark results below show a performance summary of serializing & deserializing identical `sample` struct with only numeric fields using different frameworkds available:
   * `byteserde` - `~15ns` read/write 
@@ -33,7 +33,7 @@
 
     * `#[derive(ByteSerializedSizeOf)]` - generates [ByteSerializedSizeOf trait](byteserde/src/size.rs#ByteSerializedSizeOf) - this trait provides an `associated` method `byte_size()` which gives you a `struct` memory size in bytes without alignment. However it does not support types which heap allocate, ex: Vectors, Strings, or their derivations.
     
-    * `#[derive(ByteSerializedLenOf)]` - generates  [ByteSerializedLenOf trait](byteserde/src/size.rs#ByteSerializedLenOf) - this trait provides an `instance` method `byte_len(&self)` which gives you memory size in bytes without alignment of specific instance. It exists specifically to deal with types tha `ByteSerializedSizeOf trait` does not support
+    * `#[derive(ByteSerializedLenOf)]` - generates  [ByteSerializedLenOf trait](byteserde/src/size.rs#ByteSerializedLenOf) - this trait provides an `instance` method `byte_len(&self)` which gives you memory size in bytes without alignment of specific instance. It exists specifically to deal with types that `ByteSerializedSizeOf trait` does not support
   * For more examples follow [here](byteserde_examples/examples/readme.md)
   * NOTE: that Union and Unit structure are not supported, but it might change in the future.
   
