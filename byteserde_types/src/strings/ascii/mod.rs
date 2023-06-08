@@ -1,6 +1,6 @@
 use byteserde::prelude::*;
 use byteserde::utils::hex::{to_hex_line, to_hex_pretty};
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
 use std::any::type_name;
 use std::cmp::min;
 use std::fmt;
@@ -69,7 +69,7 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8]>
 impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8; LEN]>
     for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
 {
-    /// Compiler time check for capacity, bytes array must be same length as [StringAsciiFixed::LEN]
+    /// Compiler time check for capacity, bytes array must be same length as `LEN`
     fn from(bytes: &[u8; LEN]) -> Self {
         bytes[0..].into()
     }
@@ -165,7 +165,7 @@ mod test_string_ascii_fixed {
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
 
-        let des = &mut ByteDeserializer::new(ser_stack.bytes());
+        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
 
         // take half shall FAIL
         let out_err =
@@ -246,7 +246,7 @@ mod test_string_ascii_fixed {
 /// println!("out_str: {:x}", out_str);
 /// assert_eq!(StringAscii::from(b"ABCDEABCDE"), out_str);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedLenOf, PartialEq)]
 pub struct StringAscii(Vec<u8>);
 impl StringAscii {
     pub fn len(&self) -> usize {
@@ -308,7 +308,7 @@ mod test_string_ascii {
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
 
-        let des = &mut ByteDeserializer::new(ser_stack.bytes());
+        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
 
         // take half + 1 shall SUCCESS first time
         let depleted = inp_str.len() / 2 + 1;
@@ -341,7 +341,7 @@ mod test_string_ascii {
 /// println!("{:x}", inp_char);
 /// assert_eq!(inp_char.bytes(), [0x41]);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq, Clone, Copy)]
 pub struct CharAscii(u8);
 impl CharAscii {
     pub fn bytes(&self) -> [u8; 1] {
@@ -349,6 +349,14 @@ impl CharAscii {
     }
     pub fn new(byte: u8) -> Self {
         Self(byte)
+    }
+    pub fn as_byte(&self) -> u8 {
+        self.0
+    }
+}
+impl From<&CharAscii> for u8 {
+    fn from(value: &CharAscii) -> Self {
+        value.0
     }
 }
 impl From<u8> for CharAscii {
@@ -371,17 +379,13 @@ impl fmt::LowerHex for CharAscii {
 impl fmt::Debug for CharAscii {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple(type_name::<Self>().split("::").last().ok_or(fmt::Error)?)
-            .field(&char::from_u32(u32::from(self.0)).ok_or(fmt::Error)?)
+            .field(&char::from_u32(self.0 as u32).ok_or(fmt::Error)?)
             .finish()
     }
 }
 impl fmt::Display for CharAscii {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            &char::from_u32(u32::from(self.0)).ok_or(fmt::Error)?
-        )
+        write!(f, "{}", &char::from_u32(self.0 as u32).ok_or(fmt::Error)?)
     }
 }
 
@@ -403,9 +407,9 @@ mod test_char_ascii {
 
         let ser_heap: ByteSerializerHeap = to_serializer_heap(&inp_char).unwrap();
         info!("ser_heap: {:#x}", ser_heap);
-        assert_eq!(ser_stack.bytes(), ser_heap.bytes());
+        assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
-        let des = &mut ByteDeserializer::new(ser_stack.bytes());
+        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
         let out_char = CharAscii::byte_deserialize(des).unwrap();
         info!("out_char: {:?}", out_char);
     }
@@ -426,15 +430,6 @@ impl<const CHAR: u8> ConstCharAscii<CHAR> {
     pub fn bytes(&self) -> [u8; 1] {
         [CHAR]
     }
-    pub fn is_empty(&self) -> bool {
-        false
-    }
-    pub fn len(&self) -> usize {
-        1
-    }
-    pub fn size() -> usize {
-        1
-    }
     pub fn to_char() -> char {
         char::from_u32(u32::from(CHAR)).unwrap()
     }
@@ -442,7 +437,7 @@ impl<const CHAR: u8> ConstCharAscii<CHAR> {
 impl<const CHAR: u8> ByteDeserialize<ConstCharAscii<CHAR>> for ConstCharAscii<CHAR> {
     #[allow(clippy::just_underscores_and_digits)]
     fn byte_deserialize(des: &mut ByteDeserializer) -> Result<ConstCharAscii<CHAR>> {
-        let _0 = des.deserialize_bytes_slice(1)?[0];
+        let _0 = des.deserialize_u8()?;
         match _0 == CHAR {
             true => Ok(Default::default()),
             false => {
@@ -504,7 +499,7 @@ mod test_const_char_ascii {
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_bytes).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
 
-        let des = &mut ByteDeserializer::new(ser_stack.bytes());
+        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
         let out_plus: ConstCharAscii<b'+'> = des.deserialize().unwrap();
         info!("out_plus: {}", out_plus);
 

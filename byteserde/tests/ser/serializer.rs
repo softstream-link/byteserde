@@ -12,8 +12,8 @@ fn test_serializer_stack_primitive() {
     let _ = ser.serialize_bytes_slice(&[1_u8, 2]);
     info!("ser: {ser:#x}");
 
-    assert_eq!(ser.bytes().len(), 2);
-    assert_eq!(ser.bytes(), &[1_u8, 2]);
+    assert_eq!(ser.as_slice().len(), 2);
+    assert_eq!(ser.as_slice(), &[1_u8, 2]);
     assert_eq!(ser.capacity(), CAP_3);
 
     // make sure can write using chained method and can't write past capacity
@@ -38,6 +38,7 @@ fn test_serializer_stack_primitive() {
 
     info!("res_err: {res_err:#?}");
     assert!(res_err.is_err());
+    assert!(res_err.unwrap_err().message.starts_with("Failed to add a slice size: 10 into ByteSerializerStack<22> { len: 20, cap: 22, bytes: 0000:"));
     assert_eq!(ser.len(), CAP_22 - 2);
     assert_eq!(ser.avail(), 2);
 }

@@ -38,7 +38,7 @@ pub trait ByteSerializeStack {
         ser: &mut ByteSerializerStack<CAP>,
     ) -> Result<()>;
 }
-/// A byte buffer allocated on stack backed by [u8; CAP], can be reused and recyled by calling [Self::reset()].
+/// A byte buffer allocated on stack backed by `[u8; CAP]`, can be reused and recyled by calling [Self::reset()].
 /// Example: Creates a buffer with 128 bytes capacity and serializes data into it.
 /// ```
 /// use ::byteserde::prelude::*;
@@ -50,6 +50,7 @@ pub trait ByteSerializeStack {
 /// assert_eq!(ser.capacity(), 128);
 /// assert_eq!(ser.avail(), 128 - 1);
 /// assert_eq!(ser.len(), 1);
+/// assert_eq!(ser.is_empty(), false);
 ///
 /// ser.reset();
 /// assert_eq!(ser.is_empty(), true);
@@ -70,8 +71,8 @@ pub struct ByteSerializerStack<const CAP: usize> {
 impl<const CAP: usize> LowerHex for ByteSerializerStack<CAP> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bytes = match f.alternate() {
-            true => format!("\n{hex}", hex = to_hex_pretty(self.bytes())),
-            false => to_hex_line(self.bytes()),
+            true => format!("\n{hex}", hex = to_hex_pretty(self.as_slice())),
+            false => to_hex_line(self.as_slice()),
         };
         let len = self.len;
         let name = type_name::<Self>().split("::").last().unwrap();
@@ -114,28 +115,24 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     pub fn capacity(&self) -> usize {
         CAP
     }
-    /// Returns number of available slots in the beffer. [Self::capacity()] - [Self::len()]
+    /// Returns number of available slots in the buffer. [Self::capacity()] - [Self::len()]
     pub fn avail(&self) -> usize {
         CAP - self.len
     }
     /// Returns a slice of the buffer containing the bytes written, less any unused slots.
-    pub fn bytes(&self) -> &[u8] {
+    pub fn as_slice(&self) -> &[u8] {
         &self.bytes[0..self.len]
     }
 
     /// Serializes entire slice into the buffer, returns [SerDesError] if required capacity is exceeded.
+    // #[inline]
     pub fn serialize_bytes_slice(&mut self, bytes: &[u8]) -> Result<&mut Self> {
         let input_len = bytes.len();
         let avail = self.avail();
         match input_len > avail {
             false => {
-                // TODO try using copy from slice as safer alternative
-                // T.serialize(&serializer) - reuse serializer each iter
-                //         time:   [62.164 ns 64.446 ns 67.565 ns]
-                // self.bytes[self.len..self.len+input_len].copy_from_slice(&bytes);
-                // 50% improvement using unsafe
-                // T.serialize(&serializer) - reuse serializer each iter
-                //         time:   [29.611 ns 30.166 ns 30.881 ns]
+                // safe -> self.bytes[self.len..self.len+bytes.len()].copy_from_slice(bytes); 
+                // safe 60ns vs 15ns unsafe using bench and reference struct
                 unsafe {
                     std::ptr::copy_nonoverlapping(
                         bytes.as_ptr(),
@@ -143,18 +140,18 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
                         bytes.len(),
                     );
                 }
-
                 self.len += bytes.len();
                 Result::Ok(self)
             }
-            true => {
-                // panic!("blah"); // TODO format kills performance
-                Result::Err(SerDesError {
-                    message: format!(
-                        "adding {input_len} bytes, {avail} slots available. input: {bytes:?} buffer: {self:x}",
-                    ),
-                })
-            }
+            true => Err(self.error(bytes.len())),
+        }
+    }
+
+    fn error(&self, n: usize) -> SerDesError{
+        SerDesError {
+            message: format!(
+                "Failed to add a slice size: {n} into {self:x}",
+            ),
         }
     }
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `native` endianess.
@@ -245,22 +242,29 @@ where
 pub trait ByteSerializeHeap {
     fn byte_serialize_heap(&self, ser: &mut ByteSerializerHeap) -> Result<()>;
 }
-/// A byte buffer allocated on heap backed by Vec<u8>, can be reused and recycled by calling [Selc::reset()].
+/// A byte buffer allocated on heap backed by `Vec<u8>`, can be reused and recycled by calling [Self::reset()].
 /// Example: Create a Buffer and serialize data into it.
 /// ```
 /// use ::byteserde::prelude::*;
 /// let mut ser = ByteSerializerHeap::default();
-/// 
+///
 /// ser.serialize_bytes_slice(&[0x01]).unwrap();
-/// 
+///
 /// assert_eq!(ser.len(), 1);
 /// assert_eq!(ser.is_empty(), false);
-/// 
+///
 /// ser.reset();
 /// assert_eq!(ser.is_empty(), true);
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct ByteSerializerHeap {
     bytes: Vec<u8>,
+}
+impl Default for ByteSerializerHeap{
+    fn default() -> Self {
+        ByteSerializerHeap{
+            bytes: Vec::with_capacity(1024),
+        }
+    }
 }
 /// Provides a convenient way to view buffer content as both HEX and ASCII bytes where prinable.
 /// supports both forms of alternate formatting `{:x}` and `{:#x}`.
@@ -273,7 +277,7 @@ pub struct ByteSerializerHeap {
 impl LowerHex for ByteSerializerHeap {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bytes = match f.alternate() {
-            true => format!("\n{hex}", hex = to_hex_pretty(self.bytes())),
+            true => format!("\n{hex}", hex = to_hex_pretty(self.as_slice())),
             false => to_hex_line(&self.bytes),
         };
         let len = self.len();
@@ -303,7 +307,7 @@ impl ByteSerializerHeap {
         self.bytes.capacity() - self.bytes.len()
     }
     /// Returns entire content of the buffer as a slice.
-    pub fn bytes(&self) -> &[u8] {
+    pub fn as_slice(&self) -> &[u8] {
         &self.bytes[0..]
     }
     /// Writes a slice of bytes into the buffer.
@@ -329,7 +333,9 @@ impl ByteSerializerHeap {
     /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerHeap::default();
     /// ser.serialize_le(0x1_u16);
-    /// ser.serialize_le(0x1_i16);
+    /// ser.serialize_le(0x2_i16);
+    /// println!("{:x}", ser);
+    /// assert_eq!(ser.len(), 4);
     /// ```
     pub fn serialize_le<const N: usize, T: ToLeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
@@ -340,7 +346,9 @@ impl ByteSerializerHeap {
     /// use ::byteserde::prelude::*;
     /// let mut ser = ByteSerializerHeap::default();
     /// ser.serialize_be(0x1_u16);
-    /// ser.serialize_be(0x1_i16);
+    /// ser.serialize_be(0x2_i16);
+    /// println!("{:x}", ser);
+    /// assert_eq!(ser.len(), 4);
     /// ```
     pub fn serialize_be<const N: usize, T: ToBeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())

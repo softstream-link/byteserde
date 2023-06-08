@@ -1,35 +1,42 @@
-use common::{get_crate_name, get_generics, get_struct_ser_des_tokens};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
+use tokens_enum::get_enum_from_tokens;
+use tokens_struct::{get_generics, get_struct_tokens};
 
+use crate::{
+    attr_struct::{peek_attr, Peek},
+    common::StructType,
+};
+// test only
+#[cfg(test)]
+pub mod unittest;
+
+mod attr_struct;
 mod common;
-mod struct_shared;
+mod tokens_enum;
+mod tokens_struct;
+
 #[proc_macro_derive(ByteSerializeStack, attributes(byteserde))]
-#[allow(non_snake_case)] // keep snake name otherwise it messes up vscode refactoring
-pub fn ByteSerializeStack(input: TokenStream) -> TokenStream {
+pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
 
     // get struct name
     let struct_name = &ast.ident;
-    let (generics_declaration, generics_alias) = get_generics(&ast.generics);
-    let (ser_method, _) = get_struct_ser_des_tokens(&ast);
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
+    let res = get_struct_tokens(&ast);
     // grap just stack presets
-    let ser_vars = ser_method.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
-    let ser_over = ser_method.iter().map(|f| &f.ser_repl).collect::<Vec<_>>();
-    let ser_uses_stack = ser_method
-        .iter()
-        .map(|f| &f.ser_uses_stck)
-        .collect::<Vec<_>>();
-
-    let crate_name = get_crate_name();
+    let ser_vars = res.ser_vars();
+    let ser_relp = res.ser_repl();
+    let ser_uses_stck = res.ser_uses_stck();
 
     // generate stack serializer
     let output = quote! {
         #[automatically_derived]
-        impl #generics_declaration #crate_name::ser::ByteSerializeStack for #struct_name #generics_alias{
+        impl #generics_declaration ::byteserde::ser::ByteSerializeStack for #struct_name #generics_alias #where_clause{
         // impl byteserde::ser::ByteSerializeStack for #struct_name {
-            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut #crate_name::ser::ByteSerializerStack<CAP>) -> #crate_name::error::Result<()>{
+            #[inline]
+            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ::byteserde::ser::ByteSerializerStack<CAP>) -> ::byteserde::error::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?; -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?; -- for tuple
@@ -37,8 +44,8 @@ pub fn ByteSerializeStack(input: TokenStream) -> TokenStream {
                 //      self.field_name.byte_serialize_stack(ser)?;     -- for regular
                 //      self.0         .byte_serialize_stack(ser)?;     -- for tuple
                 #( #ser_vars )*
-                #( #ser_over )*
-                #( #ser_uses_stack )*
+                #( #ser_relp )*
+                #( #ser_uses_stck )*
                 Ok(())
             }
         }
@@ -47,29 +54,24 @@ pub fn ByteSerializeStack(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(ByteSerializeHeap, attributes(byteserde))]
-#[allow(non_snake_case)] // keep snake name otherwise it messes up vscode refactoring
-pub fn ByteSerializeHeap(input: TokenStream) -> TokenStream {
+pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
     // get struct name
     let struct_name = &ast.ident;
-    let (generics_declaration, generics_alias) = get_generics(&ast.generics);
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let (ser_method, _) = get_struct_ser_des_tokens(&ast);
+    let res = get_struct_tokens(&ast);
     // grap just heap presets
-    let ser_vars = ser_method.iter().map(|f| &f.ser_vars).collect::<Vec<_>>();
-    let ser_over = ser_method.iter().map(|f| &f.ser_repl).collect::<Vec<_>>();
-    let ser_uses_heap = ser_method
-        .iter()
-        .map(|f| &f.ser_uses_heap)
-        .collect::<Vec<_>>();
-
-    let crate_name = get_crate_name();
+    let ser_vars = res.ser_vars();
+    let ser_repl = res.ser_repl();
+    let ser_uses_heap = res.ser_uses_heap();
 
     // generate heap serializer
     let output = quote! {
         #[automatically_derived]
-        impl #generics_declaration #crate_name::ser::ByteSerializeHeap for #struct_name #generics_alias{
-            fn byte_serialize_heap(&self, ser: &mut #crate_name::ser::ByteSerializerHeap) -> #crate_name::error::Result<()>{
+        impl #generics_declaration ::byteserde::ser::ByteSerializeHeap for #struct_name #generics_alias #where_clause{
+            #[inline]
+            fn byte_serialize_heap(&self, ser: &mut ::byteserde::ser::ByteSerializerHeap) -> ::byteserde::error::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?;         -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?;         -- for tuple
@@ -77,7 +79,7 @@ pub fn ByteSerializeHeap(input: TokenStream) -> TokenStream {
                 //      self.field_name.byte_serialize_heap(ser)?;          -- for regular
                 //      self.0         .byte_serialize_heap(ser)?;          -- for tuple
                 #( #ser_vars)*
-                #( #ser_over)*
+                #( #ser_repl)*
                 #( #ser_uses_heap)*
                 Ok(())
             }
@@ -87,29 +89,53 @@ pub fn ByteSerializeHeap(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(ByteDeserialize, attributes(byteserde))]
-#[allow(non_snake_case)] // keep snake name otherwise it messes up vscode refactoring
-pub fn ByteDeserialize(input: TokenStream) -> TokenStream {
+pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
     // get struct name
-    let struct_name = &ast.ident;
-    let (generics_declaration, generics_alias) = get_generics(&ast.generics);
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
-    let (des_method, ty) = get_struct_ser_des_tokens(&ast);
-    // grap just heap presets
-    let des_vars = des_method.iter().map(|f| &f.des_vars).collect::<Vec<_>>();
-    let des_uses = des_method.iter().map(|f| &f.des_uses).collect::<Vec<_>>();
-    let impl_body = match ty {
-        common::StructType::Regular => quote!(#struct_name {#( #des_uses )*}),
-        common::StructType::Tuple => quote!  (#struct_name (#( #des_uses )*)),
+    let sdt = get_struct_tokens(&ast);
+
+    let peek = peek_attr(&ast.attrs);
+    sdt.des_validate(&peek);
+
+    let des_vars = sdt.des_vars();
+    let des_option = sdt.des_option();
+    let des_uses = sdt.des_uses();
+    let id = sdt.struct_ident();
+
+    let impl_body = match sdt.struct_type {
+        StructType::Regular(..) => quote!(#id {#( #des_uses )*}), // NOTE {}
+        StructType::Tuple(..) => quote!  (#id (#( #des_uses )*)), // NOTE ()
+        StructType::Enum(..) => quote! ( #id::from( _struct )),   // NOTE ::from()
     };
 
-    let crate_name = get_crate_name();
+    let start_len = match peek {
+        Peek::Set(v) => quote!(#v),
+        Peek::NotSet => quote!(),
+    };
+
+    let des_option_special = match sdt.has_option_flds() {
+        true => quote!(
+                    while !des.is_empty() {
+                        let peek = |start, len| -> Result<&[u8]> {
+                            let p = des.peek_bytes_slice(len+start)?;
+                            Ok(&p[start..])
+                        };
+                        let __peeked = peek(#start_len)?;
+                        #( #des_option )*
+                    }
+        ),
+        false => quote!(),
+    };
 
     // generate deserializer
-    let output = quote! {
+
+    let output = quote!(
         #[automatically_derived]
-        impl #generics_declaration #crate_name::des::ByteDeserialize<#struct_name #generics_alias> for #struct_name #generics_alias {
-            fn byte_deserialize(des: &mut #crate_name::des::ByteDeserializer) -> #crate_name::error::Result<#struct_name #generics_alias>{
+        impl #generics_declaration ::byteserde::des::ByteDeserialize<#id #generics_alias> for #id #generics_alias #where_clause{
+            #[inline]
+            fn byte_deserialize(des: &mut ::byteserde::des::ByteDeserializer) -> ::byteserde::error::Result<#id #generics_alias>{
                 // let type_u16:    u16 = des.deserialize_[be|le|ne]()?; -- numerics
                 // let type_String: String = des.deserialize()?;          -- trait ByteDeserialize
                 // StructName { type_u16, type_String }
@@ -118,9 +144,70 @@ pub fn ByteDeserialize(input: TokenStream) -> TokenStream {
                 // let _1  = des.deserialize()?;          -- trait ByteDeserialize
                 // TupleName ( _0, _1 )
                 #( #des_vars )*
+                #des_option_special
                 Ok(#impl_body)
             }
         }
+    );
+    output.into()
+}
+
+#[proc_macro_derive(ByteSerializedSizeOf, attributes(byteserde))]
+pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input).unwrap();
+    // get struct name
+    let struct_name = &ast.ident;
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
+    // get ser & des quote presets
+    let res = get_struct_tokens(&ast);
+    // grap just heap presets
+    res.size_validate();
+    let size = res.size_of();
+
+    // generate deserializer
+    let output = quote! {
+        #[automatically_derived]
+        impl #generics_declaration ::byteserde::size::ByteSerializedSizeOf for #struct_name #generics_alias #where_clause{
+            #[inline]
+            fn byte_size() -> usize{
+                # ( #size )+*
+            }
+        }
+    };
+    output.into()
+}
+#[proc_macro_derive(ByteSerializedLenOf, attributes(byteserde))]
+pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input).unwrap();
+    // get struct name
+    let struct_name = &ast.ident;
+    let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
+    // get ser & des quote presets
+    let res = get_struct_tokens(&ast);
+    // grap just heap presets
+    let len = res.len_of();
+
+    // generate deserializer
+    let output = quote! {
+        #[automatically_derived]
+        impl #generics_declaration ::byteserde::size::ByteSerializedLenOf for #struct_name #generics_alias #where_clause{
+            #[inline]
+            fn byte_len(&self) -> usize{
+                # ( #len )+*
+            }
+        }
+    };
+    output.into()
+}
+
+#[proc_macro_derive(ByteEnumFromBinder, attributes(byteserde))]
+pub fn byte_enum_from(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input).unwrap();
+
+    let froms = get_enum_from_tokens(&ast);
+    // generate From
+    let output = quote! {
+         #(#froms)*
     };
     output.into()
 }

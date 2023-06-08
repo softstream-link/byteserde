@@ -5,3 +5,4 @@ pub use super::ser::{to_bytes_heap, to_serializer_heap};
 pub use super::ser::{to_bytes_stack, to_serializer_stack};
 pub use super::ser::{ByteSerializeHeap, ByteSerializerHeap};
 pub use super::ser::{ByteSerializeStack, ByteSerializerStack};
+pub use super::size::{ByteSerializedLenOf, ByteSerializedSizeOf};

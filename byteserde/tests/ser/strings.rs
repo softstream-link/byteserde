@@ -17,9 +17,9 @@ fn test_serialize_string() {
 
     assert_eq!(
         8_usize.to_be_bytes(),
-        ser.bytes()[0..size]
+        ser.as_slice()[0..size]
     );
-    assert_eq!(inp.len(), ser.bytes()[size..].len());
+    assert_eq!(inp.len(), ser.as_slice()[size..].len());
 }
 
 #[test]
@@ -31,7 +31,7 @@ fn test_serialize_char() {
     let _ = inp.byte_serialize_stack(ser);
     info!("ser: {ser:#x}");
 
-    assert_eq!([0x01_u8], ser.bytes()[0..1]);
-    assert_eq!([0x61_u8], ser.bytes()[1..2]);
+    assert_eq!([0x01_u8], ser.as_slice()[0..1]);
+    assert_eq!([0x61_u8], ser.as_slice()[1..2]);
     assert_eq!(ser.len(), 2);
 }

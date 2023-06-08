@@ -1,34 +1,41 @@
-# Examples
-* The following list of examples is available in the order of incremental complexity.
-* All examples are implemented in the form of a test, where the structure of a given complexity is `initialized`, `serialized`, and then `deserialized` with the expectation that starting and resulting `structs` are identical. 
-* All examples provide both `stack` & `heap` serializers for refernce. 
-    *  NOTE: In each case an example is available in Rust's `regular` & `tuple` `struct` format
+# This module contains a number of training examples and bench mark comparisons
 
-## `Numerics` ( `u8`, `u16`, `i32`, ..)
-* [Regular](./examples/numeric_regular.rs)
-* [Tuple](./examples/numeric_tuple.rs)
+## Training Examples
+* follow [here](./examples/readme.md)
 
-## `Strings` `ascii` / `utf-8`
-* [Regular](./examples/strings_regular.rs)
-* [Tuple](./examples/strings_tuple.rs)
-    * `ascii` types are included with the package
-        * [StringAsciiFixed](../byteserde_types/src/utils/strings/ascii/mod.rs#StringAsciiFixed) - fixed length string
-        * [StringAscii](../byteserde_types/src/utils/strings/ascii/mod.rs#StringAscii) - variable length string
-        * [CharAscii](../byteserde_types/src/utils/strings/ascii/mod.rs#CharAscii) - char, one byte long
-        * [ConstCharAscii](../byteserde_types/src/utils/strings/ascii/mod.rs#ConstCharAscii) - constant char, one byte long
+## Bench Marks
 
-## `Arrays` of `u8`, `u16`, `i32`, .. / `ascii`, `utf-8` strings / other arbitrary types
-* [Regular](./examples/arr_regular.rs)
-* [Tuple](./examples/arr_tuple.rs)
+* These benchmarks are a comparison of two other popular formats, which are [serde_json](https://crates.io/crates/serde_json) and [rmp-serde](https://crates.io/crates/rmp-serde), with [byteserde](https://crates.io/crates/byteserde)
+* To make the results of the comparison fare the following [reference](./benches/sample.rs) structure was used to produce below measurement.
 
-## `Vector` of `u8`, `u16`, `i32`, .. / `ascii`, `utf-8` strings / other arbitrary types
-* [Regular](./examples/vec_regular.rs)
-* [Tuple](./examples/vec_tuple.rs)
+### Results
+  
+### `byteserde` - takes about ~`15ns` to read or write to a byte stream
 
-## `Generics` support
-* [Regular](./examples/generics_regular.rs)
-* [Tuple](./examples/generics_tuple.rs)
+![alt text](readme/byteserde_bench.png)
 
-## `Practical` example of an actual network packet message 
-* [Regular](./examples/practical_regular.rs)
-* [Tuple](./examples/practical_tuple.rs)
+### `bincode` - takes about ~`100ns` to write and ~`15ns` to read from a byte stream
+
+![alt text](readme/byteserde_bench.png)
+
+### `rmp-serde` - takes about ~`215ns` to read or write to a byte stream, which is about `seven` times slower, likely due to the `serde` interface overhead
+
+![alt text](readme/serde_rmp_bench.png)
+
+### `serde_json` - takes about ~`600ns` to read or write to a byte stream, which is about `twenty` times slower, undestandably due to its reliance on a string result.
+
+![alt text](readme/serde_json_bench.png)
+
+### To try your self run.
+* `byteserde`
+```shell
+cargo bench --bench byteserde_bench
+```
+* `rmp-serde`
+```shell
+cargo bench --bench serde_rmp_bench
+```
+* `serde_json`
+```shell
+cargo bench --bench serde_json_bench
+```

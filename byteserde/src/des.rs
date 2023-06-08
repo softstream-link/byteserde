@@ -1,7 +1,4 @@
-use std::{
-    any::type_name,
-    fmt::{Debug, LowerHex},
-};
+use std::fmt::{Debug, LowerHex};
 
 use crate::{
     error::{Result, SerDesError},
@@ -26,8 +23,8 @@ use super::ser::ByteSerializerStack;
 /// let first: u8 = des.deserialize_bytes_slice(1).unwrap()[0];
 /// assert_eq!(first , 1);
 ///
-/// let second: [u8; 2] = des.deserialize_bytes_array().unwrap();
-/// assert_eq!(second, [0x00, 0x02]);
+/// let second: &[u8; 2] = des.deserialize_bytes_array_ref().unwrap();
+/// assert_eq!(second, &[0x00, 0x02]);
 ///
 /// let remaining: &[u8] = des.deserialize_bytes_slice_remaining();
 /// assert_eq!(remaining, &[0x00, 0x00, 0x03]);
@@ -53,9 +50,11 @@ impl<'x> LowerHex for ByteDeserializer<'x> {
             false => to_hex_line(self.bytes),
         };
         let len = self.bytes.len();
-        let name = type_name::<Self>().split("::").last().unwrap();
         let idx = self.idx;
-        write!(f, "{name} {{ len: {len}, idx: {idx}, bytes: {bytes} }}",)
+        write!(
+            f,
+            "ByteDeserializer {{ len: {len}, idx: {idx}, bytes: {bytes} }}",
+        )
     }
 }
 
@@ -63,13 +62,18 @@ impl<'x> ByteDeserializer<'x> {
     pub fn new(bytes: &[u8]) -> ByteDeserializer {
         ByteDeserializer { bytes, idx: 0 }
     }
+
+    pub fn reset(&mut self) {
+        self.idx = 0;
+    }
+
     /// Tracks the bytes read and always set to the next unread byte in the buffer. This is an inverse of [Self::remaining()]
     pub fn idx(&self) -> usize {
         self.idx
     }
     /// Number of bytes remaining to be deserialized, this is an inverse of [Self::idx()]
     pub fn remaining(&self) -> usize {
-        self.bytes.len() - self.idx
+        self.len() - self.idx
     }
 
     // Number of bytes in the buffer does not change as deserialization progresses unlike [Self::remaining()] and [Self::idx()]
@@ -79,28 +83,17 @@ impl<'x> ByteDeserializer<'x> {
     pub fn is_empty(&self) -> bool {
         self.remaining() == 0
     }
-    /// returns an array of bytes whose length will be equal to argument `N`
-    pub fn deserialize_bytes_array<const N: usize>(&mut self) -> Result<[u8; N]> {
-        // DON"T call .._slice as it halfs perforamnce let slice = self.deserialize_slice(N)?;
-        match self.bytes.get(self.idx..self.idx + N) {
-            Some(v) => {
-                self.idx += N;
-                // Ok(v)
-                Ok(v.try_into().unwrap()) // this shall not panic since slice method succeeded
-            }
-            // matched when N is greater then self.buffer.len()
-            None => {
-                // panic!("blah"); // TODO format kills performance
-                Err(SerDesError {
-                    message: format!(
-                        "buffer len: {len}, idx: {idx}, bytes avail: {avl}, bytes requested: {req}",
-                        len = self.bytes.len(),
-                        avl = self.bytes.len() - self.idx,
-                        req = N,
-                        idx = self.idx
-                    ),
-                })
-            }
+
+
+    #[cold]
+    fn error(&self, n: usize) -> SerDesError {
+        // moving error into a fn improves performance by 10%
+        // from_bytes - reuse ByteDeserializer
+        // time:   [39.251 ns 39.333 ns 39.465 ns]
+        // change: [-12.507% -11.603% -10.612%] (p = 0.00 < 0.05)
+        // Performance has improved.
+        SerDesError {
+            message: format!("Failed to get a slice size: {n} bytes from {self:x}"),
         }
     }
     /// consumes all of the remaining bytes in the buffer and returns them as slice
@@ -117,32 +110,41 @@ impl<'x> ByteDeserializer<'x> {
                 self.idx += len;
                 Ok(v)
             }
-            // matched when N is greater then self.buffer.len()
-            None => {
-                // panic!("blah");
-                Err(SerDesError {
-                    message: format!(
-                        "ByteDeserializer len: {len}, idx: {idx}, remaining: {rem}, requested: {req}",
-                        len = self.len(),
-                        rem = &self.remaining(),
-                        req = len,
-                        idx = self.idx,
-                    ),
-                })
-            }
+            None => Err(self.error(len)),
         }
     }
-    
+
+    #[inline(always)]
+    pub fn deserialize_u8(&mut self) -> Result<u8> {
+        let res = self.bytes[self.idx..].first();
+        match res {
+            Some(v) => {
+                self.idx += 1;
+                Ok(*v)
+            }
+            None => Err(self.error(1)),
+        }
+    }
+    #[inline(always)]
+    pub fn deserialize_i8(&mut self) -> Result<i8> {
+        let res = self.bytes[self.idx..].first();
+        match res {
+            Some(v) => {
+                self.idx += 1;
+                Ok(*v as i8)
+            }
+            None => Err(self.error(1)),
+        }
+    }
     /// moves the index forward by `len` bytes, intended to be used in combination with [Self::peek_bytes_slice()]
     fn advance_idx(&mut self, len: usize) {
         self.idx += len;
     }
     /// produces with out consuming `len` bytes from the buffer and returns them as slice if successful.
-    fn peek_bytes_slice(&self, len: usize) -> Result<&[u8]> {
+    pub fn peek_bytes_slice(&self, len: usize) -> Result<&[u8]> {
         // TODO figure out why i can't call this method from deserialize_bytes_slice and just increment the indexif sucess
         match self.bytes.get(self.idx..self.idx + len) {
             Some(v) => Ok(v),
-            // matched when N is greater then self.buffer.len()
             None => Err(SerDesError {
                 message: format!(
                     "ByteDeserializer len: {len}, idx: {idx}, remaining: {rem}, requested: {req}",
@@ -155,6 +157,17 @@ impl<'x> ByteDeserializer<'x> {
         }
     }
 
+
+    #[inline]
+    pub fn deserialize_bytes_array_ref<const N: usize>(&mut self) -> Result<&[u8; N]> {
+        match self.bytes.get(self.idx..self.idx + N) {
+            Some(v) => {
+                self.idx += N;
+                Ok(v.try_into().expect("Failed to convert &[u8] into &[u8; N]"))
+            },
+            None => Err(self.error(N)),
+        }
+    }
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `native` endianess
     /// FromNeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
@@ -162,13 +175,11 @@ impl<'x> ByteDeserializer<'x> {
     /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
     /// let v: u16 = des.deserialize_ne().unwrap();
     /// // ... etc
-    /// ```
+    /// ```    
+    #[inline]
     pub fn deserialize_ne<const N: usize, T: FromNeBytes<N, T>>(&mut self) -> Result<T> {
-        let r = self.deserialize_bytes_array::<N>();
-        match r {
-            Ok(v) => Ok(T::from_bytes(v)),
-            Err(e) => Err(e),
-        }
+        let r = self.deserialize_bytes_array_ref::<N>()?;
+        Ok(T::from_bytes_ref(r))
     }
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `little` endianess
     /// FromLeBytes trait is already implemented for all rust's numeric primitives in this crate
@@ -178,12 +189,10 @@ impl<'x> ByteDeserializer<'x> {
     /// let v: u16 = des.deserialize_le().unwrap();
     /// // ... etc
     /// ```
+    // #[inline]
     pub fn deserialize_le<const N: usize, T: FromLeBytes<N, T>>(&mut self) -> Result<T> {
-        let r = self.deserialize_bytes_array::<N>();
-        match r {
-            Ok(v) => Ok(T::from_bytes(v)),
-            Err(e) => Err(e),
-        }
+        let r = self.deserialize_bytes_array_ref::<N>()?;
+        Ok(T::from_bytes_ref(r))
     }
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `big` endianess
     /// FromBeBytes trait is already implemented for all rust's numeric primitives in this crate
@@ -193,12 +202,10 @@ impl<'x> ByteDeserializer<'x> {
     /// let v: u16 = des.deserialize_be().unwrap();
     /// // ... etc
     /// ```
+    #[inline]
     pub fn deserialize_be<const N: usize, T: FromBeBytes<N, T>>(&mut self) -> Result<T> {
-        let r = self.deserialize_bytes_array::<N>();
-        match r {
-            Ok(v) => Ok(T::from_bytes(v)),
-            Err(e) => Err(e),
-        }
+        let r = self.deserialize_bytes_array_ref::<N>()?;
+        Ok(T::from_bytes_ref(r))
     }
     /// creates a new instance of `T` type `struct`, depleating exactly the right amount of bytes from [ByteDeserializer]
     /// `T` must implement [ByteDeserialize] trait
@@ -239,12 +246,10 @@ pub trait ByteDeserialize<T> {
             }
             Err(e) => Err(e),
         }
-        
-        
     }
 }
 
-/// Special case to support greedy vector of bytes deserialization
+/// Greedy deserialization of the remaining byte stream into a `Vec<u8>`
 impl ByteDeserialize<Vec<u8>> for Vec<u8> {
     fn byte_deserialize(des: &mut ByteDeserializer) -> Result<Vec<u8>> {
         Ok(des.deserialize_bytes_slice_remaining().into())
@@ -260,17 +265,17 @@ where
     T::byte_deserialize(de)
 }
 
-/// This is a short cut method that uses [`ByteSerializerStack<CAP>::bytes()`] method to issue a [from_bytes] call.
+/// This is a short cut method that uses [`ByteSerializerStack<CAP>::as_slice()`] method to issue a [from_bytes] call.
 pub fn from_serializer_stack<const CAP: usize, T>(ser: &ByteSerializerStack<CAP>) -> Result<T>
 where
     T: ByteDeserialize<T>,
 {
-    from_bytes(ser.bytes())
+    from_bytes(ser.as_slice())
 }
-/// This is a short cut method that uses [`ByteSerializerHeap::bytes()`] method to issue a [from_bytes] call.
+/// This is a short cut method that uses [`ByteSerializerHeap::as_slice()`] method to issue a [from_bytes] call.
 pub fn from_serializer_heap<T>(ser: &ByteSerializerHeap) -> Result<T>
 where
     T: ByteDeserialize<T>,
 {
-    from_bytes(ser.bytes())
+    from_bytes(ser.as_slice())
 }

@@ -13,7 +13,7 @@ pub trait ToNeBytes<const N: usize> {
 macro_rules! impl_ToNeBytes {
     ($name:ty, $len:expr) => {
         impl $crate::utils::numerics::ne_bytes::ToNeBytes<$len> for $name {
-            #[inline(always)]
+            #[inline]
             fn to_bytes(&self) -> [u8; $len] {
                 self.to_ne_bytes()
             }
@@ -21,6 +21,8 @@ macro_rules! impl_ToNeBytes {
     };
 }
 const USIZE: usize = std::mem::size_of::<usize>();
+impl_ToNeBytes!(u8, 1);
+impl_ToNeBytes!(i8, 1);
 impl_ToNeBytes!(u16, 2);
 impl_ToNeBytes!(i16, 2);
 impl_ToNeBytes!(u32, 4);
@@ -36,6 +38,7 @@ impl_ToNeBytes!(isize, USIZE);
 // //////////////////////////////////////////////////////////////////////
 pub trait FromNeBytes<const N: usize, T> {
     fn from_bytes(v: [u8; N]) -> T;
+    fn from_bytes_ref(v: &[u8; N]) -> T;
 }
 
 /// calling
@@ -49,13 +52,19 @@ pub trait FromNeBytes<const N: usize, T> {
 macro_rules! impl_FromNeBytes {
     ($name:ty, $len:expr) => {
         impl $crate::utils::numerics::ne_bytes::FromNeBytes<$len, $name> for $name {
-            #[inline(always)]
+            #[inline]
             fn from_bytes(v: [u8; $len]) -> $name {
                 <$name>::from_ne_bytes(v)
+            }
+            #[inline]
+            fn from_bytes_ref(v: &[u8; $len]) -> $name {
+                <$name>::from_ne_bytes(*v)
             }
         }
     };
 }
+impl_FromNeBytes!(u8, 1);
+impl_FromNeBytes!(i8, 1);
 impl_FromNeBytes!(u16, 2);
 impl_FromNeBytes!(i16, 2);
 impl_FromNeBytes!(u32, 4);

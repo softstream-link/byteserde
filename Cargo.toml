@@ -5,3 +5,14 @@ members = [
     "byteserde_types",
     "byteserde_examples",
 ]
+
+[workspace.package]
+version = "0.2.0"
+authors = ["Softstream <softstream.link@gmail.com>"]
+readme = "readme.md"
+license-file = "LICENSE"
+edition = "2021"
+rust-version = "1.69"
+repository = "https://github.com/softstream-link/byteserde"
+keywords = ["serde", "bytes", "serialization", "derive"]
+categories = ["encoding"]

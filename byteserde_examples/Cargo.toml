@@ -1,15 +1,15 @@
 [package]
 name = "byteserde_examples"
-version = "0.1.0"
-edition = "2021"
-authors = ["Softstream <softstream.link@gmail.com>"]
-license-file = "LICENSE"
-description = "A number of common types required for proessing byte streams, for byteserde"
-repository = "https://github.com/softstream-link/byteserde"
-readme = "readme.md"
-keywords = [ "serde", "bytes", "serialization", "derive" ]
-categories = ["encoding"]
-rust-version = "1.69"
+version.workspace = true
+authors.workspace = true
+readme.workspace = true
+license-file.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
 publish = false
 
 [dependencies]
@@ -20,11 +20,32 @@ byteserde_types = { path = "./../byteserde_types"}
 
 
 [[bench]]
-name = "struct_ser_des_bench"
+name = "byteserde_full_bench"
+harness = false
+
+[[bench]]
+name = "byteserde_bench"
+harness = false
+
+
+[[bench]]
+name = "serde_json_bench"
+harness = false
+
+[[bench]]
+name = "serde_rmp_bench"
+harness = false
+
+[[bench]]
+name = "serde_bincode_bench"
 harness = false
 
 [dev-dependencies]
-criterion = "0.4"
+criterion = "0.5"
 env_logger = "0.10" 
 log = "0.4"
-
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+rmp-serde = "1.1"
+bincode = "1.3"

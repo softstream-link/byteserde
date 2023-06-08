@@ -15,12 +15,12 @@ fn test_derialser() {
     info!("des: {des:#x}");
     assert_eq!(des.len(), bytes.len());
     for _ in 0..2 {
-        let out: [u8; 10] = des.deserialize_bytes_array().unwrap();
+        let out: &[u8; 10] = des.deserialize_bytes_array_ref().unwrap();
         info!("out: {out:?}");
         info!("des: {des:#x}");
     }
 
-    let res_err = des.deserialize_bytes_array::<5>();
+    let res_err = des.deserialize_bytes_array_ref::<5>();
     info!("res_err: {res_err:#?}");
     assert!(res_err.is_err());
 }
