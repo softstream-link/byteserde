@@ -1,4 +1,4 @@
-[![Master CI](https://github.com/softstream-link/byteserde/actions/workflows/push_master.io.yml/badge.svg)](https://github.com/softstream-link/byteserde/actions/workflows/push_master.io.yml)
+[![Push to master](https://github.com/softstream-link/byteserde/actions/workflows/push-master.yml/badge.svg)](https://github.com/softstream-link/byteserde/actions/workflows/push-master.yml)
 
 # Motivation
 
