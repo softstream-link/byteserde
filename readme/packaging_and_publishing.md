@@ -15,7 +15,7 @@ cargo test --examples
 cargo clippy
 ```
 
-## on branch then master
+## Package - on branch then master
 ### byteserde
 ```shell
 pushd ./byteserde 
@@ -36,6 +36,21 @@ cargo package
 popd
 ```
 
+## Publish --dry-run
 ```shell
+pushd ./byteserde 
 cargo publish --dry-run
+popd
+```
+
+```shell
+pushd ./byteserde_derive 
+cargo publish --dry-run
+popd
+```
+
+```shell
+pushd ./byteserde_types 
+cargo publish --dry-run
+popd
 ```
