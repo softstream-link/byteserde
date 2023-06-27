@@ -58,7 +58,7 @@ impl<'x> LowerHex for ByteDeserializer<'x> {
     }
 }
 
-impl<'x> ByteDeserializer<'x> {
+impl<'des> ByteDeserializer<'des> {
     pub fn new(bytes: &[u8]) -> ByteDeserializer {
         ByteDeserializer { bytes, idx: 0 }
     }
@@ -104,7 +104,7 @@ impl<'x> ByteDeserializer<'x> {
     }
     /// consumes `len` bytes from the buffer and returns them as slice if successful.
     /// Fails if `len` is greater then [Self::remaining()]
-    pub fn deserialize_bytes_slice(&mut self, len: usize) -> Result<&[u8]> {
+    pub fn deserialize_bytes_slice(&mut self, len: usize) -> Result<&'des [u8]> {
         match self.bytes.get(self.idx..self.idx + len) {
             Some(v) => {
                 self.idx += len;

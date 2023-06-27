@@ -75,7 +75,7 @@
 * Comprehensive Examples & tests [Regular](generics_regular.rs) / [Tuple](generics_tuple.rs)
 
 ## `Option<T>` support
-* Comprehensive Examples & tests [Regular](optional_regular.rs)
+* Comprehensive Examples & tests [Regular](option_regular.rs)
 * Until now all of the examples relied on two key assumptions to serialize and deserialize a byte stream. These two assumptions are:
   1. Types have a well defined `size` in bytes required to represent them on the byte stream, less [type layout alignment](https://doc.rust-lang.org/reference/type-layout.html), and this size is know at compile time.
   1. Where the `size` is NOT known at compile time we were able to use `depelete` attribute to prevent `greedy` deserializaiton
@@ -133,5 +133,5 @@ on byte streams we introduce two new `byteserde` attributes, namely:
         ```
 
 ## `Enum` support
-* Comprehensive Examples & tests [Tuple](enum_tuple.rs) 
+* Comprehensive Examples & tests [Tuple](enum_unit_like.rs) 
     * TODO add some explanation, but untill then please reffer to examples provided

@@ -8,7 +8,7 @@ pub enum StructType {
     Tuple(String, Ident),
     Enum(String, Ident),
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FldSerDesTokens {
     // only used to create serailizer
     pub ser_vars: TokenStream,
@@ -18,7 +18,7 @@ pub struct FldSerDesTokens {
 
     // only used to create deserailizer
     pub des_vars: TokenStream,
-    pub des_option: TokenStream,
+    pub des_peeked: TokenStream,
     pub des_uses: TokenStream,
     pub des_errors: Vec<String>,
 
@@ -40,7 +40,7 @@ impl SerDesTokens {
             | StructType::Enum(ref name, _) => name.clone(),
         }
     }
-    pub fn struct_ident(&self) -> &Ident{
+    pub fn struct_ident(&self) -> &Ident {
         match self.struct_type {
             StructType::Regular(_, ref ident)
             | StructType::Tuple(_, ref ident)
@@ -94,16 +94,30 @@ impl SerDesTokens {
             .map(|f| f.des_vars.clone())
             .collect::<Vec<_>>()
     }
-    pub fn des_option(&self) -> Vec<TokenStream> {
+    pub fn des_peeked(&self) -> Vec<TokenStream> {
         self.flds
             .iter()
-            .filter(|f| !f.des_option.is_empty())
-            .map(|f| f.des_option.clone())
+            .filter(|f| !f.des_peeked.is_empty())
+            .map(|f| f.des_peeked.clone())
             .collect::<Vec<_>>()
     }
-    pub fn has_option_flds(&self) -> bool {
-        !self.des_option().is_empty()
+    pub fn has_peeked_flds(&self) -> bool {
+        !self.des_peeked().is_empty()
     }
+    pub fn count_option_des_vars(&self) -> usize {
+        self.des_vars()
+            .iter()
+            .map(|t| {
+                let var =  t.to_string().replace(' ', "");
+                if var.contains("Option<") && var.contains(">=None;") {
+                    1
+                } else {
+                    0
+                }
+            })
+            .sum()
+    }
+
     pub fn des_uses(&self) -> Vec<TokenStream> {
         self.flds
             .iter()
@@ -148,30 +162,35 @@ impl SerDesTokens {
         }
 
         // you are an option section if you have any member of type Option<T> or Peek::Set is set
-        if self.has_option_flds() || matches!(peek, Peek::Set(..)) {
-
+        if self.has_peeked_flds() || matches!(peek, Peek::Set(..)) {
             // forgot to set peek
-            if self.has_option_flds() && matches!(peek, Peek::NotSet){
+            if self.has_peeked_flds() && matches!(peek, Peek::NotSet) {
                 panic!("struct `{}` missing required `#[byteserde(peek( start, len ))]` annotation to be able to identify which optional fields are present in the bytestream",
                     self.struct_name());
             }
-            // all fileds in the optional section must be Option<T> can't mix with non Option types
-            if self.des_vars().len() != self.des_option().len() {
-                let val_err = format!(
+
+            // do this only for struct and not enums
+            if let StructType::Enum(_, _) = self.struct_type {
+            } else {
+                // all fileds in the optional section must be Option<T> can't mix with non Option types
+                eprintln!("{}", self.count_option_des_vars());
+                if self.count_option_des_vars() != self.des_peeked().len() {
+                    let val_err = format!(
                     "struct `{}` has a mix of Option<T> and Non Option<T> types, which is not allowed. Consider moving all Option<T> types into a seperate struct", 
                     self.struct_name() );
-                let fld_errors = match self.des_collated_errs() {
-                    Some(msg) => format!("\n{}", msg),
-                    None => String::new(),
-                };
-                panic!(
-                    "struct `{}` ByteDeserialize error:\n{}{}",
-                    self.struct_name(),
-                    val_err,
-                    fld_errors
-                );
+                    let fld_errors = match self.des_collated_errs() {
+                        Some(msg) => format!("\n{}", msg),
+                        None => String::new(),
+                    };
+                    panic!(
+                        "struct `{}` ByteDeserialize error:\n{}{}",
+                        self.struct_name(),
+                        val_err,
+                        fld_errors
+                    );
+                }
             }
-        } 
+        }
     }
 
     pub fn size_validate(&self) {

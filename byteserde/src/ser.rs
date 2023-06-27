@@ -131,7 +131,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
         let avail = self.avail();
         match input_len > avail {
             false => {
-                // safe -> self.bytes[self.len..self.len+bytes.len()].copy_from_slice(bytes); 
+                // safe -> self.bytes[self.len..self.len+bytes.len()].copy_from_slice(bytes);
                 // safe 60ns vs 15ns unsafe using bench and reference struct
                 unsafe {
                     std::ptr::copy_nonoverlapping(
@@ -147,11 +147,9 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
         }
     }
 
-    fn error(&self, n: usize) -> SerDesError{
+    fn error(&self, n: usize) -> SerDesError {
         SerDesError {
-            message: format!(
-                "Failed to add a slice size: {n} into {self:x}",
-            ),
+            message: format!("Failed to add a slice size: {n} into {self:x}",),
         }
     }
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `native` endianess.
@@ -210,11 +208,13 @@ where
 /// Note that this is not a `&[u8]` slice, but an array of bytes with length CAP even if
 /// the actual length of the serialized data is less.
 pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> Result<[u8; CAP]>
+// pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> Result<([u8; CAP], usize)>
 where
     T: ByteSerializeStack,
 {
     let ser = to_serializer_stack(v)?;
     Ok(ser.bytes)
+    // Ok((ser.bytes, ser.len))
 }
 
 /////////////////////
@@ -259,9 +259,16 @@ pub trait ByteSerializeHeap {
 pub struct ByteSerializerHeap {
     bytes: Vec<u8>,
 }
-impl Default for ByteSerializerHeap{
+impl ByteSerializerHeap {
+    pub fn with_capacity(cap: usize) -> Self {
+        ByteSerializerHeap {
+            bytes: Vec::with_capacity(cap),
+        }
+    }
+}
+impl Default for ByteSerializerHeap {
     fn default() -> Self {
-        ByteSerializerHeap{
+        ByteSerializerHeap {
             bytes: Vec::with_capacity(1024),
         }
     }

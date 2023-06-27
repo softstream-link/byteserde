@@ -1,6 +1,6 @@
 use byteserde::prelude::*;
 use byteserde::utils::hex::{to_hex_line, to_hex_pretty};
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
+use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf, ByteSerializedSizeOf};
 use std::any::type_name;
 use std::cmp::min;
 use std::fmt;
@@ -424,7 +424,7 @@ mod test_char_ascii {
 /// assert_eq!(inp_char.bytes(), [43]);
 ///
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, PartialEq)]
 pub struct ConstCharAscii<const CHAR: u8>(u8);
 impl<const CHAR: u8> ConstCharAscii<CHAR> {
     pub fn bytes(&self) -> [u8; 1] {

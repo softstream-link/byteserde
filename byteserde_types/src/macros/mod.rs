@@ -192,6 +192,9 @@ macro_rules! const_char_ascii {
             pub fn value(&self) -> u8 {
                 self.0
             }
+            pub fn as_slice() -> &'static [u8]{
+                &[$CONST]
+            }
         }
         impl Default for $NAME {
             fn default() -> Self {

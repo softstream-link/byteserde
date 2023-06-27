@@ -30,6 +30,11 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     let ser_relp = res.ser_repl();
     let ser_uses_stck = res.ser_uses_stck();
 
+    let ser_uses_stck_expanded = match res.struct_type {
+        StructType::Enum(_, _) => quote!( match self { #( #ser_uses_stck )* }),
+        _ => quote!( #( #ser_uses_stck )* ),
+    };
+
     // generate stack serializer
     let output = quote! {
         #[automatically_derived]
@@ -45,7 +50,7 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
                 //      self.0         .byte_serialize_stack(ser)?;     -- for tuple
                 #( #ser_vars )*
                 #( #ser_relp )*
-                #( #ser_uses_stck )*
+                #ser_uses_stck_expanded
                 Ok(())
             }
         }
@@ -66,6 +71,11 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     let ser_repl = res.ser_repl();
     let ser_uses_heap = res.ser_uses_heap();
 
+    let ser_uses_heap_expanded = match res.struct_type {
+        StructType::Enum(_, _) => quote!( match self { #( #ser_uses_heap )* }),
+        _ => quote!( #( #ser_uses_heap )* ),
+    };
+
     // generate heap serializer
     let output = quote! {
         #[automatically_derived]
@@ -80,7 +90,7 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
                 //      self.0         .byte_serialize_heap(ser)?;          -- for tuple
                 #( #ser_vars)*
                 #( #ser_repl)*
-                #( #ser_uses_heap)*
+                #ser_uses_heap_expanded
                 Ok(())
             }
         }
@@ -100,14 +110,14 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     sdt.des_validate(&peek);
 
     let des_vars = sdt.des_vars();
-    let des_option = sdt.des_option();
+    let des_peeked = sdt.des_peeked();
     let des_uses = sdt.des_uses();
     let id = sdt.struct_ident();
 
     let impl_body = match sdt.struct_type {
-        StructType::Regular(..) => quote!(#id {#( #des_uses )*}), // NOTE {}
-        StructType::Tuple(..) => quote!  (#id (#( #des_uses )*)), // NOTE ()
-        StructType::Enum(..) => quote! ( #id::from( _struct )),   // NOTE ::from()
+        StructType::Regular(..) => quote!( Ok(#id {#( #des_uses )*}) ), // NOTE {}
+        StructType::Tuple(..) => quote!  ( Ok(#id (#( #des_uses )*)) ), // NOTE ()
+        StructType::Enum(..) => quote! ( ),   // NOTE nothing
     };
 
     let start_len = match peek {
@@ -115,22 +125,37 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
         Peek::NotSet => quote!(),
     };
 
-    let des_option_special = match sdt.has_option_flds() {
-        true => quote!(
-                    while !des.is_empty() {
-                        let peek = |start, len| -> Result<&[u8]> {
-                            let p = des.peek_bytes_slice(len+start)?;
-                            Ok(&p[start..])
-                        };
-                        let __peeked = peek(#start_len)?;
-                        #( #des_option )*
-                    }
-        ),
-        false => quote!(),
+    let des_peeked = match sdt.struct_type {
+        StructType::Enum(_, _) => {
+            quote!(
+                let peek = |start, len| -> Result<&[u8]> {
+                    let p = des.peek_bytes_slice(len+start)?;
+                    Ok(&p[start..])
+                };
+                let (start, len) = (#start_len);
+                let __peeked = peek(start, len)?;
+                #( #des_peeked )*
+                Err(SerDesError {
+                    message: 
+                    format!("peek({}, {}) => {:x?}, however #[byteserde(eq( ... ))] did not yield a match. \ndes: {:#x}", start, len, __peeked, des),
+                })
+            )
+        }
+        _ => match sdt.has_peeked_flds() {
+            true => quote!(
+                        while !des.is_empty() {
+                            let peek = |start, len| -> Result<&[u8]> {
+                                let p = des.peek_bytes_slice(len+start)?;
+                                Ok(&p[start..])
+                            };
+                            let __peeked = peek(#start_len)?;
+                            #( #des_peeked )*
+                        }
+            ),
+            false => quote!(),
+        },
     };
-
     // generate deserializer
-
     let output = quote!(
         #[automatically_derived]
         impl #generics_declaration ::byteserde::des::ByteDeserialize<#id #generics_alias> for #id #generics_alias #where_clause{
@@ -144,8 +169,8 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
                 // let _1  = des.deserialize()?;          -- trait ByteDeserialize
                 // TupleName ( _0, _1 )
                 #( #des_vars )*
-                #des_option_special
-                Ok(#impl_body)
+                #des_peeked
+                #impl_body
             }
         }
     );
