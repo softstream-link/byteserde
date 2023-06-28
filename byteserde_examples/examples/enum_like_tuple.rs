@@ -1,14 +1,14 @@
 mod unittest;
 
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack};
 use log::info;
 use unittest::setup;
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Default)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq, Default)]
 struct Header(u16);
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 struct Variant1 {
     #[byteserde(replace(Header(Variant1::tag())))]
     header: Header,
@@ -17,7 +17,7 @@ struct Variant1 {
 #[rustfmt::skip]
 impl Variant1 { fn tag() -> u16 { 1 } }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 struct Variant2a {
     #[byteserde(replace(Header(Variant2a::tag())))]
     header: Header,
@@ -26,12 +26,12 @@ struct Variant2a {
 #[rustfmt::skip]
 impl Variant2a { fn tag() -> u16 { 2 } }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 struct Variant2b {
     data: u128,
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 struct Variant3 {
     #[byteserde(replace(Header(Variant3::tag())))]
     header: Header,
@@ -41,7 +41,7 @@ struct Variant3 {
 impl Variant3 { fn tag() -> u16 { 3 } }
 
 // #[derive(ByteSerializeStack, ByteSerializeHeap, Debug, PartialEq)]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 #[byteserde(peek(0, 2))]
 enum Variants {
     #[byteserde(eq(Variant1::tag().to_ne_bytes()))]
@@ -76,7 +76,7 @@ fn enum_tuple_like() {
     info!("ser_stck: {:#x}", ser_stck);
     assert_eq!(ser_stck.as_slice(), ser_heap.as_slice());
 
-    let mut des = ByteDeserializer::new(ser_stck.as_slice());
+    let mut des = ByteDeserializerSlice::new(ser_stck.as_slice());
     let mut msg_out: Vec<Variants> = vec![];
     while !des.is_empty(){
         let msg = des.deserialize::<Variants>().unwrap();

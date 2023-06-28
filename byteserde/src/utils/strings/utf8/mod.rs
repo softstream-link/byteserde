@@ -1,5 +1,5 @@
 use crate::{
-    des::{ByteDeserialize, ByteDeserializer},
+    des::{ByteDeserializeSlice, ByteDeserializerSlice},
     error::{Result, SerDesError},
     prelude::ByteDeserializeBytes,
     ser::{ByteSerializeHeap, ByteSerializeStack, ByteSerializerStack},
@@ -42,8 +42,8 @@ impl ByteSerializeHeap for String {
 /// # Appoach
 /// * first `usize` bytes to read the length of the string
 /// * remaining bytes to read the string
-impl ByteDeserialize<String> for String {
-    fn byte_deserialize(deserializer: &mut ByteDeserializer) -> Result<String> {
+impl ByteDeserializeSlice<String> for String {
+    fn byte_deserialize(deserializer: &mut ByteDeserializerSlice) -> Result<String> {
         let len: usize = deserializer.deserialize_be()?;
         let bytes = deserializer.deserialize_bytes_slice(len)?;
         match String::from_utf8(bytes.to_vec()) {
@@ -98,8 +98,8 @@ impl ByteSerializeHeap for char {
         Ok(())
     }
 }
-impl ByteDeserialize<char> for char {
-    fn byte_deserialize(des: &mut ByteDeserializer) -> Result<char> {
+impl ByteDeserializeSlice<char> for char {
+    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<char> {
         let len = des.deserialize_bytes_slice(1)?[0];
         if !(1..=4).contains(&len) {
             return Err(SerDesError {

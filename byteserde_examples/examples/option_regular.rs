@@ -2,7 +2,7 @@ mod unittest;
 
 use byteserde::prelude::*;
 use byteserde_derive::{
-    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
     ByteSerializedSizeOf,
 };
 
@@ -10,7 +10,7 @@ use log::info;
 use unittest::setup;
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedSizeOf, ByteSerializedLenOf, 
         Debug, PartialEq, Clone)]
 #[byteserde(endian = "be")]
 struct Opt1(#[byteserde(replace( Opt1::tag() ))] u16, u16);
@@ -21,7 +21,7 @@ impl Opt1 {
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedSizeOf, ByteSerializedLenOf, 
         Debug, PartialEq, Clone)]
 #[byteserde(endian = "be")]
 struct Opt2(#[byteserde(replace( Opt2::tag() ))] u16, u32);
@@ -31,7 +31,7 @@ impl Opt2 {
     }
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq, Clone)]
 #[byteserde(endian = "be")]
 struct SomeStruct {
     anything_header: i8,
@@ -43,7 +43,7 @@ struct SomeStruct {
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedSizeOf, ByteSerializedLenOf,
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedSizeOf, ByteSerializedLenOf,
     Debug, PartialEq, Clone)] 
 #[byteserde(peek(0, 2))]
 struct OptionalSection {
@@ -125,7 +125,7 @@ fn optional_block() {
     info!("ser_heap: {ser_heap:#x}");
     assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
-    let des = &mut ByteDeserializer::new(ser_stack.as_slice());
+    let des = &mut ByteDeserializerSlice::new(ser_stack.as_slice());
 
     let out_opt1 = SomeStruct::byte_deserialize(des).unwrap();
     let out_opt2 = SomeStruct::byte_deserialize(des).unwrap();

@@ -217,9 +217,9 @@ macro_rules! const_char_ascii {
                 )
             }
         }
-        impl ::byteserde::des::ByteDeserialize<$NAME> for $NAME {
+        impl ::byteserde::des::ByteDeserializeSlice<$NAME> for $NAME {
             #[allow(clippy::just_underscores_and_digits)]
-            fn byte_deserialize(des: &mut ::byteserde::des::ByteDeserializer) -> ::byteserde::error::Result<$NAME> {
+            fn byte_deserialize(des: &mut ::byteserde::des::ByteDeserializerSlice) -> ::byteserde::error::Result<$NAME> {
                 let _0 = des.deserialize_u8()?;
                 match _0 == $CONST {
                     true => Ok($NAME::default()),

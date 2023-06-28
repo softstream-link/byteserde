@@ -31,8 +31,9 @@ use std::{
 /// let ser: ByteSerializerStack<128> = to_serializer_stack(&s).unwrap();
 /// assert_eq!(ser.len(), 1);
 ///
-/// let bytes = to_bytes_stack::<128, MyStruct>(&s).unwrap();
+/// let (bytes, len) = to_bytes_stack::<128, MyStruct>(&s).unwrap();
 /// assert_eq!(bytes.len(), 128);
+/// assert_eq!(len, 1);
 /// ```
 pub trait ByteSerializeStack {
     fn byte_serialize_stack<const CAP: usize>(
@@ -209,13 +210,13 @@ where
 /// Analogous to [`to_serializer_stack::<CAP>()`], but returns just the array of bytes `[u8; CAP]`.
 /// Note that this is not a `&[u8]` slice, but an array of bytes with length CAP even if
 /// the actual length of the serialized data is less.
-pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> Result<[u8; CAP]>
+pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> Result<([u8; CAP], usize)>
 // pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> Result<([u8; CAP], usize)>
 where
     T: ByteSerializeStack,
 {
     let ser = to_serializer_stack(v)?;
-    Ok(ser.bytes)
+    Ok((ser.bytes, ser.len()))
     // Ok((ser.bytes, ser.len))
 }
 
@@ -230,7 +231,7 @@ impl ByteSerializeStack for Bytes {
 }
 
 /////////////////////
-
+// TODO convert to use BytesMut instead of Vec<u8>
 /// Trait type accepted by [ByteSerializerHeap] for serialization.
 /// Example: Define structure and manually implement ByteSerializeHeap trait then use it to serialize.
 /// ```

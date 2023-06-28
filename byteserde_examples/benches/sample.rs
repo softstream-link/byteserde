@@ -1,8 +1,8 @@
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserialize, ByteDeserializeBytes, ByteSerializeHeap, ByteSerializeStack};
 use serde::{Deserialize, Serialize};
 
 #[rustfmt::skip]
-#[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteDeserializeBytes, Serialize, Deserialize)]
 // #[byteserde(endian = "le")]
 pub struct Integers {
     type_i8: i8,
@@ -33,7 +33,7 @@ impl Default for Integers{
     }
 }
 #[rustfmt::skip]
-#[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteDeserializeBytes, Serialize, Deserialize)]
 // #[byteserde(endian = "le")]
 pub struct Floats {
     pub type_f32: f32,
@@ -49,7 +49,7 @@ impl Default for Floats{
 }
 
 #[rustfmt::skip]
-#[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteDeserializeBytes, Serialize, Deserialize)]
 pub struct Numbers {
     pub type_header: Integers,
     pub type_footer: Floats,

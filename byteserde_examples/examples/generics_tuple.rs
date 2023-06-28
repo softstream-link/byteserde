@@ -1,28 +1,28 @@
 mod unittest;
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack};
 use log::info;
 use unittest::setup;
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq, Clone)]
 #[byteserde(endian = "le")]
 pub struct NumbersStructRegular<const L: usize, const M: usize>(
     #[byteserde(endian = "be")] [u16; L],
     [u16; M],
 );
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Clone)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq, Clone)]
 pub struct StringsStructRegular<
-    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<S>,
-    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<C>,
+    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<S>,
+    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<C>,
 >(S, C);
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 pub struct NestedStructRegular<
     const L: usize,
     const M: usize,
-    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<S>,
-    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<C>,
+    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<S>,
+    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<C>,
 >(NumbersStructRegular<L, M>, StringsStructRegular<S, C>);
 
 #[test]

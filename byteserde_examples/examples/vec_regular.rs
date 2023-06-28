@@ -1,13 +1,13 @@
 mod unittest;
 use byteserde::prelude::*;
 use byteserde_derive::{
-    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
 };
 use log::info;
 use unittest::setup;
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedLenOf, Debug, PartialEq)]
 struct VecByte {
     #[byteserde(deplete(3))]
@@ -25,6 +25,8 @@ impl Default for VecByte {
         }
     }
 }
+
+//TODO CIRITCAL Bytes example and core test
 
 #[test]
 #[should_panic(
@@ -84,7 +86,7 @@ fn vec_len() {
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedLenOf, Debug, PartialEq)]
 #[byteserde(endian = "le")]
 struct VecNumerics {
@@ -154,12 +156,12 @@ fn vec_numeric_len() {
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedLenOf, Debug, PartialEq, Default)]
 struct Other(u8);
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedLenOf, Debug, PartialEq)]
 struct VecOther {
     #[byteserde(deplete(3))]  // will only ser/des 3 Other Instances

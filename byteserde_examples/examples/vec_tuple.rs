@@ -1,9 +1,9 @@
 mod unittest;
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack};
 use log::info;
 use unittest::setup;
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 struct VecByte(
     #[byteserde(deplete(3))] Vec<u8>,
     #[byteserde(deplete(2), replace( vec![10,11] ))] Vec<u8>,
@@ -35,7 +35,7 @@ fn vec_u8() {
     assert_eq!(out_num, VecByte(inp_num.0, vec![10, 11], inp_num.2,));
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 #[byteserde(endian = "le")]
 struct VecNumerics(
     #[byteserde(endian = "be", deplete(3))] Vec<u16>,
@@ -71,9 +71,9 @@ fn vec_u16() {
     assert_eq!(out_num, VecNumerics(inp_num.0, vec![10, 11], inp_num.2,));
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq, Default)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq, Default)]
 struct Other(u8);
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 struct VecOther(
     #[byteserde(deplete(3))] Vec<Other>,
     #[byteserde(deplete(2), replace( vec![Other(10),Other(11)] ))] Vec<Other>,

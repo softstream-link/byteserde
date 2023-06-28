@@ -1,5 +1,5 @@
 use crate::integrationtest::setup;
-use byteserde::{des::ByteDeserializer, error::Result, ser::ByteSerializerStack};
+use byteserde::{des::ByteDeserializerSlice, error::Result, ser::ByteSerializerStack};
 use log::info;
 
 #[test]
@@ -17,7 +17,7 @@ fn test_deserializer_u16() {
         ser.serialize_bytes_slice(&[0xff_u8]).unwrap();
         info!("ser:x {ser:x}");
 
-        let mut des = ByteDeserializer::new(ser.as_slice());
+        let mut des = ByteDeserializerSlice::new(ser.as_slice());
         for inp in inps {
             info!("des:x {des:x}");
             info!("inp: {inp}, ipn:x {inp:#06x}, inp:b {inp:016b}");
@@ -34,7 +34,7 @@ fn test_deserializer_u16() {
         info!("r:? {r:?}");
         assert!(r.is_err());
         assert!(
-            r.unwrap_err().message.starts_with("Failed to get a slice size: 2 bytes from ByteDeserializer { len: 9, idx: 8, bytes: 0000:")
+            r.unwrap_err().message.starts_with("Failed to get a slice size: 2 bytes from ByteDeserializerSlice { len: 9, idx: 8, bytes: 0000:")
         );
     }
 

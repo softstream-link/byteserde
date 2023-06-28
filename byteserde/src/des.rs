@@ -13,9 +13,9 @@ use super::ser::ByteSerializerStack;
 
 /// Utility struct with a number of methods to enable deserialization of bytes into various types
 /// ```
-/// use ::byteserde::prelude::ByteDeserializer;
+/// use ::byteserde::prelude::*;
 /// let bytes = &[0x01, 0x00, 0x02, 0x00, 0x00, 0x03];
-/// let mut des = ByteDeserializer::new(bytes);
+/// let mut des = ByteDeserializerSlice::new(bytes);
 /// assert_eq!(des.remaining(), 6);
 /// assert_eq!(des.idx(), 0);
 /// assert_eq!(des.len(), 6);
@@ -30,7 +30,7 @@ use super::ser::ByteSerializerStack;
 /// assert_eq!(remaining, &[0x00, 0x00, 0x03]);
 /// ```
 #[derive(Debug, PartialEq)]
-pub struct ByteDeserializer<'buf> {
+pub struct ByteDeserializerSlice<'buf> {
     bytes: &'buf [u8],
     idx: usize,
 }
@@ -38,12 +38,12 @@ pub struct ByteDeserializer<'buf> {
 /// Provides a conveninet way to view buffer content as both HEX and ASCII bytes where printable.
 /// supports both forms of alternate
 /// ```
-/// use byteserde::des::ByteDeserializer;
-/// let mut des = ByteDeserializer::new(&[0x01, 0x00, 0x02, 0x00, 0x00, 0x03]);
+/// use byteserde::prelude::*;
+/// let mut des = ByteDeserializerSlice::new(&[0x01, 0x00, 0x02, 0x00, 0x00, 0x03]);
 /// println ! ("{:#x}", des); // upto 16 bytes per line
 /// println ! ("{:x}", des);  // single line
 /// ```
-impl<'buf> LowerHex for ByteDeserializer<'buf> {
+impl<'buf> LowerHex for ByteDeserializerSlice<'buf> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bytes = match f.alternate() {
             true => format!("\n{hex}", hex = to_hex_pretty(self.bytes)),
@@ -53,14 +53,14 @@ impl<'buf> LowerHex for ByteDeserializer<'buf> {
         let idx = self.idx;
         write!(
             f,
-            "ByteDeserializer {{ len: {len}, idx: {idx}, bytes: {bytes} }}",
+            "ByteDeserializerSlice {{ len: {len}, idx: {idx}, bytes: {bytes} }}",
         )
     }
 }
 
-impl<'buf> ByteDeserializer<'buf> {
-    pub fn new(bytes: &[u8]) -> ByteDeserializer {
-        ByteDeserializer { bytes, idx: 0 }
+impl<'buf> ByteDeserializerSlice<'buf> {
+    pub fn new(bytes: &[u8]) -> ByteDeserializerSlice {
+        ByteDeserializerSlice { bytes, idx: 0 }
     }
 
     pub fn reset(&mut self) {
@@ -87,7 +87,7 @@ impl<'buf> ByteDeserializer<'buf> {
     #[cold]
     fn error(&self, n: usize) -> SerDesError {
         // moving error into a fn improves performance by 10%
-        // from_bytes - reuse ByteDeserializer
+        // from_bytes - reuse ByteDeserializerSlice
         // time:   [39.251 ns 39.333 ns 39.465 ns]
         // change: [-12.507% -11.603% -10.612%] (p = 0.00 < 0.05)
         // Performance has improved.
@@ -146,7 +146,7 @@ impl<'buf> ByteDeserializer<'buf> {
             Some(v) => Ok(v),
             None => Err(SerDesError {
                 message: format!(
-                    "ByteDeserializer len: {len}, idx: {idx}, remaining: {rem}, requested: {req}",
+                    "ByteDeserializerSlice len: {len}, idx: {idx}, remaining: {rem}, requested: {req}",
                     len = self.len(),
                     rem = &self.remaining(),
                     req = len,
@@ -169,8 +169,8 @@ impl<'buf> ByteDeserializer<'buf> {
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `native` endianess
     /// FromNeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use ::byteserde::prelude::ByteDeserializer;
-    /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
+    /// use ::byteserde::prelude::*;
+    /// let mut des = ByteDeserializerSlice::new(&[0x00, 0x01]);
     /// let v: u16 = des.deserialize_ne().unwrap();
     /// // ... etc
     /// ```    
@@ -182,8 +182,8 @@ impl<'buf> ByteDeserializer<'buf> {
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `little` endianess
     /// FromLeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use ::byteserde::prelude::ByteDeserializer;
-    /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
+    /// use ::byteserde::prelude::*;
+    /// let mut des = ByteDeserializerSlice::new(&[0x00, 0x01]);
     /// let v: u16 = des.deserialize_le().unwrap();
     /// // ... etc
     /// ```
@@ -195,8 +195,8 @@ impl<'buf> ByteDeserializer<'buf> {
     /// depletes `2` bytes for `u16`, etc. and returns after deserializing using `big` endianess
     /// FromBeBytes trait is already implemented for all rust's numeric primitives in this crate
     /// ```
-    /// use ::byteserde::prelude::ByteDeserializer;
-    /// let mut des = ByteDeserializer::new(&[0x00, 0x01]);
+    /// use ::byteserde::prelude::*;
+    /// let mut des = ByteDeserializerSlice::new(&[0x00, 0x01]);
     /// let v: u16 = des.deserialize_be().unwrap();
     /// // ... etc
     /// ```
@@ -205,37 +205,37 @@ impl<'buf> ByteDeserializer<'buf> {
         let r = self.deserialize_bytes_array_ref::<N>()?;
         Ok(T::from_bytes_ref(r))
     }
-    /// creates a new instance of `T` type `struct`, depleating exactly the right amount of bytes from [ByteDeserializer]
-    /// `T` must implement [ByteDeserialize] trait
+    /// creates a new instance of `T` type `struct`, depleating exactly the right amount of bytes from [ByteDeserializerSlice]
+    /// `T` must implement [ByteDeserializeSlice] trait
     pub fn deserialize<T>(&mut self) -> Result<T>
     where
-        T: ByteDeserialize<T>,
+        T: ByteDeserializeSlice<T>,
     {
         T::byte_deserialize(self)
     }
 
-    /// creates a new instance of T type struct, depleating `exactly` `len` bytes from [ByteDeserializer].
+    /// creates a new instance of T type struct, depleating `exactly` `len` bytes from [ByteDeserializerSlice].
     /// Intended for types with variable length such as Strings, Vecs, etc.
     pub fn deserialize_take<T>(&mut self, len: usize) -> Result<T>
     where
-        T: ByteDeserialize<T>,
+        T: ByteDeserializeSlice<T>,
     {
         T::byte_deserialize_take(self, len)
     }
 }
 
-/// This trait is to be implemented by any struct, example `MyFavStruct`, to be compatbile with [`ByteDeserializer::deserialize<MyFavStruct>()`]
-pub trait ByteDeserialize<T> {
-    /// If successfull returns a new instance of T type struct, depleating exactly the right amount of bytes from [ByteDeserializer]
+/// This trait is to be implemented by any struct, example `MyFavStruct`, to be compatbile with [`ByteDeserializerSlice::deserialize<MyFavStruct>()`]
+pub trait ByteDeserializeSlice<T> {
+    /// If successfull returns a new instance of T type struct, depleating exactly the right amount of bytes from [ByteDeserializerSlice]
     /// Number of bytes depleted is determined by the struct T itself and its member types.
-    fn byte_deserialize(des: &mut ByteDeserializer) -> Result<T>;
+    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<T>;
 
-    /// if sucessfull returns a new instance of T type struct, however ONLY depleating a maximum of `len` bytes from [ByteDeserializer]
+    /// if sucessfull returns a new instance of T type struct, however ONLY depleating a maximum of `len` bytes from [ByteDeserializerSlice]
     /// Intended for types with variable length such as Strings, Vecs, etc.
     /// No bytes will be depleted if attempt was not successful.
-    fn byte_deserialize_take(des: &mut ByteDeserializer, len: usize) -> Result<T> {
+    fn byte_deserialize_take(des: &mut ByteDeserializerSlice, len: usize) -> Result<T> {
         let bytes = des.peek_bytes_slice(len)?;
-        let tmp_des = &mut ByteDeserializer::new(bytes);
+        let tmp_des = &mut ByteDeserializerSlice::new(bytes);
         let result = Self::byte_deserialize(tmp_des);
         match result {
             Ok(v) => {
@@ -248,32 +248,32 @@ pub trait ByteDeserialize<T> {
 }
 
 /// Greedy deserialization of the remaining byte stream into a `Vec<u8>`
-impl ByteDeserialize<Vec<u8>> for Vec<u8> {
-    fn byte_deserialize(des: &mut ByteDeserializer) -> Result<Vec<u8>> {
+impl ByteDeserializeSlice<Vec<u8>> for Vec<u8> {
+    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<Vec<u8>> {
         Ok(des.deserialize_bytes_slice_remaining().into())
     }
 }
 
-/// This is a short cut method that creates a new instance of [ByteDeserializer] and then uses that to convert them into a T type struct.
-pub fn from_bytes<T>(bytes: &[u8]) -> Result<T>
+/// This is a short cut method that creates a new instance of [ByteDeserializerSlice] and then uses that to convert them into a T type struct.
+pub fn from_slice<T>(bytes: &[u8]) -> Result<T>
 where
-    T: ByteDeserialize<T>,
+    T: ByteDeserializeSlice<T>,
 {
-    let de = &mut ByteDeserializer::new(bytes);
+    let de = &mut ByteDeserializerSlice::new(bytes);
     T::byte_deserialize(de)
 }
 
 /// This is a short cut method that uses [`ByteSerializerStack<CAP>::as_slice()`] method to issue a [from_bytes] call.
 pub fn from_serializer_stack<const CAP: usize, T>(ser: &ByteSerializerStack<CAP>) -> Result<T>
 where
-    T: ByteDeserialize<T>,
+    T: ByteDeserializeSlice<T>,
 {
-    from_bytes(ser.as_slice())
+    from_slice(ser.as_slice())
 }
 /// This is a short cut method that uses [`ByteSerializerHeap::as_slice()`] method to issue a [from_bytes] call.
 pub fn from_serializer_heap<T>(ser: &ByteSerializerHeap) -> Result<T>
 where
-    T: ByteDeserialize<T>,
+    T: ByteDeserializeSlice<T>,
 {
-    from_bytes(ser.as_slice())
+    from_slice(ser.as_slice())
 }

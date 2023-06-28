@@ -1,7 +1,7 @@
 use byteserde::prelude::*;
 use byteserde::utils::hex::{to_hex_line, to_hex_pretty};
 use byteserde_derive::{
-    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
     ByteSerializedSizeOf,
 };
 use std::any::type_name;
@@ -37,7 +37,7 @@ use std::fmt;
 /// println!("{:x}", inp_str);
 /// assert_eq!(inp_str.bytes(), [0x20, 0x41, 0x42, 0x43, 0x44]);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, PartialEq)]
 pub struct StringAsciiFixed<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool>(
     [u8; LEN],
 );
@@ -168,7 +168,7 @@ mod test_string_ascii_fixed {
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
 
-        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
+        let des = &mut ByteDeserializerSlice::new(ser_stack.as_slice());
 
         // take half shall FAIL
         let out_err =
@@ -250,7 +250,7 @@ mod test_string_ascii_fixed {
 /// assert_eq!(StringAscii::from(b"ABCDEABCDE"), out_str);
 /// ```
 #[derive(
-    ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedLenOf, PartialEq,
+    ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq,
 )]
 pub struct StringAscii(Vec<u8>);
 impl StringAscii {
@@ -313,7 +313,7 @@ mod test_string_ascii {
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
 
-        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
+        let des = &mut ByteDeserializerSlice::new(ser_stack.as_slice());
 
         // take half + 1 shall SUCCESS first time
         let depleted = inp_str.len() / 2 + 1;
@@ -346,7 +346,7 @@ mod test_string_ascii {
 /// println!("{:x}", inp_char);
 /// assert_eq!(inp_char.bytes(), [0x41]);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq, Clone, Copy)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, PartialEq, Clone, Copy)]
 pub struct CharAscii(u8);
 impl CharAscii {
     pub fn bytes(&self) -> [u8; 1] {
@@ -414,7 +414,7 @@ mod test_char_ascii {
         info!("ser_heap: {:#x}", ser_heap);
         assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
-        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
+        let des = &mut ByteDeserializerSlice::new(ser_stack.as_slice());
         let out_char = CharAscii::byte_deserialize(des).unwrap();
         info!("out_char: {:?}", out_char);
     }
@@ -441,9 +441,9 @@ impl<const CHAR: u8> ConstCharAscii<CHAR> {
         char::from_u32(u32::from(CHAR)).unwrap()
     }
 }
-impl<const CHAR: u8> ByteDeserialize<ConstCharAscii<CHAR>> for ConstCharAscii<CHAR> {
+impl<const CHAR: u8> ByteDeserializeSlice<ConstCharAscii<CHAR>> for ConstCharAscii<CHAR> {
     #[allow(clippy::just_underscores_and_digits)]
-    fn byte_deserialize(des: &mut ByteDeserializer) -> Result<ConstCharAscii<CHAR>> {
+    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<ConstCharAscii<CHAR>> {
         let _0 = des.deserialize_u8()?;
         match _0 == CHAR {
             true => Ok(Default::default()),
@@ -506,7 +506,7 @@ mod test_const_char_ascii {
         let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_bytes).unwrap();
         info!("ser_stack: {:#x}", ser_stack);
 
-        let des = &mut ByteDeserializer::new(ser_stack.as_slice());
+        let des = &mut ByteDeserializerSlice::new(ser_stack.as_slice());
         let out_plus: ConstCharAscii<b'+'> = des.deserialize().unwrap();
         info!("out_plus: {}", out_plus);
 

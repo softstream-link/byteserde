@@ -11,7 +11,7 @@ fn test_deserialser_array() {
     ];
     info!("inp: {bytes:?}");
     // make sure you can read 20 bytes of payload
-    let mut des = ByteDeserializer::new(bytes);
+    let mut des = ByteDeserializerSlice::new(bytes);
     info!("des: {des:#x}");
     assert_eq!(des.len(), bytes.len());
     for _ in 0..2 {

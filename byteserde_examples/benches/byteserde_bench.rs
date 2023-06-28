@@ -1,4 +1,5 @@
 mod sample;
+use bytes::Bytes;
 use byteserde::prelude::*;
 use sample::Numbers;
 
@@ -9,7 +10,19 @@ fn to_bytes(c: &mut Criterion) {
     c.bench_function("byteserde::to_bytes_stack", |b| {
         b.iter(|| {
             black_box({
-                let _: [u8; 128] = byteserde::prelude::to_bytes_stack(&inp).unwrap();
+                let _: ([u8; 128], usize) = byteserde::prelude::to_bytes_stack(&inp).unwrap();
+            })
+        })
+    });
+}
+
+fn from_slice(c: &mut Criterion) {
+    let inp = Numbers::default();
+    let ser: ByteSerializerStack<128> = to_serializer_stack(&inp).unwrap();
+    c.bench_function("byteserde::from_slice", |b| {
+        b.iter(|| {
+            black_box({
+                let _ : Numbers = byteserde::prelude::from_slice(&ser.as_slice()).unwrap();
             })
         })
     });
@@ -18,10 +31,11 @@ fn to_bytes(c: &mut Criterion) {
 fn from_bytes(c: &mut Criterion) {
     let inp = Numbers::default();
     let ser: ByteSerializerStack<128> = to_serializer_stack(&inp).unwrap();
+    let bytes: Bytes = ser.as_slice().to_vec().into();
     c.bench_function("byteserde::from_bytes", |b| {
-        b.iter(|| {
+        b.iter( || {
             black_box({
-                let _ : Numbers = byteserde::prelude::from_bytes(&ser.as_slice()).unwrap();
+                let _ : Numbers = byteserde::prelude::from_bytes(bytes.clone()).unwrap();
             })
         })
     });
@@ -29,9 +43,10 @@ fn from_bytes(c: &mut Criterion) {
 
 criterion_group!(
     name = benches;
-    config = Criterion::default().warm_up_time(std::time::Duration::from_secs(1));
+    config = Criterion::default().warm_up_time(std::time::Duration::from_secs(5));
     targets =
     to_bytes,
+    from_slice,
     from_bytes,
 );
 criterion_main!(benches);

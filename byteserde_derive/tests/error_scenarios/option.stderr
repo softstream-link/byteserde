@@ -1,16 +1,16 @@
 error: proc-macro derive panicked
  --> tests/error_scenarios/option.rs:9:10
   |
-9 | #[derive(ByteDeserialize)]
-  |          ^^^^^^^^^^^^^^^
+9 | #[derive(ByteDeserializeSlice)]
+  |          ^^^^^^^^^^^^^^^^^^^^
   |
   = help: message: Option of Byte & Numerics are not supported only of other struct types. Ex: Option<SomeStruct>
 
 error: proc-macro derive panicked
   --> tests/error_scenarios/option.rs:15:10
    |
-15 | #[derive(ByteDeserialize)]
-   |          ^^^^^^^^^^^^^^^
+15 | #[derive(ByteDeserializeSlice)]
+   |          ^^^^^^^^^^^^^^^^^^^^
    |
    = help: message: struct `OptionalSectionMissingEqAnnotation` ByteDeserialize error:
            OptionalSectionMissingEqAnnotation.field1 is Option<T> type and hence requires `#[byteserde(eq( ... ))] attribute it that evalutes to a byte slice and complared with &[u8] of `#[byteserde(peek( start, len ))]` expression
@@ -18,7 +18,7 @@ error: proc-macro derive panicked
 error: proc-macro derive panicked
   --> tests/error_scenarios/option.rs:20:10
    |
-20 | #[derive(ByteDeserialize)]
-   |          ^^^^^^^^^^^^^^^
+20 | #[derive(ByteDeserializeSlice)]
+   |          ^^^^^^^^^^^^^^^^^^^^
    |
    = help: message: struct `OptionalSectionMissingPeekAnnotation` missing required `#[byteserde(peek( start, len ))]` annotation to be able to identify which optional fields are present in the bytestream

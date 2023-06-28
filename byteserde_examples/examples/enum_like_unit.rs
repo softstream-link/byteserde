@@ -2,7 +2,7 @@ mod unittest;
 
 use byteserde::prelude::*;
 use byteserde_derive::{
-    ByteDeserialize, ByteEnumFromBinder, ByteSerializeHeap, ByteSerializeStack,
+    ByteDeserializeSlice, ByteEnumFromBinder, ByteSerializeHeap, ByteSerializeStack,
 };
 use byteserde_types::char_ascii;
 use log::info;
@@ -16,7 +16,7 @@ fn enums_from_auto_impl() {
     setup::log::configure();
 
     #[rustfmt::skip]
-    char_ascii!(Side, ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, PartialEq);
+    char_ascii!(Side, ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, PartialEq);
     // impl Side{ // TODO deside what todo with FromBInder
     //     pub fn Buy() -> Self { Self(b'B') }
     //     pub fn Sell() -> Self { Self(b'S') }
