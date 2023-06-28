@@ -1,6 +1,9 @@
 use byteserde::prelude::*;
 use byteserde::utils::hex::{to_hex_line, to_hex_pretty};
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf, ByteSerializedSizeOf};
+use byteserde_derive::{
+    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteSerializedSizeOf,
+};
 use std::any::type_name;
 use std::cmp::min;
 use std::fmt;
@@ -219,11 +222,11 @@ mod test_string_ascii_fixed {
 }
 
 /// A string of ascii characters with a variable length allocated on heap using `Vec<u8>`
-/// 
+///
 /// ```
 /// use ::byteserde_types::prelude::*;
 /// use ::byteserde::prelude::*;
-/// 
+///
 /// // Take all bytes from array
 /// let inp_str: StringAscii = b"ABCDE".into();
 /// println!("inp_str: {:x}", inp_str);
@@ -246,7 +249,9 @@ mod test_string_ascii_fixed {
 /// println!("out_str: {:x}", out_str);
 /// assert_eq!(StringAscii::from(b"ABCDEABCDE"), out_str);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedLenOf, PartialEq)]
+#[derive(
+    ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, ByteSerializedLenOf, PartialEq,
+)]
 pub struct StringAscii(Vec<u8>);
 impl StringAscii {
     pub fn len(&self) -> usize {
@@ -424,7 +429,9 @@ mod test_char_ascii {
 /// assert_eq!(inp_char.bytes(), [43]);
 ///
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, PartialEq)]
+#[derive(
+    ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, PartialEq,
+)]
 pub struct ConstCharAscii<const CHAR: u8>(u8);
 impl<const CHAR: u8> ConstCharAscii<CHAR> {
     pub fn bytes(&self) -> [u8; 1] {

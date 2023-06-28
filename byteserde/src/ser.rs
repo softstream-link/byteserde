@@ -1,3 +1,5 @@
+use bytes::Bytes;
+
 use crate::{
     error::{Result, SerDesError},
     utils::{
@@ -215,6 +217,16 @@ where
     let ser = to_serializer_stack(v)?;
     Ok(ser.bytes)
     // Ok((ser.bytes, ser.len))
+}
+
+impl ByteSerializeStack for Bytes {
+    fn byte_serialize_stack<const CAP: usize>(
+        &self,
+        ser: &mut ByteSerializerStack<CAP>,
+    ) -> Result<()> {
+        ser.serialize_bytes_slice(&self[..])?;
+        Ok(())
+    }
 }
 
 /////////////////////

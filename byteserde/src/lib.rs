@@ -1,6 +1,7 @@
 // public
 pub mod prelude;
 pub mod des;
+pub mod des_bytes;
 pub mod error;
 pub mod ser;
 pub mod size;

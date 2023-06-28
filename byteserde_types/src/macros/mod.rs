@@ -219,7 +219,26 @@ macro_rules! const_char_ascii {
         }
         impl ::byteserde::des::ByteDeserialize<$NAME> for $NAME {
             #[allow(clippy::just_underscores_and_digits)]
-            fn byte_deserialize(des: &mut ByteDeserializer) -> ::byteserde::error::Result<$NAME> {
+            fn byte_deserialize(des: &mut ::byteserde::des::ByteDeserializer) -> ::byteserde::error::Result<$NAME> {
+                let _0 = des.deserialize_u8()?;
+                match _0 == $CONST {
+                    true => Ok($NAME::default()),
+                    false => {
+                        let ty = $NAME::default();
+        
+                        Err(SerDesError {
+                            message: format!(
+                                "Type {:?} expected: 0x{:02x} actual: 0x{:02x}",
+                                ty, $CONST, _0
+                            ),
+                        })
+                    }
+                }
+            }
+        }
+        impl ::byteserde::des_bytes::ByteDeserializeBytes<$NAME> for $NAME {
+            #[allow(clippy::just_underscores_and_digits)]
+            fn byte_deserialize(des: &mut ::byteserde::des_bytes::ByteDeserializerBytes) -> ::byteserde::error::Result<$NAME> {
                 let _0 = des.deserialize_u8()?;
                 match _0 == $CONST {
                     true => Ok($NAME::default()),

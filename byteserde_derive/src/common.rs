@@ -174,8 +174,8 @@ impl SerDesTokens {
             if let StructType::Enum(_, _) = self.struct_type {
             } else {
                 // all fileds in the optional section must be Option<T> can't mix with non Option types
-                eprintln!("count_option_des_vars: {}", self.count_option_des_vars());
-                eprintln!("self.des_peeked().len(): {}", self.des_peeked().len());
+                // eprintln!("count_option_des_vars: {}", self.count_option_des_vars());
+                // eprintln!("self.des_peeked().len(): {}", self.des_peeked().len());
                 if self.count_option_des_vars() != self.des_peeked().len() {
                     let val_err = format!(
                     "struct `{}` has a mix of Option<T> and Non Option<T> types, which is not allowed. Consider moving all Option<T> types into a seperate struct", 
