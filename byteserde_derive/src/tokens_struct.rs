@@ -101,7 +101,7 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                 let variant_id = variant.value().ident.clone();
                 let eq = match eq_attr(&variant.value().attrs){
                     PeekEq::Set(eq) => eq,
-                    PeekEq::NotSet => panic!("enum '{id}' variant '{variant_id}' missing required #[byteserde(eq( ... ))] attribute. It is matched vs #[byteserde(peek(start, len))] to determin deserilization struct."), 
+                    PeekEq::NotSet => panic!("enum '{id}' variant '{variant_id}' missing required #[byteserde(eq( ... ))] attribute. It is matched vs #[byteserde(peek(start, len))] to determine deserilization struct."), 
                 };
                 let default = FldSerDesTokens {
                     ser_vars: quote!(),

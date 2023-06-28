@@ -22,12 +22,3 @@ error: proc-macro derive panicked
    |          ^^^^^^^^^^^^^^^
    |
    = help: message: struct `OptionalSectionMissingPeekAnnotation` missing required `#[byteserde(peek( start, len ))]` annotation to be able to identify which optional fields are present in the bytestream
-
-error: proc-macro derive panicked
-  --> tests/error_scenarios/option.rs:26:10
-   |
-26 | #[derive(ByteDeserialize)]
-   |          ^^^^^^^^^^^^^^^
-   |
-   = help: message: struct `OptionalSectionAllMustBeOption` ByteDeserialize error:
-           struct `OptionalSectionAllMustBeOption` has a mix of Option<T> and Non Option<T> types, which is not allowed. Consider moving all Option<T> types into a seperate struct
