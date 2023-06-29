@@ -1,5 +1,5 @@
 use crate::integrationtest::setup;
-use byteserde::{des::ByteDeserializerSlice, error::Result, ser::ByteSerializerStack};
+use byteserde::{des_slice::ByteDeserializerSlice, error::Result, ser::ByteSerializerStack};
 use log::info;
 
 #[test]

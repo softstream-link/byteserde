@@ -31,7 +31,7 @@
     
     * `#[derive(ByteSerializeHeap)]` - generates [ByteSerializeHeap trait](byteserde/src/ser.rs#ByteSerializeHeap)
     
-    * `#[derive(ByteDeserialize)]` - generates [ByteDeserialize`<T>` trait](byteserde/src/des.rs#ByteDeserialize)
+    * `#[derive(ByteDeserialize)]` - generates [ByteDeserialize`<T>` trait](byteserde/src/des_slice.rs#ByteDeserialize)
 
     * `#[derive(ByteSerializedSizeOf)]` - generates [ByteSerializedSizeOf trait](byteserde/src/size.rs#ByteSerializedSizeOf) - this trait provides an `associated` method `byte_size()` which gives you a `struct` memory size in bytes without alignment. However it does not support types which heap allocate, ex: Vectors, Strings, or their derivations.
     
@@ -47,8 +47,8 @@
   * [ByteSerialize***r***Heap](byteserde/src/ser.rs#ByteSerializerHeap) - provides a fast enough for most speed by serializing into a `byte vector` `Vec<u8>`, hence the name. This utility trades some performance in return for not having to worry about knowing the LARGEST `struct` size in advance.
     * works for `struct`s that implement [ByteSerializeHeap trait](byteserde/src/ser.rs#ByteSerializeHeap)
 
-  * [ByteDeserialize***r***](byteserde/src/des.rs#ByteDeserialize) - takes a `byte stream` `&[u8]` irrespctive of heap vs stack allocation and turns it into a `struct`
-    * works for `struct`s that implement [ByteDeserialize`<T>` trait](byteserde/src/des.rs#ByteDeserialize)
+  * [ByteDeserialize***r***](byteserde/src/des_slice.rs#ByteDeserialize) - takes a `byte stream` `&[u8]` irrespctive of heap vs stack allocation and turns it into a `struct`
+    * works for `struct`s that implement [ByteDeserialize`<T>` trait](byteserde/src/des_slice.rs#ByteDeserialize)
 
 
     

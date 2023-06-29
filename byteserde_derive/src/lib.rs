@@ -101,13 +101,13 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(ByteDeserializeSlice, attributes(byteserde))]
 pub fn byte_deserialize_slice(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
-    byte_deserialize_common(ast, quote!(::byteserde::des::ByteDeserializerSlice), quote!(::byteserde::des::ByteDeserializeSlice))
+    byte_deserialize_common(ast, quote!(::byteserde::prelude::ByteDeserializerSlice), quote!(::byteserde::prelude::ByteDeserializeSlice))
 }
 
 #[proc_macro_derive(ByteDeserializeBytes, attributes(byteserde))]
 pub fn byte_deserialize_bytes(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
-    byte_deserialize_common(ast, quote!(::byteserde::des_bytes::ByteDeserializerBytes), quote!(::byteserde::des_bytes::ByteDeserializeBytes))
+    byte_deserialize_common(ast, quote!(::byteserde::prelude::ByteDeserializerBytes), quote!(::byteserde::prelude::ByteDeserializeBytes))
 }
 
 fn byte_deserialize_common(ast: DeriveInput, _struct: quote::__private::TokenStream, _trait: quote::__private::TokenStream) -> TokenStream{

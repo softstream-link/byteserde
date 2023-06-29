@@ -1,5 +1,5 @@
 use crate::{
-    des::{ByteDeserializeSlice, ByteDeserializerSlice},
+    des_slice::{ByteDeserializeSlice, ByteDeserializerSlice},
     error::{Result, SerDesError},
     prelude::ByteDeserializeBytes,
     ser::{ByteSerializeHeap, ByteSerializeStack, ByteSerializerStack},
