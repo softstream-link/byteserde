@@ -121,23 +121,22 @@ impl ByteDeserializerBytes {
 
     #[inline(always)]
     pub fn deserialize_u8(&mut self) -> Result<u8> {
-        // TODO both des & des_bytes have this index panic
-        let res = self.bytes[self.idx..].first();
+        let res = self.bytes.get(self.idx..);
         match res {
             Some(v) => {
                 self.idx += 1;
-                Ok(*v)
+                Ok(v[0])
             }
             None => Err(self.error(1)),
         }
     }
     #[inline(always)]
     pub fn deserialize_i8(&mut self) -> Result<i8> {
-        let res = self.bytes[self.idx..].first();
+        let res = self.bytes.get(self.idx..);
         match res {
             Some(v) => {
                 self.idx += 1;
-                Ok(*v as i8)
+                Ok(v[0] as i8)
             }
             None => Err(self.error(1)),
         }
@@ -166,7 +165,11 @@ impl ByteDeserializerBytes {
         if self.remaining() > at {
             return Err(self.error(self.idx + at));
         } else {
-            Ok(self.bytes.clone().split_to(self.idx + at).split_off(self.idx))
+            Ok(self
+                .bytes
+                .clone()
+                .split_to(self.idx + at)
+                .split_off(self.idx))
         }
     }
 

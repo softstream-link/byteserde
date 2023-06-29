@@ -9,7 +9,7 @@ use crate::{
     },
 };
 
-use super::ser::ByteSerializerStack;
+use super::ser_stack::ByteSerializerStack;
 
 /// Utility struct with a number of methods to enable deserialization of bytes into various types
 /// ```
@@ -115,22 +115,22 @@ impl<'buf> ByteDeserializerSlice<'buf> {
 
     #[inline(always)]
     pub fn deserialize_u8(&mut self) -> Result<u8> {
-        let res = self.bytes[self.idx..].first();
+        let res = self.bytes.get(self.idx..);
         match res {
             Some(v) => {
                 self.idx += 1;
-                Ok(*v)
+                Ok(v[0])
             }
             None => Err(self.error(1)),
         }
     }
     #[inline(always)]
     pub fn deserialize_i8(&mut self) -> Result<i8> {
-        let res = self.bytes[self.idx..].first();
+        let res = self.bytes.get(self.idx..);
         match res {
             Some(v) => {
                 self.idx += 1;
-                Ok(*v as i8)
+                Ok(v[0] as i8)
             }
             None => Err(self.error(1)),
         }
@@ -228,7 +228,7 @@ impl<'buf> ByteDeserializerSlice<'buf> {
 pub trait ByteDeserializeSlice<T> {
     /// If successfull returns a new instance of T type struct, depleating exactly the right amount of bytes from [ByteDeserializerSlice]
     /// Number of bytes depleted is determined by the struct T itself and its member types.
-    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<T>;
+    fn byte_deserialize<'des>(des: &mut ByteDeserializerSlice<'des>) -> Result<T>;
 
     /// if sucessfull returns a new instance of T type struct, however ONLY depleating a maximum of `len` bytes from [ByteDeserializerSlice]
     /// Intended for types with variable length such as Strings, Vecs, etc.

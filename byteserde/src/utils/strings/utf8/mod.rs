@@ -1,10 +1,4 @@
-use crate::{
-    des_slice::{ByteDeserializeSlice, ByteDeserializerSlice},
-    error::{Result, SerDesError},
-    prelude::ByteDeserializeBytes,
-    ser::{ByteSerializeHeap, ByteSerializeStack, ByteSerializerStack},
-    utils::hex::to_hex_line,
-};
+use crate::{prelude::*, utils::hex::to_hex_line};
 
 /// Default String implementation for ByteSerializeStack
 ///
@@ -29,7 +23,7 @@ impl ByteSerializeStack for String {
 /// * first `usize` bytes to store the length of the string
 /// * remaining bytes to store the string
 impl ByteSerializeHeap for String {
-    fn byte_serialize_heap(&self, ser: &mut crate::ser::ByteSerializerHeap) -> Result<()> {
+    fn byte_serialize_heap(&self, ser: &mut ByteSerializerHeap) -> Result<()> {
         let len = self.len();
         ser.serialize_bytes_slice(&len.to_be_bytes())?;
         ser.serialize_bytes_slice(self.as_bytes())?;
@@ -59,7 +53,7 @@ impl ByteDeserializeSlice<String> for String {
 }
 
 impl ByteDeserializeBytes<String> for String {
-    fn byte_deserialize(des: &mut crate::prelude::ByteDeserializerBytes) -> Result<String> {
+    fn byte_deserialize(des: &mut ByteDeserializerBytes) -> Result<String> {
         let len: usize = des.deserialize_be()?;
         let bytes = des.deserialize_bytes_slice(len)?;
         match String::from_utf8(bytes.to_vec()) {
@@ -89,7 +83,7 @@ impl ByteSerializeStack for char {
 }
 
 impl ByteSerializeHeap for char {
-    fn byte_serialize_heap(&self, ser: &mut crate::ser::ByteSerializerHeap) -> Result<()> {
+    fn byte_serialize_heap(&self, ser: &mut crate::prelude::ByteSerializerHeap) -> Result<()> {
         let len = self.len_utf8(); // max len is 4 bytes for valid utf8
         ser.serialize_bytes_slice(&[len as u8])?;
         let mut bytes = [0_u8; 4];

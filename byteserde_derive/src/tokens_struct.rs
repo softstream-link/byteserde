@@ -96,27 +96,29 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
         Data::Enum(data) => {
             ty = StructType::Enum(format!("{}", id), id.clone());
             let mut tokens = Vec::<FldSerDesTokens>::new();
+            let mut len_of_match_arms: Vec<TokenStream> = Vec::new();
 
+            let default = FldSerDesTokens {
+                ser_vars: quote!(),
+                ser_repl: quote!(),
+                ser_uses_stck: quote!(),
+                ser_uses_heap: quote!(),
+                des_vars: quote!(),
+                des_peeked: quote!(),
+                des_uses: quote!(),
+                des_errors: vec![],
+                size_of: quote!(), // not possible for enums
+                size_errors: vec![],
+                len_of: quote!(),
+            };
             for variant in data.variants.pairs() {
                 let variant_id = variant.value().ident.clone();
                 let eq = match eq_attr(&variant.value().attrs){
                     PeekEq::Set(eq) => eq,
                     PeekEq::NotSet => panic!("enum '{id}' variant '{variant_id}' missing required #[byteserde(eq( ... ))] attribute. It is matched vs #[byteserde(peek(start, len))] to determine deserilization struct."), 
                 };
-                let default = FldSerDesTokens {
-                    ser_vars: quote!(),
-                    ser_repl: quote!(),
-                    ser_uses_stck: quote!(),
-                    ser_uses_heap: quote!(),
-                    des_vars: quote!(),
-                    des_peeked: quote!(),
-                    des_uses: quote!(),
-                    des_errors: vec![],
-                    size_of: quote!(), //TODO enum size of support
-                    size_errors: vec![],
-                    len_of: quote!(), //TODO enum len support
-                };
-                // deserializer
+
+                // deserializer + len_of_arms
                 match &variant.value().fields {
                     Fields::Unnamed(flds) => {
                         let des_uses = flds
@@ -145,7 +147,9 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                             .collect::<Vec<_>>();
                         let ser_uses_stck = quote!( Self::#variant_id(#(#unnamed_members),*) => { #(#unnamed_members.byte_serialize_stack(ser)?;)*}, );
                         let ser_uses_heap = quote!( Self::#variant_id(#(#unnamed_members),*) => { #( #unnamed_members.byte_serialize_heap(ser)?;)*}, );
-
+                        len_of_match_arms.push(
+                             quote!( Self::#variant_id( #( #unnamed_members ),* ) => { #( #unnamed_members.byte_len() )+* }, )
+                        );
                         tokens.push(FldSerDesTokens {
                             ser_uses_stck: quote!( #ser_uses_stck ),
                             ser_uses_heap: quote!( #ser_uses_heap ),
@@ -156,6 +160,11 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                     _ => {} // will panic during deserializer
                 }
             }
+            // add len_of to result
+            tokens.push(FldSerDesTokens {
+                len_of: quote!( match self { #( #len_of_match_arms )* } ),
+                ..default.clone()
+            });
             tokens
         }
         _ => {

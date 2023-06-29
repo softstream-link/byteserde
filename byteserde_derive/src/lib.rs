@@ -38,10 +38,10 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     // generate stack serializer
     let output = quote! {
         #[automatically_derived]
-        impl #generics_declaration ::byteserde::ser::ByteSerializeStack for #struct_name #generics_alias #where_clause{
+        impl #generics_declaration ::byteserde::prelude::ByteSerializeStack for #struct_name #generics_alias #where_clause{
         // impl byteserde::ser::ByteSerializeStack for #struct_name {
             #[inline]
-            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ::byteserde::ser::ByteSerializerStack<CAP>) -> ::byteserde::error::Result<()>{
+            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ::byteserde::prelude::ByteSerializerStack<CAP>) -> ::byteserde::prelude::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?; -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?; -- for tuple
@@ -79,9 +79,9 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     // generate heap serializer
     let output = quote! {
         #[automatically_derived]
-        impl #generics_declaration ::byteserde::ser::ByteSerializeHeap for #struct_name #generics_alias #where_clause{
+        impl #generics_declaration ::byteserde::prelude::ByteSerializeHeap for #struct_name #generics_alias #where_clause{
             #[inline]
-            fn byte_serialize_heap(&self, ser: &mut ::byteserde::ser::ByteSerializerHeap) -> ::byteserde::error::Result<()>{
+            fn byte_serialize_heap(&self, ser: &mut ::byteserde::prelude::ByteSerializerHeap) -> ::byteserde::prelude::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?;         -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?;         -- for tuple
@@ -145,7 +145,7 @@ fn byte_deserialize_common(ast: DeriveInput, _struct: quote::__private::TokenStr
                     let (start, len) = (#start_len);
                     let __peeked = peek(start, len)?;
                     #( #des_peeked )*
-                    Err(SerDesError {
+                    Err(::byteserde::prelude::SerDesError {
                         message: 
                         format!("peek({}, {}) => {:x?}, however #[byteserde(eq( ... ))] did not yield a match. \ndes: {:#x}", start, len, __peeked, des),
                     })

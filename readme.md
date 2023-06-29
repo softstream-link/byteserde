@@ -27,9 +27,9 @@
 # The project contains three craits
 ## [byteserde_derive@crates.io](https://crates.io/crates/byteserde_derive) - [byteserde_derive/Cargo.toml](byteserde_derive/Cargo.toml)
   * contains derive macros that generates [byteserde@crates.io](https://crates.io/crates/byteserde) traits
-    * `#[derive(ByteSerializeStack)]` - generates [ByteSerializeStack trait](byteserde/src/ser.rs#ByteSerializeStack) 
+    * `#[derive(ByteSerializeStack)]` - generates [ByteSerializeStack trait](byteserde/src/ser_stack.rs#ByteSerializeStack) 
     
-    * `#[derive(ByteSerializeHeap)]` - generates [ByteSerializeHeap trait](byteserde/src/ser.rs#ByteSerializeHeap)
+    * `#[derive(ByteSerializeHeap)]` - generates [ByteSerializeHeap trait](byteserde/src/ser_stack.rs#ByteSerializeHeap)
     
     * `#[derive(ByteDeserialize)]` - generates [ByteDeserialize`<T>` trait](byteserde/src/des_slice.rs#ByteDeserialize)
 
@@ -41,11 +41,11 @@
   
 ## [byteserde@crates.io](https://crates.io/crates/byteserde) - [byteserde/Cargo.toml](byteserde/Cargo.toml)            
 * Highlights
-  * [ByteSerialize***r***Stack`<CAP>`](byteserde/src/ser.rs#ByteSerializerStack) - provides ultra fast serializer into a pre allocated `byte array` `[u8; CAP]` on `stack`, hence the name, it is very fast but at the cost of you needing to specify the size of the LARGEST `struct` you will attempt to serialize. If you reach the boundary of this preallocated byte array, your serialization will fail. This utility provides a reset features, which moves the internal counter to the begining, and allows you to recycle the buffer multiple times. 
-    * works for `struct`s that implement [ByteSerializeStack trait](byteserde/src/ser.rs#ByteSerializeStack)
+  * [ByteSerialize***r***Stack`<CAP>`](byteserde/src/ser_stack.rs#ByteSerializerStack) - provides ultra fast serializer into a pre allocated `byte array` `[u8; CAP]` on `stack`, hence the name, it is very fast but at the cost of you needing to specify the size of the LARGEST `struct` you will attempt to serialize. If you reach the boundary of this preallocated byte array, your serialization will fail. This utility provides a reset features, which moves the internal counter to the begining, and allows you to recycle the buffer multiple times. 
+    * works for `struct`s that implement [ByteSerializeStack trait](byteserde/src/ser_stack.rs#ByteSerializeStack)
 
-  * [ByteSerialize***r***Heap](byteserde/src/ser.rs#ByteSerializerHeap) - provides a fast enough for most speed by serializing into a `byte vector` `Vec<u8>`, hence the name. This utility trades some performance in return for not having to worry about knowing the LARGEST `struct` size in advance.
-    * works for `struct`s that implement [ByteSerializeHeap trait](byteserde/src/ser.rs#ByteSerializeHeap)
+  * [ByteSerialize***r***Heap](byteserde/src/ser_stack.rs#ByteSerializerHeap) - provides a fast enough for most speed by serializing into a `byte vector` `Vec<u8>`, hence the name. This utility trades some performance in return for not having to worry about knowing the LARGEST `struct` size in advance.
+    * works for `struct`s that implement [ByteSerializeHeap trait](byteserde/src/ser_stack.rs#ByteSerializeHeap)
 
   * [ByteDeserialize***r***](byteserde/src/des_slice.rs#ByteDeserialize) - takes a `byte stream` `&[u8]` irrespctive of heap vs stack allocation and turns it into a `struct`
     * works for `struct`s that implement [ByteDeserialize`<T>` trait](byteserde/src/des_slice.rs#ByteDeserialize)

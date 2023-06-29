@@ -1,4 +1,5 @@
 mod sample;
+use bytes::Bytes;
 use byteserde::prelude::*;
 use sample::Numbers;
 
@@ -10,7 +11,7 @@ fn reset_byte_serialize_stack(c: &mut Criterion) {
     c.bench_function("byte_serialize_stack - reset ByteSerializerStack", |b| {
         b.iter(|| {
             black_box({
-                ser.reset();
+                ser.clear();
                 let _ = inp.byte_serialize_stack(ser).unwrap();
             })
         })
@@ -34,7 +35,7 @@ fn reset_byte_serialize_heap(c: &mut Criterion) {
     c.bench_function("byte_serialize_heap - reset ByteSerializerHeap", |b| {
         b.iter(|| {
             black_box({
-                ser.reset();
+                ser.clear();
                 let _ = inp.byte_serialize_heap(ser).unwrap();
             })
         })
@@ -46,7 +47,7 @@ fn new_byte_serialize_heap(c: &mut Criterion) {
     c.bench_function("byte_serialize_heap - new ByteSerializerHeap", |b| {
         b.iter(|| {
             black_box({
-                let _: Vec<u8> = to_bytes_heap(&inp).unwrap();
+                let _: Bytes = to_bytes_heap(&inp).unwrap();
             })
         })
     });
@@ -60,7 +61,7 @@ fn reset_from_bytes(c: &mut Criterion) {
         b.iter(|| {
             black_box({
                 des.reset();
-                let _ = Numbers::byte_deserialize(des).unwrap();
+                let _ = <Numbers as ByteDeserializeSlice<Numbers>>::byte_deserialize(des).unwrap();
                 // let _ = from_bytes::<Numbers>(&ser.as_slice());
             })
         })
