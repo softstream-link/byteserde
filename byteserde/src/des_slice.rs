@@ -51,9 +51,10 @@ impl<'buf> LowerHex for ByteDeserializerSlice<'buf> {
         };
         let len = self.bytes.len();
         let idx = self.idx;
+        let rem = self.remaining();
         write!(
             f,
-            "ByteDeserializerSlice {{ len: {len}, idx: {idx}, bytes: {bytes} }}",
+            "ByteDeserializerSlice {{ len: {len}, idx: {idx}, remaining: {rem}, bytes: {bytes} }}",
         )
     }
 }
@@ -146,11 +147,8 @@ impl<'buf> ByteDeserializerSlice<'buf> {
             Some(v) => Ok(v),
             None => Err(SerDesError {
                 message: format!(
-                    "ByteDeserializerSlice len: {len}, idx: {idx}, remaining: {rem}, requested: {req}",
-                    len = self.len(),
-                    rem = &self.remaining(),
+                    "requested: {req}, bytes:\n{self:#x}",
                     req = len,
-                    idx = self.idx,
                 ),
             }),
         }

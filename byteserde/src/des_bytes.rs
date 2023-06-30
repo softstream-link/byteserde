@@ -52,9 +52,10 @@ impl LowerHex for ByteDeserializerBytes {
         };
         let len = self.bytes.len();
         let idx = self.idx;
+        let rem = self.remaining();
         write!(
             f,
-            "ByteDeserializerBytes {{ len: {len}, idx: {idx}, bytes: {bytes} }}",
+            "ByteDeserializerBytes {{ len: {len}, idx: {idx}, remaining: {rem}, bytes: {bytes} }}",
         )
     }
 }
@@ -152,7 +153,7 @@ impl ByteDeserializerBytes {
             Some(v) => Ok(v),
             None => Err(SerDesError {
                 message: format!(
-                    "ByteDeserializerBytes len: {len}, idx: {idx}, remaining: {rem}, requested: {req}",
+                    "ByteDeserializerBytes len: {len}, idx: {idx}, remaining: {rem}, requested: {req}, bytes:\n{self:#x}",
                     len = self.len(),
                     rem = &self.remaining(),
                     req = len,

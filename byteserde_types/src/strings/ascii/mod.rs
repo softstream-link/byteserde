@@ -250,7 +250,7 @@ mod test_string_ascii_fixed {
 /// assert_eq!(StringAscii::from(b"ABCDEABCDE"), out_str);
 /// ```
 #[derive(
-    ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq,
+    ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone
 )]
 pub struct StringAscii(Vec<u8>);
 impl StringAscii {

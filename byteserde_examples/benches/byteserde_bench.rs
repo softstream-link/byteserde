@@ -57,8 +57,8 @@ criterion_group!(
     name = benches;
     config = Criterion::default().warm_up_time(std::time::Duration::from_secs(5));
     targets =
-    // to_bytes_stack,
-    // byte_serialize_heap,
+    to_bytes_stack,
+    byte_serialize_heap,
     from_slice,
     from_bytes,
 );
