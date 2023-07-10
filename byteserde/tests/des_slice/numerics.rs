@@ -34,7 +34,7 @@ fn test_deserializer_u16() {
         info!("r:? {r:?}");
         assert!(r.is_err());
         assert!(
-            r.unwrap_err().message.starts_with("Failed to get a slice size: 2 bytes from ByteDeserializerSlice { len: 9, idx: 8, bytes: 0000:")
+            r.unwrap_err().message.starts_with("Failed to get a slice size: 2 bytes from ByteDeserializerSlice { len: 9, idx: 8, remaining: 1, bytes: 0000")
         );
     }
 

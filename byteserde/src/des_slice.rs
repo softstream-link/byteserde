@@ -30,8 +30,8 @@ use super::ser_stack::ByteSerializerStack;
 /// assert_eq!(remaining, &[0x00, 0x00, 0x03]);
 /// ```
 #[derive(Debug, PartialEq)]
-pub struct ByteDeserializerSlice<'buf> {
-    bytes: &'buf [u8],
+pub struct ByteDeserializerSlice<'slice> {
+    bytes: &'slice [u8],
     idx: usize,
 }
 
@@ -43,7 +43,7 @@ pub struct ByteDeserializerSlice<'buf> {
 /// println ! ("{:#x}", des); // upto 16 bytes per line
 /// println ! ("{:x}", des);  // single line
 /// ```
-impl<'buf> LowerHex for ByteDeserializerSlice<'buf> {
+impl<'bytes> LowerHex for ByteDeserializerSlice<'bytes> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bytes = match f.alternate() {
             true => format!("\n{hex}", hex = to_hex_pretty(self.bytes)),
@@ -59,7 +59,7 @@ impl<'buf> LowerHex for ByteDeserializerSlice<'buf> {
     }
 }
 
-impl<'buf> ByteDeserializerSlice<'buf> {
+impl<'bytes> ByteDeserializerSlice<'bytes> {
     pub fn new(bytes: &[u8]) -> ByteDeserializerSlice {
         ByteDeserializerSlice { bytes, idx: 0 }
     }
@@ -97,21 +97,17 @@ impl<'buf> ByteDeserializerSlice<'buf> {
         }
     }
     /// consumes all of the remaining bytes in the buffer and returns them as slice
-    pub fn deserialize_bytes_slice_remaining(&mut self) -> &[u8] {
+    pub fn deserialize_bytes_slice_remaining(&mut self) -> &'bytes [u8] {
         let slice = &self.bytes[self.idx..];
         self.idx += slice.len();
         slice
     }
     /// consumes `len` bytes from the buffer and returns them as slice if successful.
     /// Fails if `len` is greater then [Self::remaining()]
-    pub fn deserialize_bytes_slice(&mut self, len: usize) -> Result<&'buf [u8]> {
-        match self.bytes.get(self.idx..self.idx + len) {
-            Some(v) => {
-                self.idx += len;
-                Ok(v)
-            }
-            None => Err(self.error(len)),
-        }
+    pub fn deserialize_bytes_slice(&mut self, len: usize) -> Result<&'bytes [u8]> {
+        let res = self.peek_bytes_slice(len)?;
+        self.advance_idx(len);
+        Ok(res)
     }
 
     #[inline(always)]
@@ -141,8 +137,7 @@ impl<'buf> ByteDeserializerSlice<'buf> {
         self.idx += len;
     }
     /// produces with out consuming `len` bytes from the buffer and returns them as slice if successful.
-    pub fn peek_bytes_slice(&self, len: usize) -> Result<&[u8]> {
-        // TODO figure out why i can't call this method from deserialize_bytes_slice and just increment the indexif sucess
+    pub fn peek_bytes_slice(&self, len: usize) -> Result<&'bytes [u8]> {
         match self.bytes.get(self.idx..self.idx + len) {
             Some(v) => Ok(v),
             None => Err(SerDesError {
@@ -155,7 +150,7 @@ impl<'buf> ByteDeserializerSlice<'buf> {
     }
 
     #[inline]
-    pub fn deserialize_bytes_array_ref<const N: usize>(&mut self) -> Result<&[u8; N]> {
+    pub fn deserialize_bytes_array_ref<const N: usize>(&mut self) -> Result<&'bytes [u8; N]> {
         match self.bytes.get(self.idx..self.idx + N) {
             Some(v) => {
                 self.idx += N;
@@ -226,7 +221,7 @@ impl<'buf> ByteDeserializerSlice<'buf> {
 pub trait ByteDeserializeSlice<T> {
     /// If successfull returns a new instance of T type struct, depleating exactly the right amount of bytes from [ByteDeserializerSlice]
     /// Number of bytes depleted is determined by the struct T itself and its member types.
-    fn byte_deserialize<'des>(des: &mut ByteDeserializerSlice<'des>) -> Result<T>;
+    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<T>;
 
     /// if sucessfull returns a new instance of T type struct, however ONLY depleating a maximum of `len` bytes from [ByteDeserializerSlice]
     /// Intended for types with variable length such as Strings, Vecs, etc.
