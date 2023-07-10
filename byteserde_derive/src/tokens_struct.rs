@@ -88,10 +88,14 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                     })
                     .collect::<Vec<_>>()
             }
-            Fields::Unit => panic!(
-                "Unit struct type is not supported, found '{struct_name}'",
-                struct_name = &ast.ident
-            ),
+            Fields::Unit => {
+                ty = StructType::Unit(format!("{}", id), id.clone());
+                vec![]
+                // panic!(
+                //     "Unit struct type is not supported, found '{struct_name}'",
+                //     struct_name = &ast.ident
+                // )
+            }
         },
         Data::Enum(data) => {
             ty = StructType::Enum(format!("{}", id), id.clone());

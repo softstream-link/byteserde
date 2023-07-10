@@ -1,4 +1,4 @@
-use quote::__private::TokenStream;
+use quote::{__private::TokenStream, quote};
 use syn::Ident;
 
 use crate::attr_struct::Peek;
@@ -6,6 +6,7 @@ use crate::attr_struct::Peek;
 pub enum StructType {
     Regular(String, Ident),
     Tuple(String, Ident),
+    Unit(String, Ident),
     Enum(String, Ident),
 }
 #[derive(Debug, Clone)]
@@ -37,6 +38,7 @@ impl SerDesTokens {
         match self.struct_type {
             StructType::Regular(ref name, _)
             | StructType::Tuple(ref name, _)
+            | StructType::Unit(ref name, _)
             | StructType::Enum(ref name, _) => name.clone(),
         }
     }
@@ -44,6 +46,7 @@ impl SerDesTokens {
         match self.struct_type {
             StructType::Regular(_, ref ident)
             | StructType::Tuple(_, ref ident)
+            | StructType::Unit(_, ref ident)
             | StructType::Enum(_, ref ident) => ident,
         }
     }
@@ -129,11 +132,16 @@ impl SerDesTokens {
 
     // SIZE
     pub fn size_of(&self) -> Vec<TokenStream> {
-        self.flds
+        let size_of = self.flds
             .iter()
             .filter(|f| !f.size_of.is_empty())
             .map(|f| f.size_of.clone())
-            .collect::<Vec<_>>()
+            .collect::<Vec<_>>();
+        if size_of.is_empty() {
+            vec![quote! { 0 }]
+        } else {
+            size_of
+        }
     }
     pub fn size_errors(&self) -> Option<String> {
         let size_errors = self
@@ -145,11 +153,16 @@ impl SerDesTokens {
     }
 
     pub fn len_of(&self) -> Vec<TokenStream> {
-        self.flds
+        let len_of = self.flds
             .iter()
             .filter(|f| !f.len_of.is_empty())
             .map(|f| f.len_of.clone())
-            .collect::<Vec<_>>()
+            .collect::<Vec<_>>();
+        if len_of.is_empty() {
+            vec![quote! { 0 }]
+        } else {
+            len_of
+        }
     }
 
     pub fn des_validate(&self, peek: &Peek) {

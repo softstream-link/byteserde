@@ -127,6 +127,7 @@ fn byte_deserialize_common(ast: DeriveInput, _struct: quote::__private::TokenStr
         let impl_body = match sdt.struct_type {
             StructType::Regular(..) => quote!( Ok(#id {#( #des_uses )*}) ), // NOTE {}
             StructType::Tuple(..) => quote!  ( Ok(#id (#( #des_uses )*)) ), // NOTE ()
+            StructType::Unit(..) => quote!   ( Ok(#id) ),                   // NOTE nothing
             StructType::Enum(..) => quote! ( ),   // NOTE nothing
         };
     
@@ -197,7 +198,7 @@ pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
     // grap just heap presets
     res.size_validate();
     let size = res.size_of();
-
+    
     // generate deserializer
     let output = quote! {
         #[automatically_derived]
