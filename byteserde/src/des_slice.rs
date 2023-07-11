@@ -248,6 +248,7 @@ impl ByteDeserializeSlice<Vec<u8>> for Vec<u8> {
 }
 
 /// This is a short cut method that creates a new instance of [ByteDeserializerSlice] and then uses that to convert them into a T type struct.
+#[inline(always)]
 pub fn from_slice<T>(bytes: &[u8]) -> Result<T>
 where
     T: ByteDeserializeSlice<T>,

@@ -200,6 +200,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
 }
 
 /// Analogous to [`to_bytes_stack::<CAP>()`], but returns an instance of [`ByteSerializerStack<CAP>`].
+// #[inline] - TODO - panics during benchmarking
 pub fn to_serializer_stack<const CAP: usize, T>(v: &T) -> Result<ByteSerializerStack<CAP>>
 where
     T: ByteSerializeStack,
@@ -211,6 +212,7 @@ where
 /// Analogous to [`to_serializer_stack::<CAP>()`], but returns just the array of bytes `[u8; CAP]`.
 /// Note that this is not a `&[u8]` slice, but an array of bytes with length CAP even if
 /// the actual length of the serialized data is less.
+#[inline(always)]
 pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> Result<([u8; CAP], usize)>
 // pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> Result<([u8; CAP], usize)>
 where
@@ -218,7 +220,6 @@ where
 {
     let ser = to_serializer_stack(v)?;
     Ok((ser.bytes, ser.len()))
-    // Ok((ser.bytes, ser.len))
 }
 
 impl ByteSerializeStack for Bytes {
