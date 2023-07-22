@@ -37,7 +37,7 @@ use std::fmt;
 /// println!("{:x}", inp_str);
 /// assert_eq!(inp_str.bytes(), [0x20, 0x41, 0x42, 0x43, 0x44]);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone)]
 pub struct StringAsciiFixed<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool>(
     [u8; LEN],
 );
@@ -430,7 +430,7 @@ mod test_char_ascii {
 ///
 /// ```
 #[derive(
-    ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, PartialEq,
+    ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, PartialEq, Clone
 )]
 pub struct ConstCharAscii<const CHAR: u8>(u8);
 impl<const CHAR: u8> ConstCharAscii<CHAR> {

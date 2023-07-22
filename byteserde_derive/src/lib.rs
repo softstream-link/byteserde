@@ -139,7 +139,7 @@ fn byte_deserialize_common(ast: DeriveInput, _struct: quote::__private::TokenStr
         let des_peeked = match sdt.struct_type {
             StructType::Enum(_, _) => {
                 quote!(
-                    let peek = |start, len| -> Result<&[u8]> {
+                    let peek = |start, len| -> ::byteserde::prelude::Result<&[u8]> {
                         let p = des.peek_bytes_slice(len+start)?;
                         Ok(&p[start..])
                     };
