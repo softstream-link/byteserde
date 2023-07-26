@@ -48,7 +48,7 @@ pub trait ByteSerializeHeap {
 ///
 /// ser.clear();
 /// assert_eq!(ser.is_empty(), true);
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ByteSerializerHeap {
     bytes: BytesMut,
 }
@@ -56,13 +56,6 @@ impl ByteSerializerHeap {
     pub fn with_capacity(cap: usize) -> Self {
         ByteSerializerHeap {
             bytes: BytesMut::with_capacity(cap),
-        }
-    }
-}
-impl Default for ByteSerializerHeap {
-    fn default() -> Self {
-        ByteSerializerHeap {
-            bytes: BytesMut::default(),
         }
     }
 }
