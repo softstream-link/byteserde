@@ -31,7 +31,7 @@
     
     * `#[derive(ByteSerializeHeap)]` - generates [ByteSerializeHeap trait](byteserde/src/ser_stack.rs#ByteSerializeHeap)
     
-    * `#[derive(ByteDeserialize)]` - generates [ByteDeserialize`<T>` trait](byteserde/src/des_slice.rs#ByteDeserialize)
+    * `#[derive(ByteDeserializeSlice)]` - generates [ByteDeserialize`<T>` trait](byteserde/src/des_slice.rs#ByteDeserializeSlice)
 
     * `#[derive(ByteSerializedSizeOf)]` - generates [ByteSerializedSizeOf trait](byteserde/src/size.rs#ByteSerializedSizeOf) - this trait provides an `associated` method `byte_size()` which gives you a `struct` memory size in bytes without alignment. However it does not support types which heap allocate, ex: Vectors, Strings, or their derivations.
     

@@ -169,7 +169,7 @@ impl SerDesTokens {
         // if flds produce errors, panic and don't worry about further validation
         if let Some(msg) = self.des_collated_errs() {
             panic!(
-                "struct `{}` ByteDeserialize error:\n{}",
+                "struct `{}` ByteDeserializeSlice error:\n{}",
                 self.struct_name(),
                 msg
             );
@@ -198,7 +198,7 @@ impl SerDesTokens {
                         None => String::new(),
                     };
                     panic!(
-                        "struct `{}` ByteDeserialize error:\n{}{}",
+                        "struct `{}` ByteDeserializeSlice error:\n{}{}",
                         self.struct_name(),
                         val_err,
                         fld_errors

@@ -57,7 +57,7 @@ fn reset_from_bytes(c: &mut Criterion) {
     let inp = Numbers::default();
     let ser: ByteSerializerStack<128> = to_serializer_stack(&inp).unwrap();
     let des = &mut ByteDeserializerSlice::new(ser.as_slice());
-    c.bench_function("from_bytes - reset ByteDeserializer", |b| {
+    c.bench_function("from_bytes - reset ByteDeserializerSlice", |b| {
         b.iter(|| {
             black_box({
                 des.reset();
@@ -71,7 +71,7 @@ fn reset_from_bytes(c: &mut Criterion) {
 fn new_from_bytes(c: &mut Criterion) {
     let inp = Numbers::default();
     let ser: ByteSerializerStack<128> = to_serializer_stack(&inp).unwrap();
-    c.bench_function("from_bytes - new ByteDeserializer", |b| {
+    c.bench_function("from_bytes - new ByteDeserializerSlice", |b| {
         b.iter(|| {
             black_box({
                 let _: Numbers = from_slice(&ser.as_slice()).unwrap();

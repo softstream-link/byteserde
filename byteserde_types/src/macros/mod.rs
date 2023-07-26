@@ -167,7 +167,7 @@ macro_rules! char_ascii {
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
 /// * `Debug` & `Display` - provides a human readable sting view of the `u8` byte as utf-8 char
-/// * `ByteDeserialize`- provides an implementation for deserializing from a byte stream, which `will panic` if value on the 
+/// * `ByteDeserializeSlice`- provides an implementation for deserializing from a byte stream, which `will panic` if value on the 
 /// stream does `not` match the `CONST` value.
 /// 
 /// # Examples
@@ -298,7 +298,7 @@ macro_rules! numeric_tuple {
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
 /// * `ENDIAN` - endianess of the numeric type, must be either `le`, `be`, or `ne`, this will be passed directly to the `byteserde` attribute as #[byteserde(endian = "xx" )]
-/// * `[derive, ...]` -- `must include one of` the following `ByteSerializeStack`, `ByteSerializeHeap`, or `ByteDeserialize` other wise the `#[byteserde(endian = $ENDIAN)]` attribute will fail to compile. 
+/// * `[derive, ...]` -- `must include one of` the following `ByteSerializeStack`, `ByteSerializeHeap`, or `ByteDeserializeSlice` other wise the `#[byteserde(endian = $ENDIAN)]` attribute will fail to compile. 
 /// Plus list of additional valid rust derive traits 
 /// 
 /// # Derives

@@ -173,11 +173,11 @@ fn byte_deserialize_common(ast: DeriveInput, _struct: quote::__private::TokenStr
                 #[inline]
                 fn byte_deserialize(des: &mut #_struct) -> ::byteserde::error::Result<#id #generics_alias>{
                     // let type_u16:    u16 = des.deserialize_[be|le|ne]()?; -- numerics
-                    // let type_String: String = des.deserialize()?;          -- trait ByteDeserialize
+                    // let type_String: String = des.deserialize()?;          -- trait ByteDeserializeSlice
                     // StructName { type_u16, type_String }
                     //
                     // let _0 = des.deserialize_[be|le|ne]()?; -- numerics
-                    // let _1  = des.deserialize()?;          -- trait ByteDeserialize
+                    // let _1  = des.deserialize()?;          -- trait ByteDeserializeSlice
                     // TupleName ( _0, _1 )
                     #( #des_vars )*
                     #des_peeked

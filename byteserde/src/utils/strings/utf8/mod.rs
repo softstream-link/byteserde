@@ -31,7 +31,7 @@ impl ByteSerializeHeap for String {
     }
 }
 
-/// Default String implementation for ByteDeserialize
+/// Default String implementation for ByteDeserializeSlice
 ///
 /// # Appoach
 /// * first `usize` bytes to read the length of the string

@@ -47,7 +47,7 @@ pub struct ByteDeserializerBytes {
 impl LowerHex for ByteDeserializerBytes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bytes = match f.alternate() {
-            true => format!("\n{hex}", hex = to_hex_pretty(&self.bytes.as_ref())),
+            true => format!("\n{hex}", hex = to_hex_pretty(self.bytes.as_ref())),
             false => to_hex_line(self.bytes.as_ref()),
         };
         let len = self.bytes.len();
@@ -164,7 +164,7 @@ impl ByteDeserializerBytes {
     }
     pub fn peek_bytes(&self, at: usize) -> Result<Bytes> {
         if self.remaining() > at {
-            return Err(self.error(self.idx + at));
+            Err(self.error(self.idx + at))
         } else {
             Ok(self
                 .bytes
