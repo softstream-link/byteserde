@@ -123,51 +123,46 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                 };
 
                 // deserializer + len_of_arms
-                match &variant.value().fields {
-                    Fields::Unnamed(flds) => {
-                        let des_uses = flds
-                            .unnamed
-                            .iter()
-                            .map(|fld| fld.ty.clone())
-                            .collect::<Vec<_>>();
-                        let des_peeked = quote!( if __peeked == #eq { return Ok( Self::#variant_id( #( #des_uses::byte_deserialize(des)? ),* ) )} );
-                        tokens.push(FldSerDesTokens {
-                            des_peeked,
-                            ..default.clone()
-                        });
-                    }
-                    _ => {
-                        panic!("enum '{}' has an unsupported variant '{}'. Only tuple-like style variants are supported", id, quote!(#variant))
-                    }
+                if let Fields::Unnamed(flds) = &variant.value().fields {
+                    let des_uses = flds
+                        .unnamed
+                        .iter()
+                        .map(|fld| fld.ty.clone())
+                        .collect::<Vec<_>>();
+                    let des_peeked = quote!( if __peeked == #eq { return Ok( Self::#variant_id( #( #des_uses::byte_deserialize(des)? ),* ) )} );
+                    tokens.push(FldSerDesTokens {
+                        des_peeked,
+                        ..default.clone()
+                    });
+                } else {
+                    panic!("enum '{}' has an unsupported variant '{}'. Only tuple-like style variants are supported", id, quote!(#variant))
                 }
+
                 // serializer
-                match &variant.value().fields {
-                    Fields::Unnamed(flds) => {
-                        let unnamed_members = flds
-                            .unnamed
-                            .iter()
-                            .enumerate()
-                            .map(|(i, _)| Ident::new(&format!("_{}", i), ast.ident.span()))
-                            .collect::<Vec<_>>();
-                        let ser_uses_stck = quote!( Self::#variant_id(#(#unnamed_members),*) => { #(#unnamed_members.byte_serialize_stack(ser)?;)*}, );
-                        let ser_uses_heap = quote!( Self::#variant_id(#(#unnamed_members),*) => { #( #unnamed_members.byte_serialize_heap(ser)?;)*}, );
-                        len_of_match_arms.push(
+                if let Fields::Unnamed(flds) = &variant.value().fields {
+                    let unnamed_members = flds
+                        .unnamed
+                        .iter()
+                        .enumerate()
+                        .map(|(i, _)| Ident::new(&format!("_{}", i), ast.ident.span()))
+                        .collect::<Vec<_>>();
+                    let ser_uses_stck = quote!( Self::#variant_id(#(#unnamed_members),*) => { #(#unnamed_members.byte_serialize_stack(ser)?;)*}, );
+                    let ser_uses_heap = quote!( Self::#variant_id(#(#unnamed_members),*) => { #( #unnamed_members.byte_serialize_heap(ser)?;)*}, );
+                    len_of_match_arms.push(
                              quote!( Self::#variant_id( #( #unnamed_members ),* ) => { #( #unnamed_members.byte_len() )+* }, )
                         );
-                        tokens.push(FldSerDesTokens {
-                            ser_uses_stck: quote!( #ser_uses_stck ),
-                            ser_uses_heap: quote!( #ser_uses_heap ),
-                            len_of: quote!(),
-                            ..default.clone()
-                        });
-                    }
-                    _ => {} // will panic during deserializer
-                }
+                    tokens.push(FldSerDesTokens {
+                        ser_uses_stck: quote!( #ser_uses_stck ),
+                        ser_uses_heap: quote!( #ser_uses_heap ),
+                        len_of: quote!(),
+                        ..default.clone()
+                    });
+                } // else will panic during deserializer
             }
             // add len_of to result
             tokens.push(FldSerDesTokens {
                 len_of: quote!( match self { #( #len_of_match_arms )* } ),
-                ..default.clone()
+                ..default
             });
             tokens
         }
