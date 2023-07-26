@@ -13,8 +13,8 @@ categories.workspace = true
 description = "A procedural macro for mapping byte streams to/from arbitrary struct types with focus on performance"
 
 [dependencies]
-byteserde_derive = { path = "../byteserde_derive", version = "0.2" }
-byteserde = { path = "../byteserde", version = "0.2" }
+byteserde_derive = { workspace = true }
+byteserde = { workspace = true }
 
 [dev-dependencies]
 env_logger = { workspace = true }
