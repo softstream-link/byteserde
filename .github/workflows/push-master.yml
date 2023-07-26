@@ -11,14 +11,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@nextest
       - name: Toolchain Info
         run: |
           cargo --version --verbose
           rustc --version
       - name: Test
         run: |
-          cargo test
-          cargo test --examples
+          cargo nextest run --success-output final
+          cargo nextest run --examples --success-output final
       - name: Benchmark
         run: cargo bench
       - name: Clippy Deny Warnings
