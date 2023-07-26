@@ -16,11 +16,11 @@ description = "A procedural macro for mapping byte streams to/from arbitrary str
 proc-macro = true
 
 [dependencies]
-syn = { version = "2.0", features = ["full" , "extra-traits"] }
-quote = "1.0"
+syn = { workspace = true }
+quote = { workspace = true }
 
 [dev-dependencies]
-trybuild = { version = "1.0", features = ["diff"] }
-env_logger = "0.10"
-log = "0.4"
 byteserde = { path = "../byteserde" }
+trybuild = { workspace = true }
+env_logger = { workspace = true }
+log = { workspace = true }

@@ -1,4 +1,5 @@
 mod integrationtest;
 
 mod ser;
-mod des;
+mod des_slice;
+mod des_bytes;

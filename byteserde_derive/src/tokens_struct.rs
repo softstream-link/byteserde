@@ -12,16 +12,15 @@ use syn::{
 
 use crate::{
     attr_struct::{
-        deplete_attr, des_endian_method_xx, endian_attr, replace_attr, ser_endian_method_xx,
-        Deplete, MemberIdent, Replace, eq_attr, PeekEq, enum_bind_attr, Bind,
-    }, common::{StructType, FldSerDesTokens, SerDesTokens},
+        deplete_attr, des_endian_method_xx, endian_attr, eq_attr, replace_attr,
+        ser_endian_method_xx, Deplete, MemberIdent, PeekEq, Replace,
+    },
+    common::{FldSerDesTokens, SerDesTokens, StructType},
 };
-
 
 pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
     let ty: StructType;
     let id = &ast.ident;
-    // eprintln!("get_struct_ser_des_tokens: {:?}", &ast.ident);
     let flds_tokens = match &ast.data {
         Data::Struct(data) => match &data.fields {
             Fields::Named(flds) => {
@@ -89,42 +88,88 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                     })
                     .collect::<Vec<_>>()
             }
-            Fields::Unit => panic!(
-                "Unit struct type is not supported, found '{struct_name}'",
-                struct_name = &ast.ident
-            ),
+            Fields::Unit => {
+                ty = StructType::Unit(format!("{}", id), id.clone());
+                vec![]
+                // panic!(
+                //     "Unit struct type is not supported, found '{struct_name}'",
+                //     struct_name = &ast.ident
+                // )
+            }
         },
-        Data::Enum(_) => {
-            let bind = enum_bind_attr(&ast.attrs);
-            let struct_type = match bind {
-                Bind::Set(value) => {
-                    quote!(#value)
-                }
-                _ => panic!("Enum {} needs to be bound to a struct type using bind attribute. Example: `#[byteserde(bind( MyStructName ))]`", id),
-            };
+        Data::Enum(data) => {
             ty = StructType::Enum(format!("{}", id), id.clone());
             let mut tokens = Vec::<FldSerDesTokens>::new();
-            tokens.push(FldSerDesTokens {
-                ser_vars: quote!(let _from_enum = #struct_type::from(self);),
+            let mut len_of_match_arms: Vec<TokenStream> = Vec::new();
+
+            let default = FldSerDesTokens {
+                ser_vars: quote!(),
                 ser_repl: quote!(),
-                ser_uses_stck: quote!(ser.serialize(&_from_enum)?;),
-                ser_uses_heap: quote!(ser.serialize(&_from_enum)?;),
-                des_vars: quote!( let _struct = des.deserialize::<#struct_type>()?; ),
-                des_option: quote!(), // does not apply here
+                ser_uses_stck: quote!(),
+                ser_uses_heap: quote!(),
+                des_vars: quote!(),
+                des_peeked: quote!(),
                 des_uses: quote!(),
                 des_errors: vec![],
-                size_of: quote!(todo!("Please imlement")), //TODO complete size_of for Enums
+                size_of: quote!(), // not possible for enums
                 size_errors: vec![],
-                len_of: quote!(todo!("Please imlement")), //TODO complete len_of for Enums
-            });
+                len_of: quote!(),
+            };
+            for variant in data.variants.pairs() {
+                let variant_id = variant.value().ident.clone();
+                let eq = match eq_attr(&variant.value().attrs){
+                    PeekEq::Set(eq) => eq,
+                    PeekEq::NotSet => panic!("enum '{id}' variant '{variant_id}' missing required #[byteserde(eq( ... ))] attribute. It is matched vs #[byteserde(peek(start, len))] to determine deserilization struct."), 
+                };
 
+                // deserializer + len_of_arms
+                if let Fields::Unnamed(flds) = &variant.value().fields {
+                    let des_uses = flds
+                        .unnamed
+                        .iter()
+                        .map(|fld| fld.ty.clone())
+                        .collect::<Vec<_>>();
+                    let des_peeked = quote!( if __peeked == #eq { return Ok( Self::#variant_id( #( #des_uses::byte_deserialize(des)? ),* ) )} );
+                    tokens.push(FldSerDesTokens {
+                        des_peeked,
+                        ..default.clone()
+                    });
+                } else {
+                    panic!("enum '{}' has an unsupported variant '{}'. Only tuple-like style variants are supported", id, quote!(#variant))
+                }
+
+                // serializer
+                if let Fields::Unnamed(flds) = &variant.value().fields {
+                    let unnamed_members = flds
+                        .unnamed
+                        .iter()
+                        .enumerate()
+                        .map(|(i, _)| Ident::new(&format!("_{}", i), ast.ident.span()))
+                        .collect::<Vec<_>>();
+                    let ser_uses_stck = quote!( Self::#variant_id(#(#unnamed_members),*) => { #(#unnamed_members.byte_serialize_stack(ser)?;)*}, );
+                    let ser_uses_heap = quote!( Self::#variant_id(#(#unnamed_members),*) => { #( #unnamed_members.byte_serialize_heap(ser)?;)*}, );
+                    len_of_match_arms.push(
+                             quote!( Self::#variant_id( #( #unnamed_members ),* ) => { #( #unnamed_members.byte_len() )+* }, )
+                        );
+                    tokens.push(FldSerDesTokens {
+                        ser_uses_stck: quote!( #ser_uses_stck ),
+                        ser_uses_heap: quote!( #ser_uses_heap ),
+                        len_of: quote!(),
+                        ..default.clone()
+                    });
+                } // else will panic during deserializer
+            }
+            // add len_of to result
+            tokens.push(FldSerDesTokens {
+                len_of: quote!( match self { #( #len_of_match_arms )* } ),
+                ..default
+            });
             tokens
         }
         _ => {
             panic!(
                 "Only struct types supported, found '{struct_name}' of type '{ty}'",
                 ty = match ast.data {
-                    Data::Enum(_) => "enum",
                     Data::Union(_) => "union",
                     _ => "unknow",
                 },
@@ -132,7 +177,10 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
             )
         }
     };
-    SerDesTokens{ struct_type: ty, flds: flds_tokens }
+    SerDesTokens {
+        struct_type: ty,
+        flds: flds_tokens,
+    }
 }
 
 fn setup_numeric(
@@ -181,7 +229,7 @@ fn setup_numeric(
         ser_uses_stck: ser_uses_xxx.clone(),
         ser_uses_heap: ser_uses_xxx,
         des_vars,
-        des_option: quote!(), // does not apply here
+        des_peeked: quote!(), // does not apply here
         des_uses: quote!( #var_name, ),
         des_errors: vec![],
         size_of: size,
@@ -237,7 +285,9 @@ fn setup_array(
 
     let des_vars = match option {
         FieldType::ArrBytes { signed, .. } => match signed {
-            false => quote!( let #var_name: [#arr_ty; #len] = *des.deserialize_bytes_array_ref()?; ),
+            false => {
+                quote!( let #var_name: [#arr_ty; #len] = *des.deserialize_bytes_array_ref()?; )
+            }
             true => {
                 quote!( let #var_name: [u8; #len] = *des.deserialize_bytes_array_ref()?; 
                         let #var_name: [#arr_ty; #len] = unsafe { ::std::mem::transmute(#var_name) }; )
@@ -289,7 +339,7 @@ fn setup_array(
         ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
         des_vars,
-        des_option: quote!(), // does not apply here
+        des_peeked: quote!(), // does not apply here
         des_uses: quote!( #var_name, ),
         des_errors: vec![],
         size_of: size,
@@ -424,7 +474,7 @@ fn setup_vec(
         ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
         des_vars: des_vars_xxx,
-        des_option: quote!(), // does not apply here
+        des_peeked: quote!(), // does not apply here
         des_uses: quote!( #var_name, ),
         des_errors: vec![],
         size_of: quote!(0),
@@ -455,7 +505,7 @@ fn setup_struct(fld: &Field, var_name: &Ident, ty: &Type, member: &MemberIdent) 
         ser_uses_stck: quote!( #var_name.byte_serialize_stack(ser)?; ),
         ser_uses_heap: quote!( #var_name.byte_serialize_heap(ser)?; ),
         des_vars,
-        des_option: quote!(), // does not apply here
+        des_peeked: quote!(), // does not apply here
         des_uses: quote!( #var_name, ),
         des_errors: vec![],
         size_of: quote!( #ty.byte_size() ),
@@ -520,7 +570,7 @@ fn setup_option(
         ser_uses_stck: ser_uses_xxx(&Ident::new("byte_serialize_stack", Span::call_site())),
         ser_uses_heap: ser_uses_xxx(&Ident::new("byte_serialize_heap", Span::call_site())),
         des_vars: quote!( let mut #var_name: #fld_ty = None; ),
-        des_option: quote!(if __peeked == #eq { #var_name = Some(des.deserialize()?); continue; }), // does not apply here
+        des_peeked: quote!(if __peeked == #eq { #var_name = Some(des.deserialize()?); continue; }),
         des_uses: quote!( #var_name, ),
         des_errors,
         size_of,

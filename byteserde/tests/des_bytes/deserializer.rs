@@ -3,17 +3,15 @@ use byteserde::prelude::*;
 use log::info;
 
 #[test]
-fn test_derialser() {
+fn test_deserialser_array() {
     setup::log::configure();
 
-    let bytes = &[
+    let mut des = ByteDeserializerBytes::from(vec![
         1_u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1_u8, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-    ];
-    info!("inp: {bytes:?}");
-    // make sure you can read 20 bytes of payload
-    let mut des = ByteDeserializer::new(bytes);
+    ]);
+
     info!("des: {des:#x}");
-    assert_eq!(des.len(), bytes.len());
+    assert_eq!(des.len(), 20);
     for _ in 0..2 {
         let out: &[u8; 10] = des.deserialize_bytes_array_ref().unwrap();
         info!("out: {out:?}");

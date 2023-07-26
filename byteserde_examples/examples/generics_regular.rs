@@ -1,14 +1,14 @@
 mod unittest;
 use byteserde::prelude::*;
 use byteserde_derive::{
-    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
     ByteSerializedSizeOf,
 };
 use log::info;
 use unittest::setup;
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
        ByteSerializedSizeOf, ByteSerializedLenOf, Debug, PartialEq, Clone)]
 #[byteserde(endian = "le")]
 pub struct NumbersStructRegular<const L: usize, const M: usize> {
@@ -67,12 +67,12 @@ fn numeric_size_len(){
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize,
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice,
          ByteSerializedLenOf, Debug, PartialEq, Clone)]
 pub struct StringsStructRegular<S, C> 
 where 
-    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<S> + ByteSerializedLenOf,
-    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<C> + ByteSerializedLenOf,
+    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<S> + ByteSerializedLenOf,
+    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<C> + ByteSerializedLenOf,
 {
     field_string: S,
     field_char: C,
@@ -133,13 +133,13 @@ fn strings_len(){
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedLenOf, Debug, PartialEq)]
 pub struct NestedStructRegular<
     const L: usize,
     const M: usize,
-    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<S> + ByteSerializedLenOf,
-    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserialize<C> + ByteSerializedLenOf,
+    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<S> + ByteSerializedLenOf,
+    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<C> + ByteSerializedLenOf,
 > {
     field_numbers: NumbersStructRegular<L, M>,
     field_strings: StringsStructRegular<S, C>,

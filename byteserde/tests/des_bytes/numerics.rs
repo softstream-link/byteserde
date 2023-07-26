@@ -1,5 +1,5 @@
 use crate::integrationtest::setup;
-use byteserde::{des::ByteDeserializer, error::Result, ser::ByteSerializerStack};
+use byteserde::prelude::*;
 use log::info;
 
 #[test]
@@ -17,24 +17,24 @@ fn test_deserializer_u16() {
         ser.serialize_bytes_slice(&[0xff_u8]).unwrap();
         info!("ser:x {ser:x}");
 
-        let mut de = ByteDeserializer::new(ser.as_slice());
+        let mut des = ByteDeserializerBytes::new(ser.as_slice().to_vec().into());
         for inp in inps {
-            info!("de:x {de:x}");
+            info!("des:x {des:x}");
             info!("inp: {inp}, ipn:x {inp:#06x}, inp:b {inp:016b}");
             let out: u16 = match le {
-                true => de.deserialize_le().unwrap(),
-                false => de.deserialize_be().unwrap(),
+                true => des.deserialize_le().unwrap(),
+                false => des.deserialize_be().unwrap(),
             };
             info!("out: {out}, out:x {out:#06x}, out:b {out:016b}");
             assert_eq!(*inp, out);
         }
-        info!("de:x {de:x}");
+        info!("des:x {des:x}");
 
-        let r: Result<u16> = de.deserialize_le();
+        let r: Result<u16> = des.deserialize_le();
         info!("r:? {r:?}");
         assert!(r.is_err());
         assert!(
-            r.unwrap_err().message.starts_with("Failed to get a slice size: 2 bytes from ByteDeserializer { len: 9, idx: 8, bytes: 0000:")
+            r.unwrap_err().message.starts_with("Failed to get a slice size: 2 bytes from ByteDeserializerBytes { len: 9, idx: 8, remaining: 1, bytes: 0000")
         );
     }
 

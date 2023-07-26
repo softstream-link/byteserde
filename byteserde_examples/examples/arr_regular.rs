@@ -3,14 +3,14 @@ use std::mem::size_of;
 
 use byteserde::prelude::*;
 use byteserde_derive::{
-    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
     ByteSerializedSizeOf,
 };
 use log::info;
 use unittest::setup;
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize,
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice,
         ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 struct ArrBytes {
     field_arr_u8: [u8; 2],
@@ -74,7 +74,7 @@ fn bytes_size_len() {
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 #[byteserde(endian = "be")]
 struct ArrNumerics {
@@ -151,18 +151,18 @@ fn numerics_size_len(){
 
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq, Copy, Clone)]
 struct Other(u8);
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq, Copy, Clone)]
 struct OtherBreakAlignment(u16, u8);
 
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedSizeOf, ByteSerializedLenOf,
         // ByteSerializedSizeOf, 
         Default, Debug, PartialEq)]

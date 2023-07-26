@@ -1,9 +1,12 @@
 # samples https://github.com/actions/starter-workflows/blob/main/ci/rust.yml
-name: Test Pull Request
+name: Test Non Master Snapshot
 on:
-  pull_request:
+  push:
+     branches:
+      - '*'
+      - '!master'
 jobs:
-  pull-request:
+  push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

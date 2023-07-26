@@ -1,13 +1,13 @@
 mod unittest;
 use byteserde::prelude::*;
-use byteserde_derive::{ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
 use byteserde_types::{prelude::*, const_char_ascii};
 use log::info;
 use unittest::setup;
 
 const_char_ascii!(Plus, b'+', ByteSerializeStack, ByteSerializeHeap, ByteSerializedLenOf, PartialEq);
 
-#[derive(ByteDeserialize, ByteSerializeStack, ByteSerializeHeap, Debug, PartialEq)]
+#[derive(ByteDeserializeSlice, ByteSerializeStack, ByteSerializeHeap, Debug, PartialEq)]
 #[byteserde(endian = "be")]
 struct VariableLenMsg(
     #[byteserde(replace( (_1.byte_len() + _2.byte_len()) as u16 ))] u16,
@@ -43,7 +43,7 @@ fn strings_ascii() {
     info!("ser_heap: {ser_heap:#x}");
     assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
-    let des = &mut ByteDeserializer::new(ser_stack.as_slice());
+    let des = &mut ByteDeserializerSlice::new(ser_stack.as_slice());
 
     let out_debug = VariableLenMsg::byte_deserialize(des).unwrap();
     info!("out_debug: {:?}", out_debug);
@@ -55,7 +55,7 @@ fn strings_ascii() {
     assert_eq!(des.remaining(), tail.len());
 }
 
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 struct Strings(String, char);
 
 #[test]

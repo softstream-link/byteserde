@@ -3,14 +3,14 @@ use std::mem::size_of;
 
 use byteserde::{prelude::*, size::ByteSerializedSizeOf};
 use byteserde_derive::{
-    ByteDeserialize, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
+    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
     ByteSerializedSizeOf,
 };
 use log::info;
 use unittest::setup;
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 struct Bytes {
     #[byteserde(replace(i8::MIN))]
@@ -55,7 +55,7 @@ fn bytes() {
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserialize, 
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 #[byteserde(endian = "le")]
 struct Numerics {

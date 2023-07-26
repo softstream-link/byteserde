@@ -1,7 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::DeriveInput;
-use tokens_enum::get_enum_from_tokens;
 use tokens_struct::{get_generics, get_struct_tokens};
 
 use crate::{
@@ -14,7 +13,6 @@ pub mod unittest;
 
 mod attr_struct;
 mod common;
-mod tokens_enum;
 mod tokens_struct;
 
 #[proc_macro_derive(ByteSerializeStack, attributes(byteserde))]
@@ -30,13 +28,18 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     let ser_relp = res.ser_repl();
     let ser_uses_stck = res.ser_uses_stck();
 
+    let ser_uses_stck_expanded = match res.struct_type {
+        StructType::Enum(_, _) => quote!( match self { #( #ser_uses_stck )* }),
+        _ => quote!( #( #ser_uses_stck )* ),
+    };
+
     // generate stack serializer
     let output = quote! {
         #[automatically_derived]
-        impl #generics_declaration ::byteserde::ser::ByteSerializeStack for #struct_name #generics_alias #where_clause{
+        impl #generics_declaration ::byteserde::prelude::ByteSerializeStack for #struct_name #generics_alias #where_clause{
         // impl byteserde::ser::ByteSerializeStack for #struct_name {
             #[inline]
-            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ::byteserde::ser::ByteSerializerStack<CAP>) -> ::byteserde::error::Result<()>{
+            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ::byteserde::prelude::ByteSerializerStack<CAP>) -> ::byteserde::prelude::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?; -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?; -- for tuple
@@ -45,7 +48,7 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
                 //      self.0         .byte_serialize_stack(ser)?;     -- for tuple
                 #( #ser_vars )*
                 #( #ser_relp )*
-                #( #ser_uses_stck )*
+                #ser_uses_stck_expanded
                 Ok(())
             }
         }
@@ -66,12 +69,17 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     let ser_repl = res.ser_repl();
     let ser_uses_heap = res.ser_uses_heap();
 
+    let ser_uses_heap_expanded = match res.struct_type {
+        StructType::Enum(_, _) => quote!( match self { #( #ser_uses_heap )* }),
+        _ => quote!( #( #ser_uses_heap )* ),
+    };
+
     // generate heap serializer
     let output = quote! {
         #[automatically_derived]
-        impl #generics_declaration ::byteserde::ser::ByteSerializeHeap for #struct_name #generics_alias #where_clause{
+        impl #generics_declaration ::byteserde::prelude::ByteSerializeHeap for #struct_name #generics_alias #where_clause{
             #[inline]
-            fn byte_serialize_heap(&self, ser: &mut ::byteserde::ser::ByteSerializerHeap) -> ::byteserde::error::Result<()>{
+            fn byte_serialize_heap(&self, ser: &mut ::byteserde::prelude::ByteSerializerHeap) -> ::byteserde::prelude::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?;         -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?;         -- for tuple
@@ -80,7 +88,7 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
                 //      self.0         .byte_serialize_heap(ser)?;          -- for tuple
                 #( #ser_vars)*
                 #( #ser_repl)*
-                #( #ser_uses_heap)*
+                #ser_uses_heap_expanded
                 Ok(())
             }
         }
@@ -88,9 +96,31 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     output.into()
 }
 
-#[proc_macro_derive(ByteDeserialize, attributes(byteserde))]
-pub fn byte_deserialize(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(ByteDeserializeSlice, attributes(byteserde))]
+pub fn byte_deserialize_slice(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
+    byte_deserialize_common(
+        ast,
+        quote!(::byteserde::prelude::ByteDeserializerSlice),
+        quote!(::byteserde::prelude::ByteDeserializeSlice),
+    )
+}
+
+#[proc_macro_derive(ByteDeserializeBytes, attributes(byteserde))]
+pub fn byte_deserialize_bytes(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input).unwrap();
+    byte_deserialize_common(
+        ast,
+        quote!(::byteserde::prelude::ByteDeserializerBytes),
+        quote!(::byteserde::prelude::ByteDeserializeBytes),
+    )
+}
+
+fn byte_deserialize_common(
+    ast: DeriveInput,
+    _struct: quote::__private::TokenStream,
+    _trait: quote::__private::TokenStream,
+) -> TokenStream {
     // get struct name
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
@@ -100,14 +130,15 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
     sdt.des_validate(&peek);
 
     let des_vars = sdt.des_vars();
-    let des_option = sdt.des_option();
+    let des_peeked = sdt.des_peeked();
     let des_uses = sdt.des_uses();
     let id = sdt.struct_ident();
 
     let impl_body = match sdt.struct_type {
-        StructType::Regular(..) => quote!(#id {#( #des_uses )*}), // NOTE {}
-        StructType::Tuple(..) => quote!  (#id (#( #des_uses )*)), // NOTE ()
-        StructType::Enum(..) => quote! ( #id::from( _struct )),   // NOTE ::from()
+        StructType::Regular(..) => quote!( Ok(#id {#( #des_uses )*}) ), // NOTE {}
+        StructType::Tuple(..) => quote!  ( Ok(#id (#( #des_uses )*)) ), // NOTE ()
+        StructType::Unit(..) => quote!   ( Ok(#id) ),                   // NOTE nothing
+        StructType::Enum(..) => quote!(),                               // NOTE nothing
     };
 
     let start_len = match peek {
@@ -115,43 +146,57 @@ pub fn byte_deserialize(input: TokenStream) -> TokenStream {
         Peek::NotSet => quote!(),
     };
 
-    let des_option_special = match sdt.has_option_flds() {
-        true => quote!(
-                    while !des.is_empty() {
-                        let peek = |start, len| -> Result<&[u8]> {
-                            let p = des.peek_bytes_slice(len+start)?;
-                            Ok(&p[start..])
-                        };
-                        let __peeked = peek(#start_len)?;
-                        #( #des_option )*
-                    }
-        ),
-        false => quote!(),
+    let des_peeked = match sdt.struct_type {
+        StructType::Enum(_, _) => {
+            quote!(
+                let peek = |start, len| -> ::byteserde::prelude::Result<&[u8]> {
+                    let p = des.peek_bytes_slice(len+start)?;
+                    Ok(&p[start..])
+                };
+                let (start, len) = (#start_len);
+                let __peeked = peek(start, len)?;
+                #( #des_peeked )*
+                Err(::byteserde::prelude::SerDesError {
+                    message:
+                    format!("peek({}, {}) => {:x?}, however #[byteserde(eq( ... ))] did not yield a match. \ndes: {:#x}", start, len, __peeked, des),
+                })
+            )
+        }
+        _ => match sdt.has_peeked_flds() {
+            true => quote!(
+                        while !des.is_empty() {
+                            let peek = |start, len| -> Result<&[u8]> {
+                                let p = des.peek_bytes_slice(len+start)?;
+                                Ok(&p[start..])
+                            };
+                            let __peeked = peek(#start_len)?;
+                            #( #des_peeked )*
+                        }
+            ),
+            false => quote!(),
+        },
     };
-
     // generate deserializer
-
     let output = quote!(
         #[automatically_derived]
-        impl #generics_declaration ::byteserde::des::ByteDeserialize<#id #generics_alias> for #id #generics_alias #where_clause{
+        impl #generics_declaration #_trait<#id #generics_alias> for #id #generics_alias #where_clause{
             #[inline]
-            fn byte_deserialize(des: &mut ::byteserde::des::ByteDeserializer) -> ::byteserde::error::Result<#id #generics_alias>{
+            fn byte_deserialize(des: &mut #_struct) -> ::byteserde::error::Result<#id #generics_alias>{
                 // let type_u16:    u16 = des.deserialize_[be|le|ne]()?; -- numerics
-                // let type_String: String = des.deserialize()?;          -- trait ByteDeserialize
+                // let type_String: String = des.deserialize()?;          -- trait ByteDeserializeSlice
                 // StructName { type_u16, type_String }
                 //
                 // let _0 = des.deserialize_[be|le|ne]()?; -- numerics
-                // let _1  = des.deserialize()?;          -- trait ByteDeserialize
+                // let _1  = des.deserialize()?;          -- trait ByteDeserializeSlice
                 // TupleName ( _0, _1 )
                 #( #des_vars )*
-                #des_option_special
-                Ok(#impl_body)
+                #des_peeked
+                #impl_body
             }
         }
     );
     output.into()
 }
-
 #[proc_macro_derive(ByteSerializedSizeOf, attributes(byteserde))]
 pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
@@ -196,18 +241,6 @@ pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
                 # ( #len )+*
             }
         }
-    };
-    output.into()
-}
-
-#[proc_macro_derive(ByteEnumFromBinder, attributes(byteserde))]
-pub fn byte_enum_from(input: TokenStream) -> TokenStream {
-    let ast: DeriveInput = syn::parse(input).unwrap();
-
-    let froms = get_enum_from_tokens(&ast);
-    // generate From
-    let output = quote! {
-         #(#froms)*
     };
     output.into()
 }

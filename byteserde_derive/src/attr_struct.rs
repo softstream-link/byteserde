@@ -85,10 +85,6 @@ pub enum Bind {
     NotSet,
     Set(Ident),
 }
-pub fn enum_bind_attr(struct_attrs: &[Attribute]) -> Bind {
-    let (_, _, _, _, _, bind, _) = get_attrs(struct_attrs);
-    bind
-}
 pub struct From(Expr);
 impl ToTokens for From {
     fn to_token_stream(&self) -> TokenStream {
@@ -97,10 +93,6 @@ impl ToTokens for From {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         self.0.to_tokens(tokens)
     }
-}
-pub fn enum_from_attr(struct_attrs: &[Attribute]) -> Vec<From> {
-    let (_, _, _, _, _, _, from) = get_attrs(struct_attrs);
-    from
 }
 
 fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Peek, PeekEq, Bind, Vec<From>) {
