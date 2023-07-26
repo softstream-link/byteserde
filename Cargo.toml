@@ -8,7 +8,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.3.0"
+version = "0.3.0" # NOTE remembe to update this and below dependencies for byteserde and byteserde_derive
 authors = ["Softstream <softstream.link@gmail.com>"]
 readme = "readme.md"
 license-file = "LICENSE"
@@ -24,7 +24,9 @@ bytes = "1.4.0"
 syn = { version = "2.0", features = ["full" , "extra-traits"] }
 quote = "1.0"
 
-# [workspace.dev-dependencies] # fails to build unless uncommented
+byteserde_derive = { path = "./byteserde_derive", version = "0.3.0" }
+byteserde = { path = "./byteserde", version = "0.3.0" }
+
 # unit testing
 text-diff = "0.4"
 env_logger = "0.10"
