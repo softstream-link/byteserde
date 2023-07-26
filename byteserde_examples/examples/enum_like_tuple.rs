@@ -7,38 +7,26 @@ use byteserde_derive::{
 use log::info;
 use unittest::setup;
 
-#[derive(
-    ByteSerializeStack,
-    ByteSerializeHeap,
-    ByteDeserializeSlice,
-    ByteSerializedLenOf,
-    Debug,
-    PartialEq,
-    Default,
-)]
+/// To be used as a common section in the byte stream that can be used to identify the variant during deserialization.
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, Debug, PartialEq)]
 struct Header(u16);
 
-#[derive(
-    ByteSerializeStack,
-    ByteSerializeHeap,
-    ByteDeserializeSlice,
-    ByteSerializedLenOf,
-    Debug,
-    PartialEq,
-)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, Debug, PartialEq)]
 struct Variant1 {
-    #[byteserde(replace(Header(Variant1::tag())))]
-    header: Header,
+    #[byteserde(replace(Header(Variant1::tag())))] // this ensures that header always gets a Variant1 value during serialization
+    header: Header, // note that this field need to be positioned consistently across all variants
     data: u32,
 }
 #[rustfmt::skip]
 impl Variant1 { fn tag() -> u16 { 1 } }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf,Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, Debug, PartialEq)]
 struct Variant2a {
-    #[byteserde(replace(Header(Variant2a::tag())))]
-    header: Header,
+    #[byteserde(replace(Header(Variant2a::tag())))] // this ensures that header always gets a Variant2a value during serialization
+    header: Header, // note that this field need to be positioned consistently across all variants
     data: u64,
 }
 #[rustfmt::skip]
@@ -67,7 +55,7 @@ enum Variants {
     #[byteserde(eq(Variant1::tag().to_ne_bytes()))]
     V1(Variant1),
     #[byteserde(eq(Variant2a::tag().to_ne_bytes()))]
-    V2(Variant2a, Variant2b),
+    V2(Variant2a, Variant2b), // note that only Variant2a has the header field and it is positioned consistently both Variant1 and Variant2a as a member
     // #[byteserde(eq(3_u16.to_ne_bytes()))] // TODO add fail test
     // V3 { x: Variant3 },
 }
@@ -91,7 +79,7 @@ fn enum_tuple_like() {
     let mut iter = msg_inp.iter();
     assert_eq!(iter.next().unwrap().byte_len(), 6);
     assert_eq!(iter.next().unwrap().byte_len(), 26);
-    
+
     let mut ser_stck = ByteSerializerStack::<1024>::default();
     let mut ser_heap = ByteSerializerHeap::default();
 
