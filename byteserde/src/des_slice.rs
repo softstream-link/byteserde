@@ -1,7 +1,7 @@
 use std::fmt::{Debug, LowerHex};
 
 use crate::{
-    error::{Result, SerDesError},
+    error::SerDesError,
     prelude::ByteSerializerHeap,
     utils::{
         hex::{to_hex_line, to_hex_pretty},
@@ -104,14 +104,14 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
     }
     /// consumes `len` bytes from the buffer and returns them as slice if successful.
     /// Fails if `len` is greater then [Self::remaining()]
-    pub fn deserialize_bytes_slice(&mut self, len: usize) -> Result<&'bytes [u8]> {
+    pub fn deserialize_bytes_slice(&mut self, len: usize) -> crate::error::Result<&'bytes [u8]> {
         let res = self.peek_bytes_slice(len)?;
         self.advance_idx(len);
         Ok(res)
     }
 
     #[inline(always)]
-    pub fn deserialize_u8(&mut self) -> Result<u8> {
+    pub fn deserialize_u8(&mut self) -> crate::error::Result<u8> {
         let res = self.bytes.get(self.idx..);
         match res {
             Some(v) => {
@@ -122,7 +122,7 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
         }
     }
     #[inline(always)]
-    pub fn deserialize_i8(&mut self) -> Result<i8> {
+    pub fn deserialize_i8(&mut self) -> crate::error::Result<i8> {
         let res = self.bytes.get(self.idx..);
         match res {
             Some(v) => {
@@ -137,20 +137,19 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
         self.idx += len;
     }
     /// produces with out consuming `len` bytes from the buffer and returns them as slice if successful.
-    pub fn peek_bytes_slice(&self, len: usize) -> Result<&'bytes [u8]> {
+    pub fn peek_bytes_slice(&self, len: usize) -> crate::error::Result<&'bytes [u8]> {
         match self.bytes.get(self.idx..self.idx + len) {
             Some(v) => Ok(v),
             None => Err(SerDesError {
-                message: format!(
-                    "requested: {req}, bytes:\n{self:#x}",
-                    req = len,
-                ),
+                message: format!("requested: {req}, bytes:\n{self:#x}", req = len,),
             }),
         }
     }
 
     #[inline]
-    pub fn deserialize_bytes_array_ref<const N: usize>(&mut self) -> Result<&'bytes [u8; N]> {
+    pub fn deserialize_bytes_array_ref<const N: usize>(
+        &mut self,
+    ) -> crate::error::Result<&'bytes [u8; N]> {
         match self.bytes.get(self.idx..self.idx + N) {
             Some(v) => {
                 self.idx += N;
@@ -168,7 +167,9 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
     /// // ... etc
     /// ```    
     #[inline]
-    pub fn deserialize_ne<const N: usize, T: FromNeBytes<N, T>>(&mut self) -> Result<T> {
+    pub fn deserialize_ne<const N: usize, T: FromNeBytes<N, T>>(
+        &mut self,
+    ) -> crate::error::Result<T> {
         let r = self.deserialize_bytes_array_ref::<N>()?;
         Ok(T::from_bytes_ref(r))
     }
@@ -181,7 +182,9 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
     /// // ... etc
     /// ```
     // #[inline]
-    pub fn deserialize_le<const N: usize, T: FromLeBytes<N, T>>(&mut self) -> Result<T> {
+    pub fn deserialize_le<const N: usize, T: FromLeBytes<N, T>>(
+        &mut self,
+    ) -> crate::error::Result<T> {
         let r = self.deserialize_bytes_array_ref::<N>()?;
         Ok(T::from_bytes_ref(r))
     }
@@ -194,13 +197,15 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
     /// // ... etc
     /// ```
     #[inline]
-    pub fn deserialize_be<const N: usize, T: FromBeBytes<N, T>>(&mut self) -> Result<T> {
+    pub fn deserialize_be<const N: usize, T: FromBeBytes<N, T>>(
+        &mut self,
+    ) -> crate::error::Result<T> {
         let r = self.deserialize_bytes_array_ref::<N>()?;
         Ok(T::from_bytes_ref(r))
     }
     /// creates a new instance of `T` type `struct`, depleating exactly the right amount of bytes from [ByteDeserializerSlice]
     /// `T` must implement [ByteDeserializeSlice] trait
-    pub fn deserialize<T>(&mut self) -> Result<T>
+    pub fn deserialize<T>(&mut self) -> crate::error::Result<T>
     where
         T: ByteDeserializeSlice<T>,
     {
@@ -209,7 +214,7 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
 
     /// creates a new instance of T type struct, depleating `exactly` `len` bytes from [ByteDeserializerSlice].
     /// Intended for types with variable length such as Strings, Vecs, etc.
-    pub fn deserialize_take<T>(&mut self, len: usize) -> Result<T>
+    pub fn deserialize_take<T>(&mut self, len: usize) -> crate::error::Result<T>
     where
         T: ByteDeserializeSlice<T>,
     {
@@ -221,12 +226,15 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
 pub trait ByteDeserializeSlice<T> {
     /// If successfull returns a new instance of T type struct, depleating exactly the right amount of bytes from [ByteDeserializerSlice]
     /// Number of bytes depleted is determined by the struct T itself and its member types.
-    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<T>;
+    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> crate::error::Result<T>;
 
     /// if sucessfull returns a new instance of T type struct, however ONLY depleating a maximum of `len` bytes from [ByteDeserializerSlice]
     /// Intended for types with variable length such as Strings, Vecs, etc.
     /// No bytes will be depleted if attempt was not successful.
-    fn byte_deserialize_take(des: &mut ByteDeserializerSlice, len: usize) -> Result<T> {
+    fn byte_deserialize_take(
+        des: &mut ByteDeserializerSlice,
+        len: usize,
+    ) -> crate::error::Result<T> {
         let bytes = des.peek_bytes_slice(len)?;
         let tmp_des = &mut ByteDeserializerSlice::new(bytes);
         let result = Self::byte_deserialize(tmp_des);
@@ -242,14 +250,14 @@ pub trait ByteDeserializeSlice<T> {
 
 /// Greedy deserialization of the remaining byte stream into a `Vec<u8>`
 impl ByteDeserializeSlice<Vec<u8>> for Vec<u8> {
-    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<Vec<u8>> {
+    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> crate::error::Result<Vec<u8>> {
         Ok(des.deserialize_bytes_slice_remaining().into())
     }
 }
 
 /// This is a short cut method that creates a new instance of [ByteDeserializerSlice] and then uses that to convert them into a T type struct.
 #[inline(always)]
-pub fn from_slice<T>(bytes: &[u8]) -> Result<T>
+pub fn from_slice<T>(bytes: &[u8]) -> crate::error::Result<T>
 where
     T: ByteDeserializeSlice<T>,
 {
@@ -258,14 +266,16 @@ where
 }
 
 /// This is a short cut method that uses [`ByteSerializerStack<CAP>::as_slice()`] method to issue a [from_bytes] call.
-pub fn from_serializer_stack<const CAP: usize, T>(ser: &ByteSerializerStack<CAP>) -> Result<T>
+pub fn from_serializer_stack<const CAP: usize, T>(
+    ser: &ByteSerializerStack<CAP>,
+) -> crate::error::Result<T>
 where
     T: ByteDeserializeSlice<T>,
 {
     from_slice(ser.as_slice())
 }
 /// This is a short cut method that uses [`ByteSerializerHeap::as_slice()`] method to issue a [from_bytes] call.
-pub fn from_serializer_heap<T>(ser: &ByteSerializerHeap) -> Result<T>
+pub fn from_serializer_heap<T>(ser: &ByteSerializerHeap) -> crate::error::Result<T>
 where
     T: ByteDeserializeSlice<T>,
 {

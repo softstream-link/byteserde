@@ -165,7 +165,7 @@ fn byte_deserialize_common(
         _ => match sdt.has_peeked_flds() {
             true => quote!(
                         while !des.is_empty() {
-                            let peek = |start, len| -> Result<&[u8]> {
+                            let peek = |start, len| -> crate::error::Result<&[u8]> {
                                 let p = des.peek_bytes_slice(len+start)?;
                                 Ok(&p[start..])
                             };

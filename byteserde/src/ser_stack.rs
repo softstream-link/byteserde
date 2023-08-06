@@ -20,7 +20,7 @@ use std::{
 ///
 /// struct MyStruct { a: u8, }
 /// impl ByteSerializeStack for MyStruct {
-///     fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ByteSerializerStack<CAP>) -> Result<()> {
+///     fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ByteSerializerStack<CAP>) -> byteserde::error::Result<()> {
 ///         ser.serialize_bytes_slice(&[self.a])?;
 ///         Ok(())
 ///    }
@@ -39,7 +39,7 @@ pub trait ByteSerializeStack {
     fn byte_serialize_stack<const CAP: usize>(
         &self,
         ser: &mut ByteSerializerStack<CAP>,
-    ) -> Result<()>;
+    ) -> crate::error::Result<()>;
 }
 /// A byte buffer allocated on stack backed by `[u8; CAP]`, can be reused and recyled by calling [Self::reset()].
 /// Example: Creates a buffer with 128 bytes capacity and serializes data into it.
@@ -130,7 +130,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
 
     /// Serializes entire slice into the buffer, returns [SerDesError] if required capacity is exceeded.
     // #[inline]
-    pub fn serialize_bytes_slice(&mut self, bytes: &[u8]) -> Result<&mut Self> {
+    pub fn serialize_bytes_slice(&mut self, bytes: &[u8]) -> crate::error::Result<&mut Self> {
         let input_len = bytes.len();
         let avail = self.avail();
         match input_len > avail {
@@ -165,7 +165,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     /// ser.serialize_ne(0x1_i16);
     /// // ... etc
     /// ```
-    pub fn serialize_ne<const N: usize, T: ToNeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
+    pub fn serialize_ne<const N: usize, T: ToNeBytes<N>>(&mut self, v: T) -> crate::error::Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
     }
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `little` endianess.
@@ -177,7 +177,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     /// ser.serialize_le(0x1_i16);
     /// // ... etc
     /// ```
-    pub fn serialize_le<const N: usize, T: ToLeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
+    pub fn serialize_le<const N: usize, T: ToLeBytes<N>>(&mut self, v: T) -> crate::error::Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
     }
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `big` endianess.
@@ -189,11 +189,11 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
     /// ser.serialize_be(0x1_i16);
     /// // ... etc
     /// ```
-    pub fn serialize_be<const N: usize, T: ToBeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
+    pub fn serialize_be<const N: usize, T: ToBeBytes<N>>(&mut self, v: T) -> crate::error::Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
     }
     /// Serializes a `struct` that implements [ByteSerializeStack] trait into the buffer.
-    pub fn serialize<T: ByteSerializeStack>(&mut self, v: &T) -> Result<&mut Self> {
+    pub fn serialize<T: ByteSerializeStack>(&mut self, v: &T) -> crate::error::Result<&mut Self> {
         v.byte_serialize_stack(self)?;
         Ok(self)
     }
@@ -201,7 +201,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
 
 /// Analogous to [`to_bytes_stack::<CAP>()`], but returns an instance of [`ByteSerializerStack<CAP>`].
 // #[inline] - TODO - panics during benchmarking
-pub fn to_serializer_stack<const CAP: usize, T>(v: &T) -> Result<ByteSerializerStack<CAP>>
+pub fn to_serializer_stack<const CAP: usize, T>(v: &T) -> crate::error::Result<ByteSerializerStack<CAP>>
 where
     T: ByteSerializeStack,
 {
@@ -213,8 +213,8 @@ where
 /// Note that this is not a `&[u8]` slice, but an array of bytes with length CAP even if
 /// the actual length of the serialized data is less.
 #[inline(always)]
-pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> Result<([u8; CAP], usize)>
-// pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> Result<([u8; CAP], usize)>
+pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> crate::error::Result<([u8; CAP], usize)>
+// pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> crate::error::Result<([u8; CAP], usize)>
 where
     T: ByteSerializeStack,
 {
@@ -226,7 +226,7 @@ impl ByteSerializeStack for Bytes {
     fn byte_serialize_stack<const CAP: usize>(
         &self,
         ser: &mut ByteSerializerStack<CAP>,
-    ) -> Result<()> {
+    ) -> crate::error::Result<()> {
         ser.serialize_bytes_slice(&self[..])?;
         Ok(())
     }

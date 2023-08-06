@@ -57,7 +57,7 @@ fn test_serializer_stack_chained_impl() {
         fn byte_serialize_stack<const CAP: usize>(
             &self,
             serializer: &mut ByteSerializerStack<CAP>,
-        ) -> Result<()> {
+        ) -> byteserde::error::Result<()> {
             serializer
                 .serialize_bytes_slice(&[self.a])?
                 .serialize_be(self.b)?

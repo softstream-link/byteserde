@@ -37,7 +37,14 @@ use std::fmt;
 /// println!("{:x}", inp_str);
 /// assert_eq!(inp_str.bytes(), [0x20, 0x41, 0x42, 0x43, 0x44]);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone)]
+#[derive(
+    ByteSerializeStack,
+    ByteSerializeHeap,
+    ByteDeserializeSlice,
+    ByteSerializedLenOf,
+    PartialEq,
+    Clone,
+)]
 pub struct StringAsciiFixed<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool>(
     [u8; LEN],
 );
@@ -52,6 +59,13 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool>
     }
     pub fn bytes(&self) -> &[u8] {
         &self.0[0..]
+    }
+}
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> Default
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
+    fn default() -> Self {
+        Self([PADDING; LEN])
     }
 }
 impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8]>
@@ -82,7 +96,7 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u16>
 {
     fn from(value: u16) -> Self {
         if LEN < 5 {
-            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u16, LEN must be atleast 5 bytes")
+            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u16, LEN must be at least 5 bytes")
         }
         value.to_string().as_bytes().into()
     }
@@ -92,7 +106,7 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u32>
 {
     fn from(value: u32) -> Self {
         if LEN < 10 {
-            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u32, LEN must be atleast 10 bytes")
+            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u32, LEN must be at least 10 bytes")
         }
         value.to_string().as_bytes().into()
     }
@@ -102,7 +116,7 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u64>
 {
     fn from(value: u64) -> Self {
         if LEN < 20 {
-            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u64, LEN must be atleast 20 bytes")
+            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u64, LEN must be at least 20 bytes")
         }
         value.to_string().as_bytes().into()
     }
@@ -250,7 +264,12 @@ mod test_string_ascii_fixed {
 /// assert_eq!(StringAscii::from(b"ABCDEABCDE"), out_str);
 /// ```
 #[derive(
-    ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone
+    ByteSerializeStack,
+    ByteSerializeHeap,
+    ByteDeserializeSlice,
+    ByteSerializedLenOf,
+    PartialEq,
+    Clone,
 )]
 pub struct StringAscii(Vec<u8>);
 impl StringAscii {
@@ -346,7 +365,15 @@ mod test_string_ascii {
 /// println!("{:x}", inp_char);
 /// assert_eq!(inp_char.bytes(), [0x41]);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone, Copy)]
+#[derive(
+    ByteSerializeStack,
+    ByteSerializeHeap,
+    ByteDeserializeSlice,
+    ByteSerializedLenOf,
+    PartialEq,
+    Clone,
+    Copy,
+)]
 pub struct CharAscii(u8);
 impl CharAscii {
     pub fn bytes(&self) -> [u8; 1] {
@@ -429,9 +456,8 @@ mod test_char_ascii {
 /// assert_eq!(inp_char.bytes(), [43]);
 ///
 /// ```
-#[derive(
-    ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, PartialEq, Clone
-)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, PartialEq, Clone,)]
 pub struct ConstCharAscii<const CHAR: u8>(u8);
 impl<const CHAR: u8> ConstCharAscii<CHAR> {
     pub fn bytes(&self) -> [u8; 1] {
@@ -443,7 +469,7 @@ impl<const CHAR: u8> ConstCharAscii<CHAR> {
 }
 impl<const CHAR: u8> ByteDeserializeSlice<ConstCharAscii<CHAR>> for ConstCharAscii<CHAR> {
     #[allow(clippy::just_underscores_and_digits)]
-    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<ConstCharAscii<CHAR>> {
+    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> crate::error::Result<ConstCharAscii<CHAR>> {
         let _0 = des.deserialize_u8()?;
         match _0 == CHAR {
             true => Ok(Default::default()),

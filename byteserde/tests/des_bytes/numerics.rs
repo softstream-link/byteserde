@@ -1,5 +1,5 @@
 use crate::integrationtest::setup;
-use byteserde::prelude::*;
+use byteserde::{prelude::*, error::Result};
 use log::info;
 
 #[test]
