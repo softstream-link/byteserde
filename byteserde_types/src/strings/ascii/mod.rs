@@ -1,3 +1,4 @@
+use byteserde::error::Result;
 use byteserde::prelude::*;
 use byteserde::utils::hex::{to_hex_line, to_hex_pretty};
 use byteserde_derive::{
@@ -37,14 +38,8 @@ use std::fmt;
 /// println!("{:x}", inp_str);
 /// assert_eq!(inp_str.bytes(), [0x20, 0x41, 0x42, 0x43, 0x44]);
 /// ```
-#[derive(
-    ByteSerializeStack,
-    ByteSerializeHeap,
-    ByteDeserializeSlice,
-    ByteSerializedLenOf,
-    PartialEq,
-    Clone,
-)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone,)]
 pub struct StringAsciiFixed<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool>(
     [u8; LEN],
 );
@@ -469,7 +464,7 @@ impl<const CHAR: u8> ConstCharAscii<CHAR> {
 }
 impl<const CHAR: u8> ByteDeserializeSlice<ConstCharAscii<CHAR>> for ConstCharAscii<CHAR> {
     #[allow(clippy::just_underscores_and_digits)]
-    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> crate::error::Result<ConstCharAscii<CHAR>> {
+    fn byte_deserialize(des: &mut ByteDeserializerSlice) -> Result<ConstCharAscii<CHAR>> {
         let _0 = des.deserialize_u8()?;
         match _0 == CHAR {
             true => Ok(Default::default()),
@@ -536,7 +531,7 @@ mod test_const_char_ascii {
         let out_plus: ConstCharAscii<b'+'> = des.deserialize().unwrap();
         info!("out_plus: {}", out_plus);
 
-        let out_res: Result<ConstCharAscii<b'+'>> = des.deserialize();
+        let out_res: byteserde::error::Result<ConstCharAscii<b'+'>> = des.deserialize();
         info!("out_res: {:?}", out_res);
         assert!(out_res.is_err());
     }

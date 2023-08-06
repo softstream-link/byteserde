@@ -39,7 +39,7 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
         impl #generics_declaration ::byteserde::prelude::ByteSerializeStack for #struct_name #generics_alias #where_clause{
         // impl byteserde::ser::ByteSerializeStack for #struct_name {
             #[inline]
-            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ::byteserde::prelude::ByteSerializerStack<CAP>) -> ::byteserde::prelude::Result<()>{
+            fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ::byteserde::prelude::ByteSerializerStack<CAP>) -> ::byteserde::error::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?; -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?; -- for tuple
@@ -79,7 +79,7 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
         #[automatically_derived]
         impl #generics_declaration ::byteserde::prelude::ByteSerializeHeap for #struct_name #generics_alias #where_clause{
             #[inline]
-            fn byte_serialize_heap(&self, ser: &mut ::byteserde::prelude::ByteSerializerHeap) -> ::byteserde::prelude::Result<()>{
+            fn byte_serialize_heap(&self, ser: &mut ::byteserde::prelude::ByteSerializerHeap) -> ::byteserde::error::Result<()>{
                 // numerics
                 //      ser.serialize_[be|le|ne](self.field_name)?;         -- for regular
                 //      ser.serialize_[be|le|ne](self.0         )?;         -- for tuple
@@ -149,7 +149,7 @@ fn byte_deserialize_common(
     let des_peeked = match sdt.struct_type {
         StructType::Enum(_, _) => {
             quote!(
-                let peek = |start, len| -> ::byteserde::prelude::Result<&[u8]> {
+                let peek = |start, len| -> ::byteserde::error::Result<&[u8]> {
                     let p = des.peek_bytes_slice(len+start)?;
                     Ok(&p[start..])
                 };
@@ -165,7 +165,7 @@ fn byte_deserialize_common(
         _ => match sdt.has_peeked_flds() {
             true => quote!(
                         while !des.is_empty() {
-                            let peek = |start, len| -> crate::error::Result<&[u8]> {
+                            let peek = |start, len| -> ::byteserde::error::Result<&[u8]> {
                                 let p = des.peek_bytes_slice(len+start)?;
                                 Ok(&p[start..])
                             };
