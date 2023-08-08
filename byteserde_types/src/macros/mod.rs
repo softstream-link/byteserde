@@ -48,6 +48,9 @@ macro_rules! string_ascii_fixed {
             pub fn value(&self) -> &[u8; $LEN] {
                 &self.0
             }
+            pub fn as_slice(&self) -> &[u8]{
+                &self.0[..]
+            }
             pub fn new(value: [u8; $LEN]) -> Self {
                 $NAME(value)
             }
