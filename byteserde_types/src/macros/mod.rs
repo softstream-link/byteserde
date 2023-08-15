@@ -261,12 +261,141 @@ macro_rules! const_char_ascii {
     };
 }
 
+/// This is a short hand macro for generateing a new `COSNT` `tuple` `struct` type for u8, i8
+/// Typically will not be used directly but instead will be called via one of the other macros like `const_u8_tuple`, `const_i8_tuple`
+#[macro_export]
+macro_rules! const_byte {
+    ($NAME:ident, $CONST:literal, $TYPE:ty, $($DERIVE:ty),* ) => {
+        #[derive( $($DERIVE),* )]
+        pub struct $NAME($TYPE);
+        impl $NAME {
+            pub fn value(&self) -> $TYPE {
+                self.0
+            }
+        }
+        impl Default for $NAME {
+            fn default() -> Self {
+                $NAME($CONST)
+            }
+        }
+        impl std::fmt::Display for $NAME {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(
+                    f,
+                    "{}",
+                    &self.0
+                )
+            }
+        }
+    };
+}
+/// Generates a `CONST` `tuple` `struct` with a given name for managing a Numeric type `u8` allocated on `stack`.
+/// 
+/// # Arguments
+/// * `NAME` - name of the struct to be generated
+/// * `CONST` - `u8` byte value to be used as the value behind this struct
+/// * `[derive, ...]` -- list of traits to derive for the struct, must be valid rust traits
+/// 
+/// # Derives
+/// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
+/// * `Display` - provides a human readable sting view of the `u8` value
+/// 
+/// # Examples
+/// ```
+/// # #[macro_use] extern crate byteserde_types; fn main() {
+/// const_u8_tuple!(Number, 1, byteserde_derive::ByteSerializeStack, PartialEq, Debug);
+/// 
+/// let inp_num = Number::default();
+/// println!("inp_num: {:?}, {}", inp_num, inp_num);
+/// assert_eq!(inp_num.value(), 1_u8);
+/// # }
+/// ```
+#[macro_export]
+macro_rules! const_u8_tuple {
+    ($NAME:ident, $CONST:literal, $($DERIVE:ty),*) => {
+        $crate::const_byte!($NAME, $CONST, u8, $($DERIVE),* );
+    };
+}
+/// see [const_u8_tuple] for more details and examples.
+#[macro_export]
+macro_rules! const_i8_tuple {
+    ($NAME:ident, $CONST:literal, $($DERIVE:ty),*) => {
+        $crate::const_byte!($NAME, $CONST, i8, $($DERIVE),* );
+    };
+}
+
+/// This is a short hand macro for generateing a new `COSNT` `tuple` `struct` type for numerics like u16, i16, u32, i32, u64, i64, ...
+/// Typically will not be used directly but instead will be called via one of the other macros like `const_u16_tuple`, `const_i16_tuple`, ...
+#[macro_export]
+macro_rules! const_numeric {
+    ($NAME:ident, $CONST:literal, $TYPE:ty, $ENDIAN:literal, $($DERIVE:ty),* ) => {
+        #[derive( $($DERIVE),* )]
+        #[byteserde(endian = $ENDIAN )]
+        pub struct $NAME($TYPE);
+        impl $NAME {
+            pub fn value(&self) -> $TYPE {
+                self.0
+            }
+        }
+        impl Default for $NAME {
+            fn default() -> Self {
+                $NAME($CONST)
+            }
+        }
+        impl std::fmt::Display for $NAME {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(
+                    f,
+                    "{}",
+                    &self.0
+                )
+            }
+        }
+    };
+}
+/// Generates a `CONST` `tuple` `struct` with a given name for managing a Numeric type `u16` allocated on `stack`.
+/// 
+/// # Arguments
+/// * `NAME` - name of the struct to be generated
+/// * `CONST` - `u16` byte value to be used as the value behind this struct
+/// * `ENDIAN` - endianess of the numeric type, must be either `le`, `be`, or `ne`, this will be passed directly to the `byteserde` attribute as #[byteserde(endian = "xx" )]
+/// * `[derive, ...]` -- `must include one of` the following `ByteSerializeStack`, `ByteSerializeHeap`, or `ByteDeserializeSlice` other wise the `#[byteserde(endian = $ENDIAN)]` attribute will fail to compile.
+/// Plus list of additional valid rust derive traits
+/// 
+/// # Derives
+/// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
+/// * `Display` - provides a human readable sting view of the `u16` value
+/// 
+/// # Examples
+/// ```
+/// # #[macro_use] extern crate byteserde_types; fn main() {
+/// const_u16_tuple!(Number, 1, "be", byteserde_derive::ByteSerializeStack, PartialEq, Debug);
+/// 
+/// let inp_num = Number::default();
+/// println!("inp_num: {:?}, {}", inp_num, inp_num);
+/// assert_eq!(inp_num.value(), 1_u16);
+/// # }
+/// ```
+#[macro_export]
+macro_rules! const_u16_tuple {
+    ($NAME:ident, $CONST:literal, $ENDIAN:literal, $($DERIVE:ty),*) => {
+        $crate::const_numeric!($NAME, $CONST, u16, $ENDIAN, $($DERIVE),* );
+    };
+}
+
+/// see [const_u16_tuple] for more details and examples.
+#[macro_export]
+macro_rules! const_i16_tuple {
+    ($NAME:ident, $CONST:literal, $ENDIAN:literal, $($DERIVE:ty),*) => {
+        $crate::const_numeric!($NAME, $CONST, i16, $ENDIAN, $($DERIVE),* );
+    };
+}
+
 /// This is a short hand macro for generateing a new `tuple` `struct` type for numerics like u32, i32, u64, i64, f32, f64, ...
 /// Typically will not be used directly but instead will be called via one of the other macros like `u16_tuple`, `i16_tuple`, ...
 #[macro_export]
 macro_rules! numeric_tuple {
     ($NAME:ident, $TYPE:ty, $ENDIAN:literal, $($DERIVE:ty),* ) => {
-        // #[derive( $($derive),* )]
         #[derive( $($DERIVE),* )]
         #[byteserde(endian = $ENDIAN )]
         pub struct $NAME($TYPE);
