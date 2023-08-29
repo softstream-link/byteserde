@@ -201,6 +201,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
 
 /// Analogous to [`to_bytes_stack::<CAP>()`], but returns an instance of [`ByteSerializerStack<CAP>`].
 // #[inline] - TODO - panics during benchmarking
+#[inline]
 pub fn to_serializer_stack<const CAP: usize, T>(v: &T) -> crate::error::Result<ByteSerializerStack<CAP>>
 where
     T: ByteSerializeStack,
@@ -212,7 +213,7 @@ where
 /// Analogous to [`to_serializer_stack::<CAP>()`], but returns just the array of bytes `[u8; CAP]`.
 /// Note that this is not a `&[u8]` slice, but an array of bytes with length CAP even if
 /// the actual length of the serialized data is less.
-#[inline(always)]
+#[inline]
 pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> crate::error::Result<([u8; CAP], usize)>
 // pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> crate::error::Result<([u8; CAP], usize)>
 where

@@ -60,6 +60,7 @@ impl<'bytes> LowerHex for ByteDeserializerSlice<'bytes> {
 }
 
 impl<'bytes> ByteDeserializerSlice<'bytes> {
+    #[inline(always)]
     pub fn new(bytes: &[u8]) -> ByteDeserializerSlice {
         ByteDeserializerSlice { bytes, idx: 0 }
     }
