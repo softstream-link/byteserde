@@ -41,7 +41,7 @@ pub trait ByteSerializeStack {
         ser: &mut ByteSerializerStack<CAP>,
     ) -> crate::error::Result<()>;
 }
-/// A byte buffer allocated on stack backed by `[u8; CAP]`, can be reused and recyled by calling [Self::clear()].
+/// A byte buffer allocated on stack backed by `[u8; CAP]`, can be reused and recycled by calling [Self::clear()].
 /// Example: Creates a buffer with 128 bytes capacity and serializes data into it.
 /// ```
 /// use ::byteserde::prelude::*;
@@ -63,13 +63,13 @@ pub struct ByteSerializerStack<const CAP: usize> {
     bytes: [u8; CAP],
     len: usize,
 }
-/// Provides a conveninet way to view buffer content as both HEX and ASCII bytes where printable.
+/// Provides a convenient way to view buffer content as both HEX and ASCII bytes where printable.
 /// supports both forms of alternate formatting `{:x}` and `{:#x}`.
 /// ```
 /// use ::byteserde::prelude::*;
 /// let mut ser = ByteSerializerStack::<128>::default();
 /// ser.serialize_bytes_slice(&[0x01, 0x02, 0x03, 0x04, 0x05]);
-/// println ! ("{:#x}", ser); // upto 16 bytes per line
+/// println ! ("{:#x}", ser); // up to 16 bytes per line
 /// println ! ("{:x}", ser);  // single line
 /// ```
 impl<const CAP: usize> LowerHex for ByteSerializerStack<CAP> {
@@ -85,7 +85,7 @@ impl<const CAP: usize> LowerHex for ByteSerializerStack<CAP> {
 }
 impl<const CAP: usize> Default for ByteSerializerStack<CAP> {
     fn default() -> Self {
-        // let mut buf: [u8; 1024] = unsafe { MaybeUninit::uninit().assume_init() };
+        #[allow(clippy::uninit_assumed_init)]
         ByteSerializerStack {
             bytes: unsafe { MaybeUninit::uninit().assume_init() },
             len: 0,

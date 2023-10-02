@@ -66,7 +66,7 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> Default
 impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8]>
     for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
 {
-    ///  Runt time check for capacity, Takes defensively and upto `LEN`, never overflows.
+    ///  Runt time check for capacity, Takes defensively and up to `LEN`, never overflows.
     fn from(bytes: &[u8]) -> Self {
         let mut new = StringAsciiFixed::<LEN, PADDING, RIGHT_ALIGN>([PADDING; LEN]);
         let take_len = min(LEN, bytes.len());
@@ -190,7 +190,7 @@ mod test_string_ascii_fixed {
             StringAsciiFixed::<ELEVEN, SPACE, RIGHT>::byte_deserialize_take(des, ELEVEN * 2)
                 .unwrap_err();
         info!("out_err: {:?}", out_err);
-        // take correct shall PASS - IMPORANT no bytes depleted by failed takes
+        // take correct shall PASS - IMPORTANT no bytes depleted by failed takes
         let out_str = StringAsciiFixed::<ELEVEN, SPACE, RIGHT>::byte_deserialize(des).unwrap();
         info!("out_str: {:?}", out_str);
     }
@@ -253,7 +253,7 @@ mod test_string_ascii_fixed {
 /// let mut ser_stack: ByteSerializerStack<128> =  to_serializer_stack(&inp_str).unwrap();
 /// ser_stack.serialize(&inp_str).unwrap();
 /// println!("ser_stack: {:#x}", ser_stack);
-/// // deserialize NOTE - This completelly DEPLEATES entire buffer instead of just only once for the original string
+/// // deserialize NOTE - This completely DEPLETES entire buffer instead of just only once for the original string
 /// let out_str: StringAscii = from_serializer_stack(&ser_stack).unwrap();
 /// println!("out_str: {:x}", out_str);
 /// assert_eq!(StringAscii::from(b"ABCDEABCDE"), out_str);
