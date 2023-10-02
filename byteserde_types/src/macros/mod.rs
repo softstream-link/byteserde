@@ -14,14 +14,14 @@
 ///
 /// # From
 /// Note that provided implementation already includes the following `From` implementations.
-/// * `From<&[u8]>` - will take upto `LEN` bytes from the slice and pad if necessary usig `PADDING` argument.
+/// * `From<&[u8]>` - will take up to `LEN` bytes from the slice and pad if necessary using `PADDING` argument.
 /// * `From<&[u8; LEN]>` - must match the length of the buffer, will not pad.
 ///
 /// # Examples
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// // Align=Left / Len=10 / Padding=Minus
-/// string_ascii_fixed!(Password, 10, b'-', false,); // NOTE required comma after alignment when you dont provide a single derive argument
+/// string_ascii_fixed!(Password, 10, b'-', false,); // NOTE required comma after alignment when you don't provide a single derive argument
 /// let inp_pwd = Password::new(*b"1234567890");
 ///
 /// let inp_pwd: Password = b"12345".as_slice().into(); // from slice
@@ -56,7 +56,7 @@ macro_rules! string_ascii_fixed {
             }
         }
         impl From<&[u8]> for $NAME {
-            ///  Runt time check for capacity, Takes defensively and upto `LEN`, never overflows.
+            ///  Runt time check for capacity, Takes defensively and up to `LEN`, never overflows.
             fn from(bytes: &[u8]) -> Self {
                 let mut new = $NAME([$PADDING; $LEN]);
                 let take_len = core::cmp::min($LEN, bytes.len());
@@ -101,8 +101,8 @@ macro_rules! string_ascii_fixed {
 ///
 /// # From
 /// Note that provided implementation already includes the following `From` implementations.
-/// * `From<u8>` - will take the `u8` byte and return tupe struct with type of `NAME` agrument.
-/// * `From<[u8; 1]>` - will take the first byte of the array and return tupe struct with type of `NAME` agrument.
+/// * `From<u8>` - will take the `u8` byte and return tuple struct with type of `NAME` argument.
+/// * `From<[u8; 1]>` - will take the first byte of the array and return tuple struct with type of `NAME` argument.
 ///
 /// # Examples
 /// ```
@@ -142,7 +142,7 @@ macro_rules! char_ascii {
                 $NAME(bytes[0])
             }
         }
-        // utf8 `char` based impls
+        // utf8 `char` based impl
         impl std::fmt::Debug for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 f.debug_tuple( stringify! ($NAME) )
@@ -150,7 +150,7 @@ macro_rules! char_ascii {
                     .finish()
             }
         }
-        /// utf8 `char` based impls
+        /// utf8 `char` based impl
         impl std::fmt::Display for $NAME{
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", &char::from_u32(self.0 as u32).ok_or(std::fmt::Error)?)
@@ -161,18 +161,18 @@ macro_rules! char_ascii {
 
 /// Generates a `tuple` `struct` with a given name and a private ascii char allocated on `stack` using `u8` whose
 /// value always set to parameter `CONST`.
-/// 
+///
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
 /// * `CONST` - `u8` byte value to be used as the value behind this struct
 /// * `[derive, ...]` -- list of traits to derive for the struct, must be valid rust traits
-/// 
+///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
 /// * `Debug` & `Display` - provides a human readable sting view of the `u8` byte as utf-8 char
-/// * `ByteDeserializeSlice`- provides an implementation for deserializing from a byte stream, which `will panic` if value on the 
+/// * `ByteDeserializeSlice`- provides an implementation for deserializing from a byte stream, which `will panic` if value on the
 /// stream does `not` match the `CONST` value.
-/// 
+///
 /// # Examples
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
@@ -228,7 +228,7 @@ macro_rules! const_char_ascii {
                     true => Ok($NAME::default()),
                     false => {
                         let ty = $NAME::default();
-        
+
                         Err(SerDesError {
                             message: format!(
                                 "Type {:?} expected: 0x{:02x} actual: 0x{:02x}",
@@ -247,7 +247,7 @@ macro_rules! const_char_ascii {
                     true => Ok($NAME::default()),
                     false => {
                         let ty = $NAME::default();
-        
+
                         Err(SerDesError {
                             message: format!(
                                 "Type {:?} expected: 0x{:02x} actual: 0x{:02x}",
@@ -261,7 +261,7 @@ macro_rules! const_char_ascii {
     };
 }
 
-/// This is a short hand macro for generateing a new `COSNT` `tuple` `struct` type for u8, i8
+/// This is a short hand macro for generating a new `CONST` `tuple` `struct` type for u8, i8
 /// Typically will not be used directly but instead will be called via one of the other macros like `const_u8_tuple`, `const_i8_tuple`
 #[macro_export]
 macro_rules! const_byte {
@@ -290,21 +290,21 @@ macro_rules! const_byte {
     };
 }
 /// Generates a `CONST` `tuple` `struct` with a given name for managing a Numeric type `u8` allocated on `stack`.
-/// 
+///
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
 /// * `CONST` - `u8` byte value to be used as the value behind this struct
 /// * `[derive, ...]` -- list of traits to derive for the struct, must be valid rust traits
-/// 
+///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
 /// * `Display` - provides a human readable sting view of the `u8` value
-/// 
+///
 /// # Examples
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// const_u8_tuple!(Number, 1, byteserde_derive::ByteSerializeStack, PartialEq, Debug);
-/// 
+///
 /// let inp_num = Number::default();
 /// println!("inp_num: {:?}, {}", inp_num, inp_num);
 /// assert_eq!(inp_num.value(), 1_u8);
@@ -324,7 +324,7 @@ macro_rules! const_i8_tuple {
     };
 }
 
-/// This is a short hand macro for generateing a new `COSNT` `tuple` `struct` type for numerics like u16, i16, u32, i32, u64, i64, ...
+/// This is a short hand macro for generating a new `CONST` `tuple` `struct` type for numerics like u16, i16, u32, i32, u64, i64, ...
 /// Typically will not be used directly but instead will be called via one of the other macros like `const_u16_tuple`, `const_i16_tuple`, ...
 #[macro_export]
 macro_rules! const_numeric {
@@ -354,23 +354,23 @@ macro_rules! const_numeric {
     };
 }
 /// Generates a `CONST` `tuple` `struct` with a given name for managing a Numeric type `u16` allocated on `stack`.
-/// 
+///
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
 /// * `CONST` - `u16` byte value to be used as the value behind this struct
 /// * `ENDIAN` - endianess of the numeric type, must be either `le`, `be`, or `ne`, this will be passed directly to the `byteserde` attribute as #[byteserde(endian = "xx" )]
 /// * `[derive, ...]` -- `must include one of` the following `ByteSerializeStack`, `ByteSerializeHeap`, or `ByteDeserializeSlice` other wise the `#[byteserde(endian = $ENDIAN)]` attribute will fail to compile.
 /// Plus list of additional valid rust derive traits
-/// 
+///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
 /// * `Display` - provides a human readable sting view of the `u16` value
-/// 
+///
 /// # Examples
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// const_u16_tuple!(Number, 1, "be", byteserde_derive::ByteSerializeStack, PartialEq, Debug);
-/// 
+///
 /// let inp_num = Number::default();
 /// println!("inp_num: {:?}, {}", inp_num, inp_num);
 /// assert_eq!(inp_num.value(), 1_u16);
@@ -391,7 +391,39 @@ macro_rules! const_i16_tuple {
     };
 }
 
-/// This is a short hand macro for generateing a new `tuple` `struct` type for numerics like u32, i32, u64, i64, f32, f64, ...
+/// see [const_u16_tuple] for more details and examples.
+#[macro_export]
+macro_rules! const_u32_tuple {
+    ($NAME:ident, $CONST:literal, $ENDIAN:literal, $($DERIVE:ty),*) => {
+        $crate::const_numeric!($NAME, $CONST, u32, $ENDIAN, $($DERIVE),* );
+    };
+}
+
+/// see [const_u16_tuple] for more details and examples.
+#[macro_export]
+macro_rules! const_i32_tuple {
+    ($NAME:ident, $CONST:literal, $ENDIAN:literal, $($DERIVE:ty),*) => {
+        $crate::const_numeric!($NAME, $CONST, i32, $ENDIAN, $($DERIVE),* );
+    };
+}
+
+/// see [const_u16_tuple] for more details and examples.
+#[macro_export]
+macro_rules! const_u64_tuple {
+    ($NAME:ident, $CONST:literal, $ENDIAN:literal, $($DERIVE:ty),*) => {
+        $crate::const_numeric!($NAME, $CONST, u64, $ENDIAN, $($DERIVE),* );
+    };
+}
+
+/// see [const_u16_tuple] for more details and examples.
+#[macro_export]
+macro_rules! const_i64_tuple {
+    ($NAME:ident, $CONST:literal, $ENDIAN:literal, $($DERIVE:ty),*) => {
+        $crate::const_numeric!($NAME, $CONST, i64, $ENDIAN, $($DERIVE),* );
+    };
+}
+
+/// This is a short hand macro for generating a new `tuple` `struct` type for numerics like u32, i32, u64, i64, f32, f64, ...
 /// Typically will not be used directly but instead will be called via one of the other macros like `u16_tuple`, `i16_tuple`, ...
 #[macro_export]
 macro_rules! numeric_tuple {
@@ -426,27 +458,27 @@ macro_rules! numeric_tuple {
 }
 
 /// Generates a `tuple` `struct` with a given name for managing a Numeric type `u16` allocated on `stack`.
-/// 
+///
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
 /// * `ENDIAN` - endianess of the numeric type, must be either `le`, `be`, or `ne`, this will be passed directly to the `byteserde` attribute as #[byteserde(endian = "xx" )]
-/// * `[derive, ...]` -- `must include one of` the following `ByteSerializeStack`, `ByteSerializeHeap`, or `ByteDeserializeSlice` other wise the `#[byteserde(endian = $ENDIAN)]` attribute will fail to compile. 
-/// Plus list of additional valid rust derive traits 
-/// 
+/// * `[derive, ...]` -- `must include one of` the following `ByteSerializeStack`, `ByteSerializeHeap`, or `ByteDeserializeSlice` other wise the `#[byteserde(endian = $ENDIAN)]` attribute will fail to compile.
+/// Plus list of additional valid rust derive traits
+///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
 /// * `Display` - provides a human readable sting view of the `u16` value
-/// 
+///
 /// # From
 /// Note that provided implementation already includes the following `From` implementations.
-/// * `From<u16>` - will take the `u16` and return tupe struct with type of `NAME` agrument.
+/// * `From<u16>` - will take the `u16` and return tuple struct with type of `NAME` argument.
 /// * `From<Name>` - will take the `struct` type from the `NAME` argument and return the `u16` value.
-/// 
+///
 /// # Examples
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// u16_tuple!(Number, "be", byteserde_derive::ByteSerializeStack, PartialEq, Debug);
-/// 
+///
 /// let inp_num: Number = 1_u16.into(); // from u16
 /// println!("inp_num: {:?}, {}", inp_num, inp_num);
 /// assert_eq!(inp_num.value(), 1_u16);
@@ -454,7 +486,7 @@ macro_rules! numeric_tuple {
 /// let inp_num: Number = Number::new(2); // using new
 /// println!("inp_num: {:?}, {}", inp_num, inp_num);
 /// assert_eq!(inp_num.value(), 2_u16);
-/// 
+///
 /// let inp_num: u16 = inp_num.into(); // to u16
 /// assert_eq!(inp_num, 2_u16);
 /// # }

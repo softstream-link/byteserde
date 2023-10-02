@@ -35,12 +35,12 @@ pub struct ByteDeserializerSlice<'slice> {
     idx: usize,
 }
 
-/// Provides a conveninet way to view buffer content as both HEX and ASCII bytes where printable.
+/// Provides a convenient way to view buffer content as both HEX and ASCII bytes where printable.
 /// supports both forms of alternate
 /// ```
 /// use byteserde::prelude::*;
 /// let mut des = ByteDeserializerSlice::new(&[0x01, 0x00, 0x02, 0x00, 0x00, 0x03]);
-/// println ! ("{:#x}", des); // upto 16 bytes per line
+/// println ! ("{:#x}", des); // up to 16 bytes per line
 /// println ! ("{:x}", des);  // single line
 /// ```
 impl<'bytes> LowerHex for ByteDeserializerSlice<'bytes> {
@@ -204,7 +204,7 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
         let r = self.deserialize_bytes_array_ref::<N>()?;
         Ok(T::from_bytes_ref(r))
     }
-    /// creates a new instance of `T` type `struct`, depleating exactly the right amount of bytes from [ByteDeserializerSlice]
+    /// creates a new instance of `T` type `struct`, depleting exactly the right amount of bytes from [ByteDeserializerSlice]
     /// `T` must implement [ByteDeserializeSlice] trait
     pub fn deserialize<T>(&mut self) -> crate::error::Result<T>
     where
@@ -213,8 +213,8 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
         T::byte_deserialize(self)
     }
 
-    /// creates a new instance of T type struct, depleating `exactly` `len` bytes from [ByteDeserializerSlice].
-    /// Intended for types with variable length such as Strings, Vecs, etc.
+    /// creates a new instance of T type struct, depleting `exactly` `len` bytes from [ByteDeserializerSlice].
+    /// Intended for types with variable length such as Strings, Vec, etc.
     pub fn deserialize_take<T>(&mut self, len: usize) -> crate::error::Result<T>
     where
         T: ByteDeserializeSlice<T>,
@@ -223,14 +223,14 @@ impl<'bytes> ByteDeserializerSlice<'bytes> {
     }
 }
 
-/// This trait is to be implemented by any struct, example `MyFavStruct`, to be compatbile with [`ByteDeserializerSlice::deserialize<MyFavStruct>()`]
+/// This trait is to be implemented by any struct, example `MyFavStruct`, to be compatible with [`ByteDeserializerSlice::deserialize<MyFavStruct>()`]
 pub trait ByteDeserializeSlice<T> {
-    /// If successfull returns a new instance of T type struct, depleating exactly the right amount of bytes from [ByteDeserializerSlice]
+    /// If successfull returns a new instance of T type struct, depleting exactly the right amount of bytes from [ByteDeserializerSlice]
     /// Number of bytes depleted is determined by the struct T itself and its member types.
     fn byte_deserialize(des: &mut ByteDeserializerSlice) -> crate::error::Result<T>;
 
-    /// if sucessfull returns a new instance of T type struct, however ONLY depleating a maximum of `len` bytes from [ByteDeserializerSlice]
-    /// Intended for types with variable length such as Strings, Vecs, etc.
+    /// if successful returns a new instance of T type struct, however ONLY depleting a maximum of `len` bytes from [ByteDeserializerSlice]
+    /// Intended for types with variable length such as Strings, Vec, etc.
     /// No bytes will be depleted if attempt was not successful.
     fn byte_deserialize_take(
         des: &mut ByteDeserializerSlice,
