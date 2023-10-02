@@ -1,11 +1,8 @@
 use bytes::{Bytes, BytesMut};
 
-use crate::{
-    prelude::*,
-    utils::{
-        hex::{to_hex_line, to_hex_pretty},
-        numerics::{be_bytes::ToBeBytes, le_bytes::ToLeBytes, ne_bytes::ToNeBytes},
-    },
+use crate::utils::{
+    hex::{to_hex_line, to_hex_pretty},
+    numerics::{be_bytes::ToBeBytes, le_bytes::ToLeBytes, ne_bytes::ToNeBytes},
 };
 
 use std::{
@@ -18,7 +15,7 @@ use std::{
 /// use ::byteserde::prelude::*;
 /// struct MyStruct { a: u8, }
 /// impl ByteSerializeHeap for MyStruct {
-///    fn byte_serialize_heap(&self, ser: &mut ByteSerializerHeap) -> Result<()> {
+///    fn byte_serialize_heap(&self, ser: &mut ByteSerializerHeap) -> byteserde::error::Result<()> {
 ///       ser.serialize_bytes_slice(&[self.a])?;
 ///      Ok(())
 ///   }
@@ -33,9 +30,9 @@ use std::{
 /// assert_eq!(bytes.len(), 1);
 /// ```
 pub trait ByteSerializeHeap {
-    fn byte_serialize_heap(&self, ser: &mut ByteSerializerHeap) -> Result<()>;
+    fn byte_serialize_heap(&self, ser: &mut ByteSerializerHeap) -> crate::error::Result<()>;
 }
-/// A byte buffer allocated on heap backed by `Vec<u8>`, can be reused and recycled by calling [Self::reset()].
+/// A byte buffer allocated on heap backed by `Vec<u8>`, can be reused and recycled by calling [Self::clear()].
 /// Example: Create a Buffer and serialize data into it.
 /// ```
 /// use ::byteserde::prelude::*;
@@ -59,7 +56,7 @@ impl ByteSerializerHeap {
         }
     }
 }
-/// Provides a convenient way to view buffer content as both HEX and ASCII bytes where prinable.
+/// Provides a convenient way to view buffer content as both HEX and ASCII bytes where printable.
 /// supports both forms of alternate formatting `{:x}` and `{:#x}`.
 /// ```
 /// use ::byteserde::prelude::*;
@@ -100,7 +97,7 @@ impl ByteSerializerHeap {
     pub fn capacity(&self) -> usize {
         self.bytes.capacity()
     }
-    /// Returns the number of bytes available for writing without need for realocation
+    /// Returns the number of bytes available for writing without need for reallocation
     #[inline]
     pub fn available(&self) -> usize {
         self.bytes.capacity() - self.bytes.len()
@@ -111,7 +108,7 @@ impl ByteSerializerHeap {
         &self.bytes[0..]
     }
     /// Writes a slice of bytes into the buffer.
-    pub fn serialize_bytes_slice(&mut self, bytes: &[u8]) -> Result<&mut Self> {
+    pub fn serialize_bytes_slice(&mut self, bytes: &[u8]) -> crate::error::Result<&mut Self> {
         self.bytes.extend_from_slice(bytes);
         Ok(self)
     }
@@ -124,7 +121,10 @@ impl ByteSerializerHeap {
     /// ser.serialize_ne(0x1_i16);
     /// // ... etc
     /// ```
-    pub fn serialize_ne<const N: usize, T: ToNeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
+    pub fn serialize_ne<const N: usize, T: ToNeBytes<N>>(
+        &mut self,
+        v: T,
+    ) -> crate::error::Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
     }
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `little` endianess.
@@ -137,7 +137,10 @@ impl ByteSerializerHeap {
     /// println!("{:x}", ser);
     /// assert_eq!(ser.len(), 4);
     /// ```
-    pub fn serialize_le<const N: usize, T: ToLeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
+    pub fn serialize_le<const N: usize, T: ToLeBytes<N>>(
+        &mut self,
+        v: T,
+    ) -> crate::error::Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
     }
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `big` endianess.
@@ -150,17 +153,20 @@ impl ByteSerializerHeap {
     /// println!("{:x}", ser);
     /// assert_eq!(ser.len(), 4);
     /// ```
-    pub fn serialize_be<const N: usize, T: ToBeBytes<N>>(&mut self, v: T) -> Result<&mut Self> {
+    pub fn serialize_be<const N: usize, T: ToBeBytes<N>>(
+        &mut self,
+        v: T,
+    ) -> crate::error::Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
     }
 
-    pub fn serialize<T: ByteSerializeHeap>(&mut self, v: &T) -> Result<&mut Self> {
+    pub fn serialize<T: ByteSerializeHeap>(&mut self, v: &T) -> crate::error::Result<&mut Self> {
         v.byte_serialize_heap(self)?;
         Ok(self)
     }
 }
 /// Analogous to [to_bytes_heap] but returns an instance of [ByteSerializerHeap]
-pub fn to_serializer_heap<T>(v: &T) -> Result<ByteSerializerHeap>
+pub fn to_serializer_heap<T>(v: &T) -> crate::error::Result<ByteSerializerHeap>
 where
     T: ByteSerializeHeap,
 {
@@ -169,11 +175,10 @@ where
     Result::Ok(ser)
 }
 /// Analogous to [to_serializer_heap] but returns an instance of [`Vec<u8>`]
-pub fn to_bytes_heap<T>(v: &T) -> Result<Bytes>
+pub fn to_bytes_heap<T>(v: &T) -> crate::error::Result<Bytes>
 where
     T: ByteSerializeHeap,
 {
     let ser = to_serializer_heap(v)?;
     Ok(ser.bytes.freeze())
 }
-

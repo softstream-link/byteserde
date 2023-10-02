@@ -92,7 +92,7 @@ fn test_deserialize_char_too_long_and_not_utf8() {
     assert!(out.is_err());
     assert_eq!(
         out.unwrap_err().message,
-        "max char len supported 4 but enchountered 5"
+        "max char len supported 4 but encountered 5"
     );
 
     // create invalid utf8

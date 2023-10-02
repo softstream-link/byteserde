@@ -1,3 +1,4 @@
+use byteserde::error::Result;
 use byteserde::prelude::*;
 use byteserde::utils::hex::{to_hex_line, to_hex_pretty};
 use byteserde_derive::{
@@ -37,7 +38,8 @@ use std::fmt;
 /// println!("{:x}", inp_str);
 /// assert_eq!(inp_str.bytes(), [0x20, 0x41, 0x42, 0x43, 0x44]);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone,)]
 pub struct StringAsciiFixed<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool>(
     [u8; LEN],
 );
@@ -54,10 +56,17 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool>
         &self.0[0..]
     }
 }
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> Default
+    for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
+{
+    fn default() -> Self {
+        Self([PADDING; LEN])
+    }
+}
 impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<&[u8]>
     for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN>
 {
-    ///  Runt time check for capacity, Takes defensively and upto `LEN`, never overflows.
+    ///  Runt time check for capacity, Takes defensively and up to `LEN`, never overflows.
     fn from(bytes: &[u8]) -> Self {
         let mut new = StringAsciiFixed::<LEN, PADDING, RIGHT_ALIGN>([PADDING; LEN]);
         let take_len = min(LEN, bytes.len());
@@ -82,7 +91,7 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u16>
 {
     fn from(value: u16) -> Self {
         if LEN < 5 {
-            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u16, LEN must be atleast 5 bytes")
+            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u16, LEN must be at least 5 bytes")
         }
         value.to_string().as_bytes().into()
     }
@@ -92,7 +101,7 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u32>
 {
     fn from(value: u32) -> Self {
         if LEN < 10 {
-            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u32, LEN must be atleast 10 bytes")
+            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u32, LEN must be at least 10 bytes")
         }
         value.to_string().as_bytes().into()
     }
@@ -102,7 +111,7 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> From<u64>
 {
     fn from(value: u64) -> Self {
         if LEN < 20 {
-            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u64, LEN must be atleast 20 bytes")
+            panic!("StringAsciiFixed<{LEN}, {PADDING}, {RIGHT_ALIGN}> cannot hold u64, LEN must be at least 20 bytes")
         }
         value.to_string().as_bytes().into()
     }
@@ -181,7 +190,7 @@ mod test_string_ascii_fixed {
             StringAsciiFixed::<ELEVEN, SPACE, RIGHT>::byte_deserialize_take(des, ELEVEN * 2)
                 .unwrap_err();
         info!("out_err: {:?}", out_err);
-        // take correct shall PASS - IMPORANT no bytes depleted by failed takes
+        // take correct shall PASS - IMPORTANT no bytes depleted by failed takes
         let out_str = StringAsciiFixed::<ELEVEN, SPACE, RIGHT>::byte_deserialize(des).unwrap();
         info!("out_str: {:?}", out_str);
     }
@@ -244,13 +253,18 @@ mod test_string_ascii_fixed {
 /// let mut ser_stack: ByteSerializerStack<128> =  to_serializer_stack(&inp_str).unwrap();
 /// ser_stack.serialize(&inp_str).unwrap();
 /// println!("ser_stack: {:#x}", ser_stack);
-/// // deserialize NOTE - This completelly DEPLEATES entire buffer instead of just only once for the original string
+/// // deserialize NOTE - This completely DEPLETES entire buffer instead of just only once for the original string
 /// let out_str: StringAscii = from_serializer_stack(&ser_stack).unwrap();
 /// println!("out_str: {:x}", out_str);
 /// assert_eq!(StringAscii::from(b"ABCDEABCDE"), out_str);
 /// ```
 #[derive(
-    ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone
+    ByteSerializeStack,
+    ByteSerializeHeap,
+    ByteDeserializeSlice,
+    ByteSerializedLenOf,
+    PartialEq,
+    Clone,
 )]
 pub struct StringAscii(Vec<u8>);
 impl StringAscii {
@@ -346,7 +360,15 @@ mod test_string_ascii {
 /// println!("{:x}", inp_char);
 /// assert_eq!(inp_char.bytes(), [0x41]);
 /// ```
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Clone, Copy)]
+#[derive(
+    ByteSerializeStack,
+    ByteSerializeHeap,
+    ByteDeserializeSlice,
+    ByteSerializedLenOf,
+    PartialEq,
+    Clone,
+    Copy,
+)]
 pub struct CharAscii(u8);
 impl CharAscii {
     pub fn bytes(&self) -> [u8; 1] {
@@ -429,9 +451,8 @@ mod test_char_ascii {
 /// assert_eq!(inp_char.bytes(), [43]);
 ///
 /// ```
-#[derive(
-    ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, PartialEq, Clone
-)]
+#[rustfmt::skip]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteSerializedSizeOf, ByteSerializedLenOf, PartialEq, Clone,)]
 pub struct ConstCharAscii<const CHAR: u8>(u8);
 impl<const CHAR: u8> ConstCharAscii<CHAR> {
     pub fn bytes(&self) -> [u8; 1] {
@@ -510,7 +531,7 @@ mod test_const_char_ascii {
         let out_plus: ConstCharAscii<b'+'> = des.deserialize().unwrap();
         info!("out_plus: {}", out_plus);
 
-        let out_res: Result<ConstCharAscii<b'+'>> = des.deserialize();
+        let out_res: byteserde::error::Result<ConstCharAscii<b'+'>> = des.deserialize();
         info!("out_res: {:?}", out_res);
         assert!(out_res.is_err());
     }
