@@ -10,7 +10,7 @@ use crate::{
 
 use std::{
     any::type_name,
-    fmt::{Debug, LowerHex},
+    fmt::{Debug, LowerHex}, mem::MaybeUninit,
 };
 
 /// Trait type accepted by [ByteSerializerStack] for serialization.
@@ -41,7 +41,7 @@ pub trait ByteSerializeStack {
         ser: &mut ByteSerializerStack<CAP>,
     ) -> crate::error::Result<()>;
 }
-/// A byte buffer allocated on stack backed by `[u8; CAP]`, can be reused and recyled by calling [Self::reset()].
+/// A byte buffer allocated on stack backed by `[u8; CAP]`, can be reused and recyled by calling [Self::clear()].
 /// Example: Creates a buffer with 128 bytes capacity and serializes data into it.
 /// ```
 /// use ::byteserde::prelude::*;
@@ -85,19 +85,9 @@ impl<const CAP: usize> LowerHex for ByteSerializerStack<CAP> {
 }
 impl<const CAP: usize> Default for ByteSerializerStack<CAP> {
     fn default() -> Self {
+        // let mut buf: [u8; 1024] = unsafe { MaybeUninit::uninit().assume_init() };
         ByteSerializerStack {
-            // TODO this causes twice amount of writes first to set tozero then to write value hence serialize takes 2x deserialize, need to figure out how to start uninitialized array
-            // let mut arr: [u16; 5];
-            // unsafe {
-            //     let mut raw_arr: [mem::MaybeUninit<u16>; 5] = mem::MaybeUninit::uninit().assume_init();
-            //     for (i, elem) in raw_arr.iter_mut().enumerate() {
-            //         // Initialize each element of the array using the dereference operator and the write() method
-            //         elem.as_mut_ptr().write(i as u16);
-            //     }
-            //     // Convert the raw array to a regular array using the transmute() method
-            //     arr = mem::transmute::<[mem::MaybeUninit<u16>; 5], [u16; 5]>(raw_arr);
-            // }
-            bytes: [0x00_u8; CAP],
+            bytes: unsafe { MaybeUninit::uninit().assume_init() },
             len: 0,
         }
     }

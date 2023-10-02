@@ -266,7 +266,7 @@ where
     T::byte_deserialize(de)
 }
 
-/// This is a short cut method that uses [`ByteSerializerStack<CAP>::as_slice()`] method to issue a [from_bytes] call.
+/// This is a short cut method that uses [`ByteSerializerStack<CAP>::as_slice()`] method to issue a [from_slice] call.
 pub fn from_serializer_stack<const CAP: usize, T>(
     ser: &ByteSerializerStack<CAP>,
 ) -> crate::error::Result<T>
@@ -275,7 +275,7 @@ where
 {
     from_slice(ser.as_slice())
 }
-/// This is a short cut method that uses [`ByteSerializerHeap::as_slice()`] method to issue a [from_bytes] call.
+/// This is a short cut method that uses [`ByteSerializerHeap::as_slice()`] method to issue a [from_slice] call.
 pub fn from_serializer_heap<T>(ser: &ByteSerializerHeap) -> crate::error::Result<T>
 where
     T: ByteDeserializeSlice<T>,

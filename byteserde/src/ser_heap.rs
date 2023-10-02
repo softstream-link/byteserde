@@ -32,7 +32,7 @@ use std::{
 pub trait ByteSerializeHeap {
     fn byte_serialize_heap(&self, ser: &mut ByteSerializerHeap) -> crate::error::Result<()>;
 }
-/// A byte buffer allocated on heap backed by `Vec<u8>`, can be reused and recycled by calling [Self::reset()].
+/// A byte buffer allocated on heap backed by `Vec<u8>`, can be reused and recycled by calling [Self::clear()].
 /// Example: Create a Buffer and serialize data into it.
 /// ```
 /// use ::byteserde::prelude::*;
