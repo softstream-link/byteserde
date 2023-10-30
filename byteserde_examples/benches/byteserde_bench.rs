@@ -34,7 +34,7 @@ fn from_slice(c: &mut Criterion) {
     c.bench_function("byteserde::from_slice", |b| {
         b.iter(|| {
             black_box({
-                let _ : Numbers = byteserde::prelude::from_slice(&ser.as_slice()).unwrap();
+                let _: Numbers = byteserde::prelude::from_slice(&ser.as_slice()).unwrap();
             })
         })
     });
@@ -45,9 +45,9 @@ fn from_bytes(c: &mut Criterion) {
     let ser: ByteSerializerStack<128> = to_serializer_stack(&inp).unwrap();
     let bytes: Bytes = ser.as_slice().to_vec().into();
     c.bench_function("byteserde::from_bytes", |b| {
-        b.iter( || {
+        b.iter(|| {
             black_box({
-                let _ : Numbers = byteserde::prelude::from_bytes(bytes.clone()).unwrap();
+                let _: Numbers = byteserde::prelude::from_bytes(bytes.clone()).unwrap();
             })
         })
     });

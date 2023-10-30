@@ -1,4 +1,4 @@
-use byteserde_derive::{ByteDeserializeSlice, ByteDeserializeBytes, ByteSerializeHeap, ByteSerializeStack};
+use byteserde_derive::{ByteDeserializeBytes, ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack};
 use serde::{Deserialize, Serialize};
 
 #[rustfmt::skip]
@@ -16,7 +16,7 @@ pub struct Integers {
     type_i128: i128,
     type_u128: u128,
 }
-impl Default for Integers{
+impl Default for Integers {
     fn default() -> Self {
         Self {
             type_i8: -8,
@@ -39,12 +39,9 @@ pub struct Floats {
     pub type_f32: f32,
     pub type_f64: f64,
 }
-impl Default for Floats{
+impl Default for Floats {
     fn default() -> Self {
-        Self {
-            type_f32: 1.32,
-            type_f64: 2.64,
-        }
+        Self { type_f32: 1.32, type_f64: 2.64 }
     }
 }
 
@@ -54,7 +51,7 @@ pub struct Numbers {
     pub type_header: Integers,
     pub type_footer: Floats,
 }
-impl Default for Numbers{
+impl Default for Numbers {
     fn default() -> Self {
         Self {
             type_header: Integers::default(),

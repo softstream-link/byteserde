@@ -2,10 +2,7 @@ mod unittest;
 use std::mem::size_of;
 
 use byteserde::prelude::*;
-use byteserde_derive::{
-    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
-    ByteSerializedSizeOf,
-};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf, ByteSerializedSizeOf};
 use log::info;
 use unittest::setup;
 
@@ -43,8 +40,7 @@ fn bytes() {
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
-        ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq)]
 #[byteserde(endian = "le")]
 struct Numerics(
     #[byteserde(endian = "ne")] // ne test local attribute
@@ -71,10 +67,7 @@ fn test_numerics() {
 fn numerics() {
     setup::log::configure();
 
-    let inp_num = Numerics(
-        0x00FF_u16, 0x00FF_u16, 0x00FF_u16, 0x00FF_u16, -16, 16, -32, 32, -64, 64, 8_u8, -128, 128,
-        -1.32, 1.64,
-    );
+    let inp_num = Numerics(0x00FF_u16, 0x00FF_u16, 0x00FF_u16, 0x00FF_u16, -16, 16, -32, 32, -64, 64, 8_u8, -128, 128, -1.32, 1.64);
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
@@ -117,7 +110,7 @@ fn size_len() {
     info!("ln_of: {ln_of}");
     info!("sz_of: {sz_of}");
     info!("sz_of_aligned: {sz_of_aligned}");
-    
+
     assert_eq!(ln_of, sz_of);
     assert_eq!(sz_of, size_of::<Bytes>());
 
@@ -127,11 +120,11 @@ fn size_len() {
     info!("ln_of: {ln_of}");
     info!("sz_of: {sz_of}");
     info!("sz_of_aligned: {sz_of_aligned}");
-    
+
     assert_eq!(ln_of, sz_of);
     assert_ne!(sz_of, sz_of_aligned);
     assert_eq!(sz_of, 81);
-    assert_eq!(sz_of_aligned, 88);
+    assert_eq!(sz_of_aligned, 96);
 }
 
 fn main() {

@@ -6,9 +6,7 @@ use log::info;
 fn test_deserialser_array() {
     setup::log::configure();
 
-    let bytes = &[
-        1_u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1_u8, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-    ];
+    let bytes = &[1_u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1_u8, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     info!("inp: {bytes:?}");
     // make sure you can read 20 bytes of payload
     let mut des = ByteDeserializerSlice::new(bytes);

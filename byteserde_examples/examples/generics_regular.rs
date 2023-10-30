@@ -1,9 +1,6 @@
 mod unittest;
 use byteserde::prelude::*;
-use byteserde_derive::{
-    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
-    ByteSerializedSizeOf,
-};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf, ByteSerializedSizeOf};
 use log::info;
 use unittest::setup;
 
@@ -54,7 +51,7 @@ fn numeric() {
 fn test_numeric_size_len() {
     numeric_size_len();
 }
-fn numeric_size_len(){
+fn numeric_size_len() {
     setup::log::configure();
     let inp_num = NumbersStructRegular::<1, 2>::default();
     let sz_of = NumbersStructRegular::<1, 2>::byte_size();
@@ -108,12 +105,12 @@ fn strings() {
     assert_eq!(inp_str, out_str);
 }
 #[test]
-fn test_strings_len(){
+fn test_strings_len() {
     strings_len();
 }
-fn strings_len(){
+fn strings_len() {
     setup::log::configure();
-    let inp_str = StringsStructRegular::<String, char>{
+    let inp_str = StringsStructRegular::<String, char> {
         field_string: "12345".to_string(),
         field_char: 'a',
     };
@@ -122,7 +119,7 @@ fn strings_len(){
     info!("ln_of: {ln_of}");
     assert_eq!(ln_of, 6);
 
-    let inp_str = StringsStructRegular::<String, char>{
+    let inp_str = StringsStructRegular::<String, char> {
         field_string: "1234567890".to_string(),
         field_char: 'a',
     };
@@ -166,19 +163,18 @@ fn nested() {
     assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     // deserialize
-    let out_nes: NestedStructRegular<2, 3, String, char> =
-        from_serializer_stack(&ser_stack).unwrap();
+    let out_nes: NestedStructRegular<2, 3, String, char> = from_serializer_stack(&ser_stack).unwrap();
     info!("inp_nes: {inp_nes:?}");
     info!("out_nes: {out_nes:?}");
     assert_eq!(inp_nes, out_nes);
 }
 #[test]
-fn test_nested_len(){
+fn test_nested_len() {
     nested_len()
 }
-fn nested_len(){
+fn nested_len() {
     setup::log::configure();
-    let inp_nes = NestedStructRegular::<1, 2, String, char>{
+    let inp_nes = NestedStructRegular::<1, 2, String, char> {
         field_numbers: Default::default(), // len => 1 * 2(u16) + 2 * 2(u16) = 6
         field_strings: Default::default(), // len => hello + h = 6
     };
@@ -194,5 +190,4 @@ fn main() {
     strings_len();
     nested();
     nested_len();
-
 }

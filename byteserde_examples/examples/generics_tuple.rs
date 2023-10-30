@@ -6,24 +6,16 @@ use unittest::setup;
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq, Clone)]
 #[byteserde(endian = "le")]
-pub struct NumbersStructRegular<const L: usize, const M: usize>(
-    #[byteserde(endian = "be")] [u16; L],
-    [u16; M],
-);
+pub struct NumbersStructRegular<const L: usize, const M: usize>(#[byteserde(endian = "be")] [u16; L], [u16; M]);
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq, Clone)]
-pub struct StringsStructRegular<
-    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<S>,
-    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<C>,
->(S, C);
+pub struct StringsStructRegular<S: ByteSerializeStack+ByteSerializeHeap+ByteDeserializeSlice<S>, C: ByteSerializeStack+ByteSerializeHeap+ByteDeserializeSlice<C>>(S, C);
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
-pub struct NestedStructRegular<
-    const L: usize,
-    const M: usize,
-    S: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<S>,
-    C: ByteSerializeStack + ByteSerializeHeap + ByteDeserializeSlice<C>,
->(NumbersStructRegular<L, M>, StringsStructRegular<S, C>);
+pub struct NestedStructRegular<const L: usize, const M: usize, S: ByteSerializeStack+ByteSerializeHeap+ByteDeserializeSlice<S>, C: ByteSerializeStack+ByteSerializeHeap+ByteDeserializeSlice<C>>(
+    NumbersStructRegular<L, M>,
+    StringsStructRegular<S, C>,
+);
 
 #[test]
 fn test_all() {
@@ -32,10 +24,7 @@ fn test_all() {
 fn all() {
     setup::log::configure();
     // **************** NUMERICS ****************
-    let inp_num = NumbersStructRegular::<2, 3>(
-        [0x0001_u16, 0x0002_u16],
-        [0x0001_u16, 0x0002_u16, 0x0003_u16],
-    );
+    let inp_num = NumbersStructRegular::<2, 3>([0x0001_u16, 0x0002_u16], [0x0001_u16, 0x0002_u16, 0x0003_u16]);
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
@@ -78,8 +67,7 @@ fn all() {
     assert_eq!(ser_stack.as_slice(), ser_heap.as_slice());
 
     // deserialize
-    let out_nes: NestedStructRegular<2, 3, String, char> =
-        from_serializer_stack(&ser_stack).unwrap();
+    let out_nes: NestedStructRegular<2, 3, String, char> = from_serializer_stack(&ser_stack).unwrap();
     info!("inp_nes: {inp_nes:?}");
     info!("out_nes: {out_nes:?}");
     assert_eq!(inp_nes, out_nes);

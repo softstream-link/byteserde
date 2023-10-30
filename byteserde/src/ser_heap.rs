@@ -51,9 +51,7 @@ pub struct ByteSerializerHeap {
 }
 impl ByteSerializerHeap {
     pub fn with_capacity(cap: usize) -> Self {
-        ByteSerializerHeap {
-            bytes: BytesMut::with_capacity(cap),
-        }
+        ByteSerializerHeap { bytes: BytesMut::with_capacity(cap) }
     }
 }
 /// Provides a convenient way to view buffer content as both HEX and ASCII bytes where printable.
@@ -121,10 +119,7 @@ impl ByteSerializerHeap {
     /// ser.serialize_ne(0x1_i16);
     /// // ... etc
     /// ```
-    pub fn serialize_ne<const N: usize, T: ToNeBytes<N>>(
-        &mut self,
-        v: T,
-    ) -> crate::error::Result<&mut Self> {
+    pub fn serialize_ne<const N: usize, T: ToNeBytes<N>>(&mut self, v: T) -> crate::error::Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
     }
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `little` endianess.
@@ -137,10 +132,7 @@ impl ByteSerializerHeap {
     /// println!("{:x}", ser);
     /// assert_eq!(ser.len(), 4);
     /// ```
-    pub fn serialize_le<const N: usize, T: ToLeBytes<N>>(
-        &mut self,
-        v: T,
-    ) -> crate::error::Result<&mut Self> {
+    pub fn serialize_le<const N: usize, T: ToLeBytes<N>>(&mut self, v: T) -> crate::error::Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
     }
     /// This is a convenience method to serialize all rust's numeric primitives into the buffer using `big` endianess.
@@ -153,10 +145,7 @@ impl ByteSerializerHeap {
     /// println!("{:x}", ser);
     /// assert_eq!(ser.len(), 4);
     /// ```
-    pub fn serialize_be<const N: usize, T: ToBeBytes<N>>(
-        &mut self,
-        v: T,
-    ) -> crate::error::Result<&mut Self> {
+    pub fn serialize_be<const N: usize, T: ToBeBytes<N>>(&mut self, v: T) -> crate::error::Result<&mut Self> {
         self.serialize_bytes_slice(&v.to_bytes())
     }
 
@@ -167,18 +156,14 @@ impl ByteSerializerHeap {
 }
 /// Analogous to [to_bytes_heap] but returns an instance of [ByteSerializerHeap]
 pub fn to_serializer_heap<T>(v: &T) -> crate::error::Result<ByteSerializerHeap>
-where
-    T: ByteSerializeHeap,
-{
+where T: ByteSerializeHeap {
     let mut ser = ByteSerializerHeap::default();
     v.byte_serialize_heap(&mut ser)?;
     Result::Ok(ser)
 }
 /// Analogous to [to_serializer_heap] but returns an instance of [`Vec<u8>`]
 pub fn to_bytes_heap<T>(v: &T) -> crate::error::Result<Bytes>
-where
-    T: ByteSerializeHeap,
-{
+where T: ByteSerializeHeap {
     let ser = to_serializer_heap(v)?;
     Ok(ser.bytes.freeze())
 }

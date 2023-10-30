@@ -53,10 +53,7 @@ impl LowerHex for ByteDeserializerBytes {
         let len = self.bytes.len();
         let idx = self.idx;
         let rem = self.remaining();
-        write!(
-            f,
-            "ByteDeserializerBytes {{ len: {len}, idx: {idx}, remaining: {rem}, bytes: {bytes} }}",
-        )
+        write!(f, "ByteDeserializerBytes {{ len: {len}, idx: {idx}, remaining: {rem}, bytes: {bytes} }}",)
     }
 }
 
@@ -166,18 +163,12 @@ impl ByteDeserializerBytes {
         if self.remaining() > at {
             Err(self.error(self.idx + at))
         } else {
-            Ok(self
-                .bytes
-                .clone()
-                .split_to(self.idx + at)
-                .split_off(self.idx))
+            Ok(self.bytes.clone().split_to(self.idx + at).split_off(self.idx))
         }
     }
 
     #[inline]
-    pub fn deserialize_bytes_array_ref<const N: usize>(
-        &mut self,
-    ) -> crate::error::Result<&[u8; N]> {
+    pub fn deserialize_bytes_array_ref<const N: usize>(&mut self) -> crate::error::Result<&[u8; N]> {
         match self.bytes.get(self.idx..self.idx + N) {
             Some(v) => {
                 self.idx += N;
@@ -194,9 +185,7 @@ impl ByteDeserializerBytes {
     /// let v: u16 = des.deserialize_ne().unwrap();
     /// ```
     #[inline]
-    pub fn deserialize_ne<const N: usize, T: FromNeBytes<N, T>>(
-        &mut self,
-    ) -> crate::error::Result<T> {
+    pub fn deserialize_ne<const N: usize, T: FromNeBytes<N, T>>(&mut self) -> crate::error::Result<T> {
         let r = self.deserialize_bytes_array_ref::<N>()?;
         Ok(T::from_bytes_ref(r))
     }
@@ -209,9 +198,7 @@ impl ByteDeserializerBytes {
     /// assert_eq!(v, 1);
     /// ```
     // #[inline]
-    pub fn deserialize_le<const N: usize, T: FromLeBytes<N, T>>(
-        &mut self,
-    ) -> crate::error::Result<T> {
+    pub fn deserialize_le<const N: usize, T: FromLeBytes<N, T>>(&mut self) -> crate::error::Result<T> {
         let r = self.deserialize_bytes_array_ref::<N>()?;
         Ok(T::from_bytes_ref(r))
     }
@@ -224,44 +211,35 @@ impl ByteDeserializerBytes {
     /// assert_eq!(v, 1);
     /// ```
     #[inline]
-    pub fn deserialize_be<const N: usize, T: FromBeBytes<N, T>>(
-        &mut self,
-    ) -> crate::error::Result<T> {
+    pub fn deserialize_be<const N: usize, T: FromBeBytes<N, T>>(&mut self) -> crate::error::Result<T> {
         let r = self.deserialize_bytes_array_ref::<N>()?;
         Ok(T::from_bytes_ref(r))
     }
     /// creates a new instance of `T` type `struct`, depleting exactly the right amount of bytes from [ByteDeserializerBytes]
     /// `T` must implement [ByteDeserializeBytes] trait
     pub fn deserialize<T>(&mut self) -> crate::error::Result<T>
-    where
-        T: ByteDeserializeBytes<T>,
-    {
+    where T: ByteDeserializeBytes<T> {
         T::byte_deserialize(self)
     }
 
     /// creates a new instance of T type struct, depleting `exactly` `len` bytes from [ByteDeserializerBytes].
     /// Intended for types with variable length such as Strings, Vec, etc.
     pub fn deserialize_take<T>(&mut self, len: usize) -> crate::error::Result<T>
-    where
-        T: ByteDeserializeBytes<T>,
-    {
+    where T: ByteDeserializeBytes<T> {
         T::byte_deserialize_take(self, len)
     }
 }
 
 /// This trait is to be implemented by any struct, example `MyFavStruct`, to be compatible with [`ByteDeserializerBytes::deserialize<MyFavStruct>()`]
 pub trait ByteDeserializeBytes<T> {
-    /// If successfull returns a new instance of T type struct, depleting exactly the right amount of bytes from [ByteDeserializerBytes]
+    /// If successful returns a new instance of T type struct, depleting exactly the right amount of bytes from [ByteDeserializerBytes]
     /// Number of bytes depleted is determined by the struct T itself and its member types.
     fn byte_deserialize(des: &mut ByteDeserializerBytes) -> crate::error::Result<T>;
 
-    /// if successfull returns a new instance of T type struct, however ONLY depleting a maximum of `len` bytes from [ByteDeserializerBytes]
+    /// if successful returns a new instance of T type struct, however ONLY depleting a maximum of `len` bytes from [ByteDeserializerBytes]
     /// Intended for types with variable length such as Strings, Vec, etc.
     /// No bytes will be depleted if attempt was not successful.
-    fn byte_deserialize_take(
-        des: &mut ByteDeserializerBytes,
-        len: usize,
-    ) -> crate::error::Result<T> {
+    fn byte_deserialize_take(des: &mut ByteDeserializerBytes, len: usize) -> crate::error::Result<T> {
         let bytes = des.peek_bytes(len)?;
         let tmp_des = &mut ByteDeserializerBytes::new(bytes);
         let result = Self::byte_deserialize(tmp_des);
@@ -287,9 +265,7 @@ impl ByteDeserializeBytes<Bytes> for Bytes {
 }
 /// This is a short cut method that creates a new instance of [ByteDeserializerBytes] and then uses that to convert them into a T type struct.
 pub fn from_bytes<T>(bytes: Bytes) -> crate::error::Result<T>
-where
-    T: ByteDeserializeBytes<T>,
-{
+where T: ByteDeserializeBytes<T> {
     let de = &mut ByteDeserializerBytes::new(bytes);
     T::byte_deserialize(de)
 }

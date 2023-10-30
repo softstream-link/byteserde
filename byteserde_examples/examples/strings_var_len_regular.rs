@@ -1,11 +1,11 @@
 mod unittest;
 use byteserde::prelude::*;
-use byteserde_types::{prelude::*, const_char_ascii};
 use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
+use byteserde_types::{const_char_ascii, prelude::*};
 use log::info;
 use unittest::setup;
 
-const_char_ascii!(Plus, b'+', ByteSerializeStack, ByteSerializeHeap, ByteSerializedLenOf, PartialEq);
+const_char_ascii!(Plus, b'+', derive(ByteSerializeStack, ByteSerializeHeap, ByteSerializedLenOf, PartialEq));
 
 #[derive(ByteDeserializeSlice, ByteSerializeStack, ByteSerializeHeap, Debug, PartialEq)]
 #[byteserde(endian = "be")]
@@ -59,7 +59,6 @@ fn strings_ascii() {
     assert_eq!(inp_debug.text, out_debug.text);
     assert_eq!(des.remaining(), tail.len());
 }
-
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 struct Strings {

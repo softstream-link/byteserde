@@ -1,13 +1,18 @@
 mod unittest;
 use byteserde::prelude::*;
 use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
-use byteserde_types::{prelude::*, string_ascii_fixed, char_ascii, const_char_ascii};
+use byteserde_types::{char_ascii, const_char_ascii, prelude::*, string_ascii_fixed};
 use log::info;
 use unittest::setup;
 
-string_ascii_fixed!(UsernameAscii, 10, b' ', true,  ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq);
-char_ascii!(AnyCharAscii, ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq);
-const_char_ascii!(XConstCharAscii, b'X', ByteSerializeStack, ByteSerializeHeap, PartialEq);
+pub use models::*;
+#[rustfmt::skip]
+pub mod models{
+    use super::*;
+    string_ascii_fixed!(UsernameAscii, 10, b' ', true,  derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq));
+    char_ascii!(AnyCharAscii, derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq));
+    const_char_ascii!(XConstCharAscii, b'X', derive(ByteSerializeStack, ByteSerializeHeap, PartialEq));
+}
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
 struct AsciiStrings(
@@ -24,12 +29,7 @@ fn test_ascii() {
 fn ascii() {
     setup::log::configure();
 
-    let inp_str = AsciiStrings(
-        b"will be cut short".as_slice().into(),
-        b'?'.into(),
-        Default::default(),
-        b"my length same as username".into(),
-    );
+    let inp_str = AsciiStrings(b"will be cut short".as_slice().into(), b'?'.into(), Default::default(), b"my length same as username".into());
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_str).unwrap();
@@ -42,15 +42,7 @@ fn ascii() {
     let out_str: AsciiStrings = from_serializer_heap(&ser_heap).unwrap();
     info!("inp_str: {:?}", inp_str);
     info!("out_str: {:?}", out_str);
-    assert_eq!(
-        out_str,
-        AsciiStrings (
-            inp_str.0,
-            AnyCharAscii::from(b'R'),
-            inp_str.2,
-            inp_str.3.bytes()[0..10].into(),
-        )
-    );
+    assert_eq!(out_str, AsciiStrings(inp_str.0, AnyCharAscii::from(b'R'), inp_str.2, inp_str.3.bytes()[0..10].into(),));
 }
 
 fn main() {

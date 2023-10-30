@@ -2,10 +2,7 @@ use quote::ToTokens;
 use quote::__private::TokenStream;
 use quote::{__private::Span, quote};
 use syn::parse::Parse;
-use syn::{
-    parenthesized, punctuated::Punctuated, token::Comma, Attribute, Expr, Ident, LitInt, LitStr,
-    Member, Token,
-};
+use syn::{parenthesized, punctuated::Punctuated, token::Comma, Attribute, Expr, Ident, LitInt, LitStr, Member, Token};
 pub fn ser_endian_method_xx(endian: &Endian) -> Ident {
     match endian {
         Endian::Big => Ident::new("serialize_be", Span::call_site()),
@@ -96,10 +93,7 @@ impl ToTokens for From {
 }
 
 fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Peek, PeekEq, Bind, Vec<From>) {
-    let byteserde_attrs = attrs
-        .iter()
-        .filter(|atr| atr.meta.path().is_ident("byteserde"))
-        .collect::<Vec<_>>();
+    let byteserde_attrs = attrs.iter().filter(|atr| atr.meta.path().is_ident("byteserde")).collect::<Vec<_>>();
 
     let mut endian = Endian::NotSet;
     let mut deplete = Deplete::NotSet;
@@ -175,11 +169,7 @@ fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Peek, PeekEq, Bi
             Err(meta.error(format!("Unexpected attribute. {}", quote!(#attr))))
         });
         if res.is_err() {
-            panic!(
-                "Failed to process attributes.\nattr: `{}`\n{}",
-                attr.to_token_stream(),
-                res.unwrap_err()
-            );
+            panic!("Failed to process attributes.\nattr: `{}`\n{}", attr.to_token_stream(), res.unwrap_err());
         }
     }
 

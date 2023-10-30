@@ -10,7 +10,8 @@ use crate::{
 
 use std::{
     any::type_name,
-    fmt::{Debug, LowerHex}, mem::MaybeUninit,
+    fmt::{Debug, LowerHex},
+    mem::MaybeUninit,
 };
 
 /// Trait type accepted by [ByteSerializerStack] for serialization.
@@ -36,10 +37,7 @@ use std::{
 /// assert_eq!(len, 1);
 /// ```
 pub trait ByteSerializeStack {
-    fn byte_serialize_stack<const CAP: usize>(
-        &self,
-        ser: &mut ByteSerializerStack<CAP>,
-    ) -> crate::error::Result<()>;
+    fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ByteSerializerStack<CAP>) -> crate::error::Result<()>;
 }
 /// A byte buffer allocated on stack backed by `[u8; CAP]`, can be reused and recycled by calling [Self::clear()].
 /// Example: Creates a buffer with 128 bytes capacity and serializes data into it.
@@ -128,11 +126,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
                 // safe -> self.bytes[self.len..self.len+bytes.len()].copy_from_slice(bytes);
                 // safe 60ns vs 15ns unsafe using bench and reference struct
                 unsafe {
-                    std::ptr::copy_nonoverlapping(
-                        bytes.as_ptr(),
-                        self.bytes.as_mut_ptr().add(self.len),
-                        bytes.len(),
-                    );
+                    std::ptr::copy_nonoverlapping(bytes.as_ptr(), self.bytes.as_mut_ptr().add(self.len), bytes.len());
                 }
                 self.len += bytes.len();
                 Result::Ok(self)
@@ -193,9 +187,7 @@ impl<const CAP: usize> ByteSerializerStack<CAP> {
 // #[inline] - TODO - panics during benchmarking
 #[inline]
 pub fn to_serializer_stack<const CAP: usize, T>(v: &T) -> crate::error::Result<ByteSerializerStack<CAP>>
-where
-    T: ByteSerializeStack,
-{
+where T: ByteSerializeStack {
     let mut ser = ByteSerializerStack::<CAP>::default();
     v.byte_serialize_stack(&mut ser)?;
     Result::Ok(ser)
@@ -206,18 +198,13 @@ where
 #[inline]
 pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> crate::error::Result<([u8; CAP], usize)>
 // pub fn to_bytes_stack<const CAP: usize, T>(v: &T) -> crate::error::Result<([u8; CAP], usize)>
-where
-    T: ByteSerializeStack,
-{
+where T: ByteSerializeStack {
     let ser = to_serializer_stack(v)?;
     Ok((ser.bytes, ser.len()))
 }
 
 impl ByteSerializeStack for Bytes {
-    fn byte_serialize_stack<const CAP: usize>(
-        &self,
-        ser: &mut ByteSerializerStack<CAP>,
-    ) -> crate::error::Result<()> {
+    fn byte_serialize_stack<const CAP: usize>(&self, ser: &mut ByteSerializerStack<CAP>) -> crate::error::Result<()> {
         ser.serialize_bytes_slice(&self[..])?;
         Ok(())
     }

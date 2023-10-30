@@ -1,3 +1,3 @@
+mod deserializer;
 mod numerics;
 mod strings;
-mod deserializer;

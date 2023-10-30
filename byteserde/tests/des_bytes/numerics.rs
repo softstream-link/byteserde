@@ -1,5 +1,5 @@
 use crate::integrationtest::setup;
-use byteserde::{prelude::*, error::Result};
+use byteserde::{error::Result, prelude::*};
 use log::info;
 
 #[test]
@@ -33,9 +33,10 @@ fn test_deserializer_u16() {
         let r: Result<u16> = des.deserialize_le();
         info!("r:? {r:?}");
         assert!(r.is_err());
-        assert!(
-            r.unwrap_err().message.starts_with("Failed to get a slice size: 2 bytes from ByteDeserializerBytes { len: 9, idx: 8, remaining: 1, bytes: 0000")
-        );
+        assert!(r
+            .unwrap_err()
+            .message
+            .starts_with("Failed to get a slice size: 2 bytes from ByteDeserializerBytes { len: 9, idx: 8, remaining: 1, bytes: 0000"));
     }
 
     let inps = vec![0x00AA_u16, 0x00BB_u16, 0x00CC_u16, 0x00DD_u16];

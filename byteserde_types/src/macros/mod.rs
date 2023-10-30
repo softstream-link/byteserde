@@ -10,7 +10,8 @@
 ///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
-/// * `Debug` & `Display` - provides a human readable sting view of the `[u8; LEN]` byte buffer as a utf-8 string
+/// * [std::fmt::Debug] & [std::fmt::Display] - provides a human readable sting view of the `[u8; LEN]` byte buffer as a utf-8 string
+/// * [serde::Serialize] & [serde::Deserialize] - provides json style serialization of the internal byte array representing ascii from & into [String]
 ///
 /// # From
 /// Note that provided implementation already includes the following `From` implementations.
@@ -21,7 +22,7 @@
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// // Align=Left / Len=10 / Padding=Minus
-/// string_ascii_fixed!(Password, 10, b'-', false,); // NOTE required comma after alignment when you don't provide a single derive argument
+/// string_ascii_fixed!(Password, 10, b'-', false);
 /// let inp_pwd = Password::new(*b"1234567890");
 ///
 /// let inp_pwd: Password = b"12345".as_slice().into(); // from slice
@@ -29,7 +30,7 @@
 /// assert_eq!(inp_pwd.value(), b"12345-----");
 ///
 /// // Align=Right / Len=10 / Padding=Space
-/// string_ascii_fixed!(Username, 10, b' ', true, PartialEq);
+/// string_ascii_fixed!(Username, 10, b' ', true, derive(PartialEq));
 /// let inp_usr1: Username = b"12345".as_slice().into(); // from slice
 /// let inp_usr2: Username = b"     12345".into(); // from array of matching len
 /// println!("inp_usr1: {:?}, {}", inp_usr1, inp_usr1);
@@ -41,18 +42,52 @@
 /// ```
 #[macro_export]
 macro_rules! string_ascii_fixed {
-    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN: literal, $($DERIVE:ty),* ) => {
-        #[derive( $($DERIVE),* ) ]
+    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN: literal ) => {
         pub struct $NAME([u8; $LEN]);
-        impl $NAME{
+        $crate::_common_string_ascii_fixed!($NAME, $LEN, $PADDING, $RIGHT_ALIGN);
+    };
+    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN: literal, $STRUCT_META:meta ) => {
+        #[$STRUCT_META]
+        pub struct $NAME([u8; $LEN]);
+        $crate::_common_string_ascii_fixed!($NAME, $LEN, $PADDING, $RIGHT_ALIGN);
+    };
+}
+#[macro_export]
+macro_rules! _common_string_ascii_fixed {
+    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN:literal ) => {
+        impl $NAME {
             pub fn value(&self) -> &[u8; $LEN] {
                 &self.0
             }
-            pub fn as_slice(&self) -> &[u8]{
+            pub fn as_slice(&self) -> &[u8] {
                 &self.0[..]
             }
             pub fn new(value: [u8; $LEN]) -> Self {
                 $NAME(value)
+            }
+        }
+        impl serde::Serialize for $NAME {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where S: serde::Serializer {
+                String::from_utf8_lossy(&self.0).serialize(serializer)
+            }
+        }
+        impl<'de> serde::Deserialize<'de> for $NAME {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where D: serde::Deserializer<'de> {
+                let ascii_str = String::deserialize(deserializer)?;
+                if ascii_str.len() <= $LEN {
+                    Ok($NAME::from(ascii_str.as_bytes()))
+                } else {
+                    let msg = format!(
+                        "{} being constructed from '{}' whose byte length: {} exceeds max allowed byte length: {} of the tuple struct",
+                        stringify!($NAME),
+                        ascii_str,
+                        ascii_str.len(),
+                        $LEN
+                    );
+                    Err(serde::de::Error::custom(msg))
+                }
             }
         }
         impl From<&[u8]> for $NAME {
@@ -76,9 +111,7 @@ macro_rules! string_ascii_fixed {
         }
         impl std::fmt::Debug for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                f.debug_tuple( stringify! ($NAME) )
-                .field(&String::from_utf8_lossy(&self.0))
-                .finish()
+                f.debug_tuple(stringify!($NAME)).field(&String::from_utf8_lossy(&self.0)).finish()
             }
         }
         impl std::fmt::Display for $NAME {
@@ -97,7 +130,8 @@ macro_rules! string_ascii_fixed {
 ///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
-/// * `Debug` & `Display` - provides a human readable sting view of the `u8` byte as utf-8 char
+/// * [std::fmt::Debug] & [std::fmt::Display] - provides a human readable sting view of the `u8` byte as utf-8 char
+/// * [serde::Serialize] & [serde::Deserialize] - provides json style serialization of the internal byte array representing ascii from & into [String] with one char
 ///
 /// # From
 /// Note that provided implementation already includes the following `From` implementations.
@@ -119,10 +153,21 @@ macro_rules! string_ascii_fixed {
 /// ```
 #[macro_export]
 macro_rules! char_ascii {
-    ($NAME:ident, $($DERIVE:ty),*) => {
+    ($NAME:ident) => {
         /// Tuple struct with a `u8` buffer to represent an ascii char.
-        #[derive( $($DERIVE),* )]
         pub struct $NAME(u8);
+        $crate::_common_char_ascii!($NAME);
+    };
+    ($NAME:ident, $STRUCT_META:meta) => {
+        /// Tuple struct with a `u8` buffer to represent an ascii char.
+        #[$STRUCT_META]
+        pub struct $NAME(u8);
+        $crate::_common_char_ascii!($NAME);
+    };
+}
+#[macro_export]
+macro_rules! _common_char_ascii {
+    ($NAME:ident) => {
         impl $NAME {
             /// proves access to the `u8` byte
             pub fn value(&self) -> u8 {
@@ -130,6 +175,29 @@ macro_rules! char_ascii {
             }
             pub fn new(value: u8) -> Self {
                 $NAME(value)
+            }
+        }
+        impl serde::Serialize for $NAME {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where S: serde::Serializer {
+                String::from_utf8_lossy(&[self.0]).serialize(serializer)
+            }
+        }
+        impl<'de> serde::Deserialize<'de> for $NAME {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where D: serde::Deserializer<'de> {
+                let ascii_str = String::deserialize(deserializer)?;
+                if ascii_str.len() == 1 {
+                    Ok($NAME::from(ascii_str.as_bytes()[0]))
+                } else {
+                    let msg = format!(
+                        "{} being constructed from '{}' whose byte length: {} exceeds max allowed byte length: 1 of the tuple struct",
+                        stringify!($NAME),
+                        ascii_str,
+                        ascii_str.len(),
+                    );
+                    Err(serde::de::Error::custom(msg))
+                }
             }
         }
         impl From<u8> for $NAME {
@@ -145,18 +213,16 @@ macro_rules! char_ascii {
         // utf8 `char` based impl
         impl std::fmt::Debug for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                f.debug_tuple( stringify! ($NAME) )
-                    .field(&char::from_u32(self.0 as u32).ok_or(std::fmt::Error)?)
-                    .finish()
+                f.debug_tuple(stringify!($NAME)).field(&char::from_u32(self.0 as u32).ok_or(std::fmt::Error)?).finish()
             }
         }
         /// utf8 `char` based impl
-        impl std::fmt::Display for $NAME{
+        impl std::fmt::Display for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", &char::from_u32(self.0 as u32).ok_or(std::fmt::Error)?)
             }
         }
-    }
+    };
 }
 
 /// Generates a `tuple` `struct` with a given name and a private ascii char allocated on `stack` using `u8` whose
@@ -169,15 +235,16 @@ macro_rules! char_ascii {
 ///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
-/// * `Debug` & `Display` - provides a human readable sting view of the `u8` byte as utf-8 char
-/// * `ByteDeserializeSlice`- provides an implementation for deserializing from a byte stream, which `will panic` if value on the
+/// * [std::fmt::Debug] & [std::fmt::Display] - provides a human readable sting view of the `u8` byte as utf-8 char
+/// * [byteserde::prelude::ByteDeserializeSlice]- provides an implementation for deserializing from a byte stream, which `will panic` if value on the
+/// * [serde::Serialize] & [serde::Deserialize] - provides json style serialization of the internal CONST representing ascii from & into [String] with one char
 /// stream does `not` match the `CONST` value.
 ///
 /// # Examples
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// use byteserde::prelude::*;
-/// const_char_ascii!(One, b'1', PartialEq);
+/// const_char_ascii!(One, b'1', derive(PartialEq));
 /// let inp_const = One::default();
 /// println!("inp_const: {:?}, {}", inp_const, inp_const);
 /// assert_eq!(inp_const.value(), b'1');
@@ -185,9 +252,19 @@ macro_rules! char_ascii {
 /// ```
 #[macro_export]
 macro_rules! const_char_ascii {
-    ($NAME:ident, $CONST:literal, $($DERIVE:ty),*) => {
-        #[derive( $($DERIVE),* )]
+    ($NAME:ident, $CONST:literal) => {
         pub struct $NAME(u8);
+        $crate::_common_const_char_ascii!($NAME, $CONST);
+    };
+    ($NAME:ident, $CONST:literal, $STRUCT_META:meta) => {
+        #[$STRUCT_META]
+        pub struct $NAME(u8);
+        $crate::_common_const_char_ascii!($NAME, $CONST);
+    };
+}
+#[macro_export]
+macro_rules! _common_const_char_ascii {
+    ($NAME:ident, $CONST:literal) => {
         impl $NAME {
             pub fn to_char() -> char {
                 char::from_u32($CONST as u32).ok_or(std::fmt::Error).unwrap()
@@ -195,32 +272,50 @@ macro_rules! const_char_ascii {
             pub fn value(&self) -> u8 {
                 self.0
             }
-            pub fn as_slice() -> &'static [u8]{
+            pub fn as_slice() -> &'static [u8] {
                 &[$CONST]
             }
         }
         impl Default for $NAME {
+            #[inline(always)]
             fn default() -> Self {
                 $NAME($CONST)
             }
         }
         impl std::fmt::Debug for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                f.debug_tuple( stringify! ($NAME) )
-                    .field(&char::from_u32(u32::from( $CONST )).ok_or(std::fmt::Error)?)
-                    .finish()
+                f.debug_tuple(stringify!($NAME)).field(&char::from_u32(u32::from($CONST)).ok_or(std::fmt::Error)?).finish()
             }
         }
         impl std::fmt::Display for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(
-                    f,
-                    "{}",
-                    &char::from_u32(u32::from( $CONST )).ok_or(std::fmt::Error)?
-                )
+                write!(f, "{}", &char::from_u32(u32::from($CONST)).ok_or(std::fmt::Error)?)
             }
         }
-        impl ::byteserde::des_slice::ByteDeserializeSlice<$NAME> for $NAME {
+        impl serde::Serialize for $NAME {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where S: serde::Serializer {
+                String::from_utf8_lossy(&[self.0]).serialize(serializer)
+            }
+        }
+        impl<'de> serde::Deserialize<'de> for $NAME {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where D: serde::Deserializer<'de> {
+                let ascii_str = String::deserialize(deserializer)?;
+                if ascii_str == Self::to_char().to_string() {
+                    Ok($NAME::default())
+                } else {
+                    let msg = format!(
+                        "{} being constructed from '{}' whose value does not match expected const: '{}' of the tuple struct",
+                        stringify!($NAME),
+                        ascii_str,
+                        Self::to_char(),
+                    );
+                    Err(serde::de::Error::custom(msg))
+                }
+            }
+        }
+        impl ::byteserde::prelude::ByteDeserializeSlice<$NAME> for $NAME {
             #[allow(clippy::just_underscores_and_digits)]
             fn byte_deserialize(des: &mut ::byteserde::prelude::ByteDeserializerSlice) -> ::byteserde::error::Result<$NAME> {
                 let _0 = des.deserialize_u8()?;
@@ -230,10 +325,7 @@ macro_rules! const_char_ascii {
                         let ty = $NAME::default();
 
                         Err(SerDesError {
-                            message: format!(
-                                "Type {:?} expected: 0x{:02x} actual: 0x{:02x}",
-                                ty, $CONST, _0
-                            ),
+                            message: format!("Type {:?} expected: 0x{:02x} actual: 0x{:02x}", ty, $CONST, _0),
                         })
                     }
                 }
@@ -249,10 +341,7 @@ macro_rules! const_char_ascii {
                         let ty = $NAME::default();
 
                         Err(SerDesError {
-                            message: format!(
-                                "Type {:?} expected: 0x{:02x} actual: 0x{:02x}",
-                                ty, $CONST, _0
-                            ),
+                            message: format!("Type {:?} expected: 0x{:02x} actual: 0x{:02x}", ty, $CONST, _0),
                         })
                     }
                 }
@@ -269,11 +358,13 @@ macro_rules! const_byte {
         #[derive( $($DERIVE),* )]
         pub struct $NAME($TYPE);
         impl $NAME {
+            #[inline(always)]
             pub fn value(&self) -> $TYPE {
                 self.0
             }
         }
         impl Default for $NAME {
+            #[inline(always)]
             fn default() -> Self {
                 $NAME($CONST)
             }
@@ -333,11 +424,13 @@ macro_rules! const_numeric {
         #[byteserde(endian = $ENDIAN )]
         pub struct $NAME($TYPE);
         impl $NAME {
+            #[inline(always)]
             pub fn value(&self) -> $TYPE {
                 self.0
             }
         }
         impl Default for $NAME {
+            #[inline(always)]
             fn default() -> Self {
                 $NAME($CONST)
             }
@@ -440,11 +533,13 @@ macro_rules! numeric_tuple {
             }
         }
         impl From<$TYPE> for $NAME {
+            #[inline(always)]
             fn from(v: $TYPE) -> Self {
                 $NAME(v)
             }
         }
         impl From<$NAME> for $TYPE {
+            #[inline(always)]
             fn from(v: $NAME) -> Self {
                 v.0
             }

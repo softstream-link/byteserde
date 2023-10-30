@@ -15,6 +15,7 @@ description = "A procedural macro for mapping byte streams to/from arbitrary str
 [dependencies]
 byteserde_derive = { workspace = true }
 byteserde = { workspace = true }
+serde = { workspace = true }
 
 [dev-dependencies]
 env_logger = { workspace = true }

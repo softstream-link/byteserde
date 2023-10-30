@@ -5,16 +5,12 @@ use quote::{
     quote,
 };
 use syn::{
-    AngleBracketedGenericArguments, ConstParam, Data, DeriveInput, Expr, Field, Fields,
-    GenericArgument, GenericParam, Generics, Ident, Index, Member, Path, PathArguments, Type,
-    TypeArray, TypeGroup, TypeParam, TypePath,
+    AngleBracketedGenericArguments, ConstParam, Data, DeriveInput, Expr, Field, Fields, GenericArgument, GenericParam, Generics, Ident, Index, Member, Path, PathArguments, Type, TypeArray, TypeGroup,
+    TypeParam, TypePath,
 };
 
 use crate::{
-    attr_struct::{
-        deplete_attr, des_endian_method_xx, endian_attr, eq_attr, replace_attr,
-        ser_endian_method_xx, Deplete, MemberIdent, PeekEq, Replace,
-    },
+    attr_struct::{deplete_attr, des_endian_method_xx, endian_attr, eq_attr, replace_attr, ser_endian_method_xx, Deplete, MemberIdent, PeekEq, Replace},
     common::{FldSerDesTokens, SerDesTokens, StructType},
 };
 
@@ -32,22 +28,12 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                         let member = &MemberIdent::Named(var_name);
                         let fld_type = map_field_type(&fld.ty);
                         match fld_type {
-                            FieldType::Numeric { ty } | FieldType::Byte { ty, .. } => {
-                                setup_numeric(ast, fld, ty, var_name, member, &fld_type)
-                            }
-                            FieldType::ArrBytes { arr_ty, len, .. }
-                            | FieldType::ArrNumerics { arr_ty, len }
-                            | FieldType::ArrStructs { arr_ty, len } => {
+                            FieldType::Numeric { ty } | FieldType::Byte { ty, .. } => setup_numeric(ast, fld, ty, var_name, member, &fld_type),
+                            FieldType::ArrBytes { arr_ty, len, .. } | FieldType::ArrNumerics { arr_ty, len } | FieldType::ArrStructs { arr_ty, len } => {
                                 setup_array(ast, fld, arr_ty, var_name, len, member, &fld_type)
                             }
-                            FieldType::VecBytes { .. }
-                            | FieldType::VecNumerics { .. }
-                            | FieldType::VecStructs { .. } => {
-                                setup_vec(ast, fld, &fld.ty, var_name, member, &fld_type)
-                            }
-                            FieldType::OptionStructs { .. } => {
-                                setup_option(ast, fld, &fld.ty, var_name, member, &fld_type)
-                            }
+                            FieldType::VecBytes { .. } | FieldType::VecNumerics { .. } | FieldType::VecStructs { .. } => setup_vec(ast, fld, &fld.ty, var_name, member, &fld_type),
+                            FieldType::OptionStructs { .. } => setup_option(ast, fld, &fld.ty, var_name, member, &fld_type),
                             FieldType::Struct { ty } => setup_struct(fld, var_name, ty, member),
                         }
                     })
@@ -67,22 +53,12 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                         let var_name = &Ident::new(&format!("_{}", i), ast.ident.span());
                         let fld_type = map_field_type(&fld.ty);
                         match fld_type {
-                            FieldType::Numeric { ty } | FieldType::Byte { ty, .. } => {
-                                setup_numeric(ast, fld, ty, var_name, member, &fld_type)
-                            }
-                            FieldType::ArrBytes { arr_ty, len, .. }
-                            | FieldType::ArrNumerics { arr_ty, len }
-                            | FieldType::ArrStructs { arr_ty, len } => {
+                            FieldType::Numeric { ty } | FieldType::Byte { ty, .. } => setup_numeric(ast, fld, ty, var_name, member, &fld_type),
+                            FieldType::ArrBytes { arr_ty, len, .. } | FieldType::ArrNumerics { arr_ty, len } | FieldType::ArrStructs { arr_ty, len } => {
                                 setup_array(ast, fld, arr_ty, var_name, len, member, &fld_type)
                             }
-                            FieldType::VecBytes { .. }
-                            | FieldType::VecNumerics { .. }
-                            | FieldType::VecStructs { .. } => {
-                                setup_vec(ast, fld, &fld.ty, var_name, member, &fld_type)
-                            }
-                            FieldType::OptionStructs { .. } => {
-                                setup_option(ast, fld, &fld.ty, var_name, member, &fld_type)
-                            }
+                            FieldType::VecBytes { .. } | FieldType::VecNumerics { .. } | FieldType::VecStructs { .. } => setup_vec(ast, fld, &fld.ty, var_name, member, &fld_type),
+                            FieldType::OptionStructs { .. } => setup_option(ast, fld, &fld.ty, var_name, member, &fld_type),
                             FieldType::Struct { ty } => setup_struct(fld, var_name, ty, member),
                         }
                     })
@@ -117,40 +93,28 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
             };
             for variant in data.variants.pairs() {
                 let variant_id = variant.value().ident.clone();
-                let eq = match eq_attr(&variant.value().attrs){
+                let eq = match eq_attr(&variant.value().attrs) {
                     PeekEq::Set(eq) => eq,
-                    PeekEq::NotSet => panic!("enum '{id}' variant '{variant_id}' missing required #[byteserde(eq( ... ))] attribute. It is matched vs #[byteserde(peek(start, len))] to determine deserilization struct."), 
+                    PeekEq::NotSet => panic!(
+                        "enum '{id}' variant '{variant_id}' missing required #[byteserde(eq( ... ))] attribute. It is matched vs #[byteserde(peek(start, len))] to determine deserilization struct."
+                    ),
                 };
 
                 // deserializer + len_of_arms
                 if let Fields::Unnamed(flds) = &variant.value().fields {
-                    let des_uses = flds
-                        .unnamed
-                        .iter()
-                        .map(|fld| fld.ty.clone())
-                        .collect::<Vec<_>>();
+                    let des_uses = flds.unnamed.iter().map(|fld| fld.ty.clone()).collect::<Vec<_>>();
                     let des_peeked = quote!( if __peeked == #eq { return Ok( Self::#variant_id( #( #des_uses::byte_deserialize(des)? ),* ) )} );
-                    tokens.push(FldSerDesTokens {
-                        des_peeked,
-                        ..default.clone()
-                    });
+                    tokens.push(FldSerDesTokens { des_peeked, ..default.clone() });
                 } else {
                     panic!("enum '{}' has an unsupported variant '{}'. Only tuple-like style variants are supported", id, quote!(#variant))
                 }
 
                 // serializer
                 if let Fields::Unnamed(flds) = &variant.value().fields {
-                    let unnamed_members = flds
-                        .unnamed
-                        .iter()
-                        .enumerate()
-                        .map(|(i, _)| Ident::new(&format!("_{}", i), ast.ident.span()))
-                        .collect::<Vec<_>>();
+                    let unnamed_members = flds.unnamed.iter().enumerate().map(|(i, _)| Ident::new(&format!("_{}", i), ast.ident.span())).collect::<Vec<_>>();
                     let ser_uses_stck = quote!( Self::#variant_id(#(#unnamed_members),*) => { #(#unnamed_members.byte_serialize_stack(ser)?;)*}, );
                     let ser_uses_heap = quote!( Self::#variant_id(#(#unnamed_members),*) => { #( #unnamed_members.byte_serialize_heap(ser)?;)*}, );
-                    len_of_match_arms.push(
-                             quote!( Self::#variant_id( #( #unnamed_members ),* ) => { #( #unnamed_members.byte_len() )+* }, )
-                        );
+                    len_of_match_arms.push(quote!( Self::#variant_id( #( #unnamed_members ),* ) => { #( #unnamed_members.byte_len() )+* }, ));
                     tokens.push(FldSerDesTokens {
                         ser_uses_stck: quote!( #ser_uses_stck ),
                         ser_uses_heap: quote!( #ser_uses_heap ),
@@ -177,20 +141,10 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
             )
         }
     };
-    SerDesTokens {
-        struct_type: ty,
-        flds: flds_tokens,
-    }
+    SerDesTokens { struct_type: ty, flds: flds_tokens }
 }
 
-fn setup_numeric(
-    ast: &DeriveInput,
-    fld: &Field,
-    ty: &Type,
-    var_name: &Ident,
-    member: &MemberIdent,
-    option: &FieldType,
-) -> FldSerDesTokens {
+fn setup_numeric(ast: &DeriveInput, fld: &Field, ty: &Type, var_name: &Ident, member: &MemberIdent, option: &FieldType) -> FldSerDesTokens {
     let replace = replace_attr(&fld.attrs);
     let endian = endian_attr(&ast.attrs, &fld.attrs);
     let ser_endian_method_xx = ser_endian_method_xx(&endian);
@@ -238,15 +192,7 @@ fn setup_numeric(
     }
 }
 
-fn setup_array(
-    ast: &DeriveInput,
-    fld: &Field,
-    arr_ty: &Type,
-    var_name: &Ident,
-    len: &Expr,
-    member: &MemberIdent,
-    option: &FieldType,
-) -> FldSerDesTokens {
+fn setup_array(ast: &DeriveInput, fld: &Field, arr_ty: &Type, var_name: &Ident, len: &Expr, member: &MemberIdent, option: &FieldType) -> FldSerDesTokens {
     let replace = replace_attr(&fld.attrs);
     let endian = endian_attr(&ast.attrs, &fld.attrs);
     let ser_endian_method_xx = ser_endian_method_xx(&endian);
@@ -278,9 +224,7 @@ fn setup_array(
         FieldType::ArrStructs { .. } => {
             quote!( for n in #var_name { n.#byte_serialize_xxx(ser)?; } )
         }
-        _ => panic!(
-            "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
-        ),
+        _ => panic!("this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"),
     };
 
     let des_vars = match option {
@@ -299,18 +243,14 @@ fn setup_array(
         FieldType::ArrStructs { .. } => {
             quote!( let mut #var_name: [#arr_ty; #len] = [#arr_ty::default(); #len]; for e in #var_name.iter_mut() {*e = des.deserialize()?;} )
         }
-        _ => panic!(
-            "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
-        ),
+        _ => panic!("this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"),
     };
     let size = match option {
         FieldType::ArrBytes { .. } | FieldType::ArrNumerics { .. } => {
             quote!( ::std::mem::size_of::<#arr_ty>() * #len )
         }
         FieldType::ArrStructs { .. } => quote!( #arr_ty::byte_size() * #len ),
-        _ => panic!(
-            "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
-        ),
+        _ => panic!("this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"),
     };
 
     let len_var = match member {
@@ -328,9 +268,7 @@ fn setup_array(
         FieldType::ArrStructs { .. } => {
             quote!( ({ let mut len = 0; for e in #len_var.iter() { len += e.byte_len(); } len }) )
         }
-        _ => panic!(
-            "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
-        ),
+        _ => panic!("this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"),
     };
 
     FldSerDesTokens {
@@ -348,14 +286,7 @@ fn setup_array(
     }
 }
 
-fn setup_vec(
-    ast: &DeriveInput,
-    fld: &Field,
-    ty: &Type,
-    var_name: &Ident,
-    member: &MemberIdent,
-    option: &FieldType,
-) -> FldSerDesTokens {
+fn setup_vec(ast: &DeriveInput, fld: &Field, ty: &Type, var_name: &Ident, member: &MemberIdent, option: &FieldType) -> FldSerDesTokens {
     let deplete = deplete_attr(&fld.attrs);
     let replace = replace_attr(&fld.attrs);
     let endian = endian_attr(&ast.attrs, &fld.attrs);
@@ -463,11 +394,12 @@ fn setup_vec(
                 quote!( ({ let mut len = 0; for (idx, e) in #member_name.iter().enumerate() { if idx >= #vec_deplete_len {break} len += e.byte_len(); } len }) )
             }
         },
-        _ => panic!(
-            "this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"
-        ),
+        _ => panic!("this method should only be called ArrayBytes, ArrayNumerics, ArrayStructs types"),
     };
-    let size_error: Vec<String> = vec![format!("trait ByteSerializedLenOf can't be implemented for struct {} because it has a member {} of Vec type whose size is not know at compile time", &ast.ident, member_name)];
+    let size_error: Vec<String> = vec![format!(
+        "trait ByteSerializedLenOf can't be implemented for struct {} because it has a member {} of Vec type whose size is not know at compile time",
+        &ast.ident, member_name
+    )];
     FldSerDesTokens {
         ser_vars,
         ser_repl,
@@ -486,7 +418,7 @@ fn setup_struct(fld: &Field, var_name: &Ident, ty: &Type, member: &MemberIdent) 
     let length = deplete_attr(&fld.attrs);
     let replace = replace_attr(&fld.attrs);
     let ser_vars = match member {
-        MemberIdent::Named(_) => quote! { let #var_name = &self.#var_name; }, // let #var_name = &self.#var_name;
+        MemberIdent::Named(_) => quote! { let #var_name = &self.#var_name; },            // let #var_name = &self.#var_name;
         MemberIdent::Unnamed(fld_index) => quote! { let #var_name = &self.#fld_index; }, // let #var_name = &self.#fld_index;
     };
     let ser_repl = match replace {
@@ -514,14 +446,7 @@ fn setup_struct(fld: &Field, var_name: &Ident, ty: &Type, member: &MemberIdent) 
     }
 }
 
-fn setup_option(
-    ast: &DeriveInput,
-    fld: &Field,
-    fld_ty: &Type,
-    var_name: &Ident,
-    member: &MemberIdent,
-    option: &FieldType,
-) -> FldSerDesTokens {
+fn setup_option(ast: &DeriveInput, fld: &Field, fld_ty: &Type, var_name: &Ident, member: &MemberIdent, option: &FieldType) -> FldSerDesTokens {
     let mut des_errors = vec![];
     let struct_name = &ast.ident;
     let fld_name = match member {
@@ -623,16 +548,9 @@ fn map_field_type(ty: &Type) -> FieldType {
     // eprintln!("\tmap_field_type: {:?}", ty);
     match ty {
         Type::Path(TypePath { path, .. }) => path_2_byte_numeric_vec_struct(path, ty),
-        Type::Array(TypeArray {
-            elem: arr_ty, len, ..
-        }) => match arr_ty.as_ref() {
-            Type::Path(TypePath { path, .. }) => match path_2_byte_numeric_vec_struct(path, arr_ty)
-            {
-                FieldType::Byte { signed, .. } => FieldType::ArrBytes {
-                    arr_ty,
-                    len,
-                    signed,
-                },
+        Type::Array(TypeArray { elem: arr_ty, len, .. }) => match arr_ty.as_ref() {
+            Type::Path(TypePath { path, .. }) => match path_2_byte_numeric_vec_struct(path, arr_ty) {
+                FieldType::Byte { signed, .. } => FieldType::ArrBytes { arr_ty, len, signed },
                 FieldType::Numeric { .. } => FieldType::ArrNumerics { arr_ty, len },
                 FieldType::Struct { .. } => FieldType::ArrStructs { arr_ty, len },
                 _ => FieldType::Struct { ty: arr_ty },
@@ -672,8 +590,7 @@ fn path_2_byte_numeric_vec_struct<'a>(path: &'a Path, ty: &'a Type) -> FieldType
     // Vec
     if path.segments.len() == 1 && path.segments[0].ident == "Vec" {
         let vec_args = &path.segments[0].arguments;
-        if let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) = vec_args
-        {
+        if let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) = vec_args {
             if let GenericArgument::Type(Type::Path(path, ..)) = &args[0] {
                 let vec_ty = Type::Path(path.clone());
                 return match path_2_byte_numeric_vec_struct(&path.path, &vec_ty) {
@@ -687,8 +604,7 @@ fn path_2_byte_numeric_vec_struct<'a>(path: &'a Path, ty: &'a Type) -> FieldType
     // Option
     if path.segments.len() == 1 && path.segments[0].ident == "Option" {
         let opt_args = &path.segments[0].arguments;
-        if let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) = opt_args
-        {
+        if let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) = opt_args {
             if let GenericArgument::Type(Type::Path(path, ..)) = &args[0] {
                 // eprintln!("\t\tOption: {:?}", path);
                 let opt_ty = Type::Path(path.clone());
@@ -730,10 +646,6 @@ pub fn get_generics(generics: &Generics) -> (TokenStream, TokenStream, TokenStre
     };
     match generics.params.len() {
         0 => (quote!(), quote!(), where_clause),
-        _ => (
-            quote! ( #generics ),
-            quote! ( < #(#type_alias),* > ),
-            where_clause,
-        ),
+        _ => (quote! ( #generics ), quote! ( < #(#type_alias),* > ), where_clause),
     }
 }

@@ -63,8 +63,7 @@ impl ByteSerializedLenOf for char {
 }
 
 impl<T> ByteSerializedLenOf for Option<T>
-where
-    T: ByteSerializedLenOf,
+where T: ByteSerializedLenOf
 {
     fn byte_len(&self) -> usize {
         match self {
