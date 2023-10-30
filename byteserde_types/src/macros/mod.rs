@@ -141,7 +141,7 @@ macro_rules! _common_string_ascii_fixed {
 /// # Examples
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
-/// char_ascii!(Char, PartialEq);
+/// char_ascii!(Char, derive(PartialEq));
 /// let inp_char: Char = b'1'.into(); // from u8
 /// println!("inp_char: {:?}, {}", inp_char, inp_char);
 /// assert_eq!(inp_char.value(), b'1');

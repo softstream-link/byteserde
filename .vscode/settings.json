@@ -8,6 +8,8 @@
         "flds",
         "nonoverlapping",
         "rustfmt",
-        "stck"
+        "stck",
+        "struct",
+        "trybuild"
     ]
 }

@@ -84,12 +84,31 @@ fn ascii_2_json() {
     info!("out_str: {:?}", out_str);
     assert_eq!(out_str, inp_str);
 
+    // StringAsciiFixed
     let out_err: Result<UsernameAscii, Error> = from_str(r#" "will be cu+overflow" "#);
     info!("out_str: {:?}", out_err);
     assert!(out_err.is_err());
     assert_eq!(
         out_err.unwrap_err().to_string(),
         r#"UsernameAscii being constructed from 'will be cu+overflow' whose byte length: 19 exceeds max allowed byte length: 10 of the tuple struct"#
+    );
+
+    // CharAscii
+    let out_err: Result<AnyCharAscii, Error> = from_str(r#" "12" "#);
+    info!("out_str: {:?}", out_err);
+    assert!(out_err.is_err());
+    assert_eq!(
+        out_err.unwrap_err().to_string(),
+        r#"AnyCharAscii being constructed from '12' whose byte length: 2 exceeds max allowed byte length: 1 of the tuple struct"#
+    );
+
+    // ConstCharAscii
+    let out_err: Result<XConstCharAscii, Error> = from_str(r#" "12" "#);
+    info!("out_str: {:?}", out_err);
+    assert!(out_err.is_err());
+    assert_eq!(
+        out_err.unwrap_err().to_string(),
+        r#"XConstCharAscii being constructed from '12' whose value does not match expected const: 'X' of the tuple struct"#
     );
 }
 

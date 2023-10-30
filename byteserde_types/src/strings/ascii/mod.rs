@@ -194,7 +194,7 @@ mod test_string_ascii_fixed {
 /// ```
 /// use ::byteserde_types::prelude::*;
 /// use ::byteserde::prelude::*;
-/// use ::serde::prelude::*;
+/// use ::serde::de::*;
 ///
 /// // Take all bytes from array
 /// let inp_str: StringAscii = b"ABCDE".into();
