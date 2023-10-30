@@ -96,7 +96,7 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                 let eq = match eq_attr(&variant.value().attrs) {
                     PeekEq::Set(eq) => eq,
                     PeekEq::NotSet => panic!(
-                        "enum '{id}' variant '{variant_id}' missing required #[byteserde(eq( ... ))] attribute. It is matched vs #[byteserde(peek(start, len))] to determine deserilization struct."
+                        "enum '{id}' variant '{variant_id}' missing required #[byteserde(eq( ... ))] attribute. It is matched vs #[byteserde(peek(start, len))] to determine deserialization struct."
                     ),
                 };
 
@@ -135,7 +135,7 @@ pub fn get_struct_tokens(ast: &DeriveInput) -> SerDesTokens {
                 "Only struct types supported, found '{struct_name}' of type '{ty}'",
                 ty = match ast.data {
                     Data::Union(_) => "union",
-                    _ => "unknow",
+                    _ => "unknown",
                 },
                 struct_name = &ast.ident
             )
@@ -315,14 +315,14 @@ fn setup_vec(ast: &DeriveInput, fld: &Field, ty: &Type, var_name: &Ident, member
     let assert_error = match member {
         MemberIdent::Named(fld_name) => {
             format!(
-                "{}.{} field #[byteserde(deplete( .. ))] set higther then length of Vec instance",
+                "{}.{} field #[byteserde(deplete( .. ))] set higher then length of Vec instance",
                 quote!(#struct_name),
                 quote!( #fld_name )
             )
         }
         MemberIdent::Unnamed(fld_index) => {
             format!(
-                "{}.{} field #[byteserde(deplete( .. ))] set higther then length of Vec instance",
+                "{}.{} field #[byteserde(deplete( .. ))] set higher then length of Vec instance",
                 quote!(#struct_name),
                 quote!( #fld_index )
             )
@@ -458,7 +458,7 @@ fn setup_option(ast: &DeriveInput, fld: &Field, fld_ty: &Type, var_name: &Ident,
         PeekEq::Set(value) => quote!(#value),
         PeekEq::NotSet => {
             des_errors.push(format!(
-                "{struct_name}.{fld_name} is Option<T> type and hence requires `#[byteserde(eq( ... ))] attribute it that evalutes to a byte slice and complared with &[u8] of `#[byteserde(peek( start, len ))]` expression",
+                "{struct_name}.{fld_name} is Option<T> type and hence requires `#[byteserde(eq( ... ))] attribute it that evaluates to a byte slice and compared with &[u8] of `#[byteserde(peek( start, len ))]` expression",
             ));
             quote!()
         }
@@ -557,7 +557,7 @@ fn map_field_type(ty: &Type) -> FieldType {
             },
             _ => FieldType::Struct { ty: arr_ty },
         },
-        // for some reason when usig macro_rules! to create a tuple struct ex: struct Me(u32) the type of the tuple comes in the TypeGroup instead of TypePath so we need to handle it here
+        // for some reason when using macro_rules! to create a tuple struct ex: struct Me(u32) the type of the tuple comes in the TypeGroup instead of TypePath so we need to handle it here
         Type::Group(TypeGroup { elem, .. }) => map_field_type(elem),
         _ => FieldType::Struct { ty },
     }

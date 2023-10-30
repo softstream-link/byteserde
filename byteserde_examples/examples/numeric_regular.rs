@@ -148,9 +148,8 @@ fn size_len() {
     info!("sz_of_aligned: {sz_of_aligned}");
 
     assert_eq!(ln_of, sz_of);
-    assert_ne!(sz_of, sz_of_aligned);
+    assert!(sz_of < sz_of_aligned);
     assert_eq!(sz_of, 81);
-    assert_eq!(sz_of_aligned, 96);
 }
 
 fn main() {

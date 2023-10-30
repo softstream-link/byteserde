@@ -1,9 +1,12 @@
 {
     "cSpell.words": [
+        "ABCDEABCDE",
         "anychar",
         "byteserde",
         "endianess",
+        "flds",
         "nonoverlapping",
-        "rustfmt"
+        "rustfmt",
+        "stck"
     ]
 }
