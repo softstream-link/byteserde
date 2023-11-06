@@ -17,6 +17,8 @@ pub fn des_endian_method_xx(endian: &Endian) -> Ident {
         _ => Ident::new("deserialize_ne", Span::call_site()),
     }
 }
+
+#[derive(Debug)]
 pub enum MemberIdent<'a> {
     Named(&'a Ident),
     Unnamed(&'a Member),
@@ -49,11 +51,11 @@ pub enum Endian {
     NotSet,
 }
 
-pub fn endian_attr(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
+pub fn endian_attr(struct_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
     let (fld_endian, _, _, _, _, _, _) = get_attrs(fld_attrs);
     match fld_endian {
         Endian::NotSet => {
-            let (struct_endian, _, _, _, _, _, _) = get_attrs(struc_attrs);
+            let (struct_endian, _, _, _, _, _, _) = get_attrs(struct_attrs);
             struct_endian
         }
         _ => fld_endian,

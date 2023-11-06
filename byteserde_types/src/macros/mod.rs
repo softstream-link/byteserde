@@ -6,7 +6,7 @@
 /// * `LEN` - length of the buffer that will contain ascii string in bytes
 /// * `PADDING` - padding byte to be used when creating string
 /// * `RIGHT_ALIGN` - boolean flag to indicate if string should be right aligned or left aligned
-/// * `derive(...)` -- list of traits to derive for the struct, must be valid rust traits
+/// * `#[derive(...)]` -- list of traits to derive for the struct, must be valid rust traits
 ///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
@@ -30,7 +30,7 @@
 /// assert_eq!(inp_pwd.value(), b"12345-----");
 ///
 /// // Align=Right / Len=10 / Padding=Space
-/// string_ascii_fixed!(Username, 10, b' ', true, derive(PartialEq));
+/// string_ascii_fixed!(Username, 10, b' ', true, #[derive(PartialEq)]);
 /// let inp_usr1: Username = b"12345".as_slice().into(); // from slice
 /// let inp_usr2: Username = b"     12345".into(); // from array of matching len
 /// println!("inp_usr1: {:?}, {}", inp_usr1, inp_usr1);
@@ -46,8 +46,8 @@ macro_rules! string_ascii_fixed {
         pub struct $NAME([u8; $LEN]);
         $crate::_common_string_ascii_fixed!($NAME, $LEN, $PADDING, $RIGHT_ALIGN);
     };
-    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN: literal, $STRUCT_META:meta ) => {
-        #[$STRUCT_META]
+    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN: literal, $(#[$STRUCT_META:meta]),* ) => {
+        $(#[$STRUCT_META])*
         pub struct $NAME([u8; $LEN]);
         $crate::_common_string_ascii_fixed!($NAME, $LEN, $PADDING, $RIGHT_ALIGN);
     };
@@ -126,12 +126,12 @@ macro_rules! _common_string_ascii_fixed {
 ///
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
-/// * `derive(..)` -- list of traits to derive for the struct, must be valid rust traits
+/// * `true` - Optional boolean flag to indicate if serde json should be derived or not
+/// * `#[derive(..)]` -- list struct meta attributes
 ///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
 /// * [std::fmt::Debug] & [std::fmt::Display] - provides a human readable sting view of the `u8` byte as utf-8 char
-/// * [serde::Serialize] & [serde::Deserialize] - provides json style serialization of the internal byte array representing ascii from & into [String] with one char
 ///
 /// # From
 /// Note that provided implementation already includes the following `From` implementations.
@@ -141,7 +141,7 @@ macro_rules! _common_string_ascii_fixed {
 /// # Examples
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
-/// char_ascii!(Char, derive(PartialEq));
+/// char_ascii!(Char, #[derive(PartialEq)]);
 /// let inp_char: Char = b'1'.into(); // from u8
 /// println!("inp_char: {:?}, {}", inp_char, inp_char);
 /// assert_eq!(inp_char.value(), b'1');
@@ -149,34 +149,35 @@ macro_rules! _common_string_ascii_fixed {
 /// let inp_char: Char = [b'1'].into(); // from array
 /// println!("inp_char: {:?}, {}", inp_char, inp_char);
 /// assert_eq!(inp_char.value(), b'1');
+/// 
+/// use serde_json;
+/// char_ascii!(CharJson, true, #[derive(PartialEq)]);
+/// let inp_char: CharJson = b'A'.into(); // from u8
+/// let json_out = serde_json::to_string(&inp_char).unwrap();
+/// println!("json_out: {}", json_out);
+/// assert_eq!(json_out, r#""A""#);
 /// # }
 /// ```
 #[macro_export]
 macro_rules! char_ascii {
-    ($NAME:ident) => {
+    ($NAME:ident, true, $(#[$STRUCT_META:meta]),*) => {
         /// Tuple struct with a `u8` buffer to represent an ascii char.
+        $(#[$STRUCT_META])*
         pub struct $NAME(u8);
         $crate::_common_char_ascii!($NAME);
-    };
-    ($NAME:ident, $STRUCT_META:meta) => {
+        $crate::_common_char_ascii_serde!($NAME); 
+    };    
+    ($NAME:ident, $(#[$STRUCT_META:meta]),*) => {
         /// Tuple struct with a `u8` buffer to represent an ascii char.
-        #[$STRUCT_META]
+        $(#[$STRUCT_META])*
         pub struct $NAME(u8);
         $crate::_common_char_ascii!($NAME);
     };
 }
+
 #[macro_export]
-macro_rules! _common_char_ascii {
+macro_rules! _common_char_ascii_serde {
     ($NAME:ident) => {
-        impl $NAME {
-            /// proves access to the `u8` byte
-            pub fn value(&self) -> u8 {
-                self.0
-            }
-            pub fn new(value: u8) -> Self {
-                $NAME(value)
-            }
-        }
         impl serde::Serialize for $NAME {
             fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
             where S: serde::Serializer {
@@ -198,6 +199,20 @@ macro_rules! _common_char_ascii {
                     );
                     Err(serde::de::Error::custom(msg))
                 }
+            }
+        }
+    };
+}
+#[macro_export]
+macro_rules! _common_char_ascii {
+    ($NAME:ident) => {
+        impl $NAME {
+            /// proves access to the `u8` byte
+            pub fn value(&self) -> u8 {
+                self.0
+            }
+            pub fn new(value: u8) -> Self {
+                $NAME(value)
             }
         }
         impl From<u8> for $NAME {
@@ -231,7 +246,7 @@ macro_rules! _common_char_ascii {
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
 /// * `CONST` - `u8` byte value to be used as the value behind this struct
-/// * `derive(...)` -- list of traits to derive for the struct, must be valid rust traits
+/// * `#[derive(...)]` -- list of traits to derive for the struct
 ///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
@@ -244,7 +259,7 @@ macro_rules! _common_char_ascii {
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// use byteserde::prelude::*;
-/// const_char_ascii!(One, b'1', derive(PartialEq));
+/// const_char_ascii!(One, b'1', #[derive(PartialEq)]);
 /// let inp_const = One::default();
 /// println!("inp_const: {:?}, {}", inp_const, inp_const);
 /// assert_eq!(inp_const.value(), b'1');
@@ -256,8 +271,8 @@ macro_rules! const_char_ascii {
         pub struct $NAME(u8);
         $crate::_common_const_char_ascii!($NAME, $CONST);
     };
-    ($NAME:ident, $CONST:literal, $STRUCT_META:meta) => {
-        #[$STRUCT_META]
+    ($NAME:ident, $CONST:literal, $(#[$STRUCT_META:meta]),*) => {
+        $(#[$STRUCT_META])*
         pub struct $NAME(u8);
         $crate::_common_const_char_ascii!($NAME, $CONST);
     };
@@ -371,11 +386,7 @@ macro_rules! const_byte {
         }
         impl std::fmt::Display for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(
-                    f,
-                    "{}",
-                    &self.0
-                )
+                write!(f, "{}", &self.0)
             }
         }
     };
@@ -405,14 +416,14 @@ macro_rules! const_byte {
 #[macro_export]
 macro_rules! const_u8_tuple {
     ($NAME:ident, $CONST:literal, $STRUCT_META:meta) => {
-        $crate::const_byte!($NAME, $CONST, u8, $STRUCT_META );
+        $crate::const_byte!($NAME, $CONST, u8, $STRUCT_META);
     };
 }
 /// see [const_u8_tuple] for more details and examples.
 #[macro_export]
 macro_rules! const_i8_tuple {
     ($NAME:ident, $CONST:literal, $STRUCT_META:meta) => {
-        $crate::const_byte!($NAME, $CONST, i8, $STRUCT_META );
+        $crate::const_byte!($NAME, $CONST, i8, $STRUCT_META);
     };
 }
 
@@ -438,11 +449,7 @@ macro_rules! const_numeric {
         }
         impl std::fmt::Display for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(
-                    f,
-                    "{}",
-                    &self.0
-                )
+                write!(f, "{}", &self.0)
             }
         }
     };
@@ -474,7 +481,7 @@ macro_rules! const_numeric {
 #[macro_export]
 macro_rules! const_u16_tuple {
     ($NAME:ident, $CONST:literal, $ENDIAN:literal, $STRUCT_META:meta) => {
-        $crate::const_numeric!($NAME, $CONST, u16, $ENDIAN, $STRUCT_META );
+        $crate::const_numeric!($NAME, $CONST, u16, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -482,7 +489,7 @@ macro_rules! const_u16_tuple {
 #[macro_export]
 macro_rules! const_i16_tuple {
     ($NAME:ident, $CONST:literal, $ENDIAN:literal, $STRUCT_META:meta) => {
-        $crate::const_numeric!($NAME, $CONST, i16, $ENDIAN, $STRUCT_META );
+        $crate::const_numeric!($NAME, $CONST, i16, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -490,7 +497,7 @@ macro_rules! const_i16_tuple {
 #[macro_export]
 macro_rules! const_u32_tuple {
     ($NAME:ident, $CONST:literal, $ENDIAN:literal, $STRUCT_META:meta) => {
-        $crate::const_numeric!($NAME, $CONST, u32, $ENDIAN, $STRUCT_META );
+        $crate::const_numeric!($NAME, $CONST, u32, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -498,7 +505,7 @@ macro_rules! const_u32_tuple {
 #[macro_export]
 macro_rules! const_i32_tuple {
     ($NAME:ident, $CONST:literal, $ENDIAN:literal, $STRUCT_META:meta) => {
-        $crate::const_numeric!($NAME, $CONST, i32, $ENDIAN, $STRUCT_META );
+        $crate::const_numeric!($NAME, $CONST, i32, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -506,7 +513,7 @@ macro_rules! const_i32_tuple {
 #[macro_export]
 macro_rules! const_u64_tuple {
     ($NAME:ident, $CONST:literal, $ENDIAN:literal, $STRUCT_META:meta) => {
-        $crate::const_numeric!($NAME, $CONST, u64, $ENDIAN, $STRUCT_META );
+        $crate::const_numeric!($NAME, $CONST, u64, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -514,7 +521,7 @@ macro_rules! const_u64_tuple {
 #[macro_export]
 macro_rules! const_i64_tuple {
     ($NAME:ident, $CONST:literal, $ENDIAN:literal, $STRUCT_META:meta) => {
-        $crate::const_numeric!($NAME, $CONST, i64, $ENDIAN, $STRUCT_META );
+        $crate::const_numeric!($NAME, $CONST, i64, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -546,12 +553,12 @@ macro_rules! numeric_tuple {
                 v.0
             }
         }
-        impl std::fmt::Display for $NAME{
+        impl std::fmt::Display for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", &self.0)
             }
         }
-    }
+    };
 }
 
 /// Generates a `tuple` `struct` with a given name for managing a Numeric type `u16` allocated on `stack`.
@@ -592,7 +599,7 @@ macro_rules! numeric_tuple {
 #[macro_export]
 macro_rules! u16_tuple {
     ($NAME:ident, $ENDIAN:literal, $STRUCT_META:meta) => {
-        $crate::numeric_tuple!($NAME, u16, $ENDIAN, $STRUCT_META );
+        $crate::numeric_tuple!($NAME, u16, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -600,7 +607,7 @@ macro_rules! u16_tuple {
 #[macro_export]
 macro_rules! i16_tuple {
     ($NAME:ident, $ENDIAN:literal, $STRUCT_META:meta) => {
-        $crate::numeric_tuple!($NAME, i16, $ENDIAN, $STRUCT_META );
+        $crate::numeric_tuple!($NAME, i16, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -608,7 +615,7 @@ macro_rules! i16_tuple {
 #[macro_export]
 macro_rules! u32_tuple {
     ($NAME:ident, $ENDIAN:literal, $STRUCT_META:meta) => {
-        $crate::numeric_tuple!($NAME, u32, $ENDIAN, $STRUCT_META );
+        $crate::numeric_tuple!($NAME, u32, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -616,7 +623,7 @@ macro_rules! u32_tuple {
 #[macro_export]
 macro_rules! i32_tuple {
     ($NAME:ident, $ENDIAN:literal, $STRUCT_META:meta ) => {
-        $crate::numeric_tuple!($NAME, i32, $ENDIAN, $STRUCT_META );
+        $crate::numeric_tuple!($NAME, i32, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -624,7 +631,7 @@ macro_rules! i32_tuple {
 #[macro_export]
 macro_rules! u64_tuple {
     ($NAME:ident, $ENDIAN:literal, $STRUCT_META:meta ) => {
-        $crate::numeric_tuple!($NAME, u64, $ENDIAN, $STRUCT_META );
+        $crate::numeric_tuple!($NAME, u64, $ENDIAN, $STRUCT_META);
     };
 }
 
@@ -632,6 +639,14 @@ macro_rules! u64_tuple {
 #[macro_export]
 macro_rules! i64_tuple {
     ($NAME:ident, $ENDIAN:literal, $STRUCT_META:meta ) => {
-        $crate::numeric_tuple!($NAME, i64, $ENDIAN, $STRUCT_META );
+        $crate::numeric_tuple!($NAME, i64, $ENDIAN, $STRUCT_META);
+    };
+}
+
+/// see [u16_tuple] for more details and examples.
+#[macro_export]
+macro_rules! f32_tuple {
+    ($NAME:ident, $ENDIAN:literal, $STRUCT_META:meta ) => {
+        $crate::numeric_tuple!($NAME, f32, $ENDIAN, $STRUCT_META);
     };
 }

@@ -11,9 +11,9 @@ pub use models::*;
 #[rustfmt::skip]
 pub mod models{
     use super::*;
-    string_ascii_fixed!(UsernameAscii, 10, b' ', true,  derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq));
-    char_ascii!(AnyCharAscii, derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq));
-    const_char_ascii!(XConstCharAscii, b'X', derive(ByteSerializeStack, ByteSerializeHeap, PartialEq));
+    string_ascii_fixed!(UsernameAscii, 10, b' ', true,  #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq)]);
+    char_ascii!(AnyCharAscii, true, #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq)]);
+    const_char_ascii!(XConstCharAscii, b'X', #[derive(ByteSerializeStack, ByteSerializeHeap, PartialEq)]);
 }
 
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq, Serialize, Deserialize)]

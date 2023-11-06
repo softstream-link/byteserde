@@ -20,3 +20,4 @@ serde = { workspace = true }
 [dev-dependencies]
 env_logger = { workspace = true }
 log = { workspace = true }
+serde_json = { workspace = true } # for macros that generate serde serialization

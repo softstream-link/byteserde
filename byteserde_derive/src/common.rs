@@ -3,6 +3,7 @@ use syn::Ident;
 
 use crate::attr_struct::Peek;
 
+#[derive(Debug, Clone)]
 pub enum StructType {
     Regular(String, Ident),
     Tuple(String, Ident),

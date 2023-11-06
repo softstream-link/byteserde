@@ -175,8 +175,6 @@ fn setup_numeric(ast: &DeriveInput, fld: &Field, ty: &Type, var_name: &Ident, me
         _ => panic!("this method should only be called Byte, Numeric types"),
     };
 
-    let size = quote!( ::std::mem::size_of::<#ty>() );
-    let len = quote!( ::std::mem::size_of::<#ty>() );
     FldSerDesTokens {
         ser_vars,
         ser_repl,
@@ -186,9 +184,9 @@ fn setup_numeric(ast: &DeriveInput, fld: &Field, ty: &Type, var_name: &Ident, me
         des_peeked: quote!(), // does not apply here
         des_uses: quote!( #var_name, ),
         des_errors: vec![],
-        size_of: size,
+        size_of: quote!( ::std::mem::size_of::<#ty>() ),
         size_errors: vec![],
-        len_of: len,
+        len_of: quote!( ::std::mem::size_of::<#ty>() ),
     }
 }
 
@@ -431,6 +429,11 @@ fn setup_struct(fld: &Field, var_name: &Ident, ty: &Type, member: &MemberIdent) 
         }
         Deplete::NotSet => quote!( let #var_name: #ty = des.deserialize()?; ),
     };
+
+    let len_of = match member {
+        MemberIdent::Named(_) => quote! { self.#var_name.byte_len() },            // let #var_name = &self.#var_name;
+        MemberIdent::Unnamed(fld_index) => quote! { self.#fld_index.byte_len() }, // let #var_name = &self.#fld_index;
+    };
     FldSerDesTokens {
         ser_vars,
         ser_repl,
@@ -442,7 +445,9 @@ fn setup_struct(fld: &Field, var_name: &Ident, ty: &Type, member: &MemberIdent) 
         des_errors: vec![],
         size_of: quote!( #ty.byte_size() ),
         size_errors: vec![],
-        len_of: quote!( self.#var_name.byte_len() ),
+        // len_of: quote!( self.#var_name.byte_len() ),
+        // len_of: quote!( #var_name.byte_len() ),
+        len_of,
     }
 }
 
