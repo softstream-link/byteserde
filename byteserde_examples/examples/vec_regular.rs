@@ -1,8 +1,6 @@
 mod unittest;
 use byteserde::prelude::*;
-use byteserde_derive::{
-    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
-};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
 use log::info;
 use unittest::setup;
 
@@ -26,12 +24,10 @@ impl Default for VecByte {
     }
 }
 
-//TODO CIRITCAL Bytes example and core test
+//TODO CRITICAL Bytes example and core test
 
 #[test]
-#[should_panic(
-    expected = "VecByte.field_vec_u8_head field #[byteserde(deplete( .. ))] set higther then length of Vec instance"
-)]
+#[should_panic(expected = "VecByte.field_vec_u8_head field #[byteserde(deplete( .. ))] set higher then length of Vec instance")]
 fn vec_u8_deplete_invalid() {
     setup::log::configure();
     let mut inp_num = VecByte::default();
@@ -64,7 +60,7 @@ fn vec_u8() {
         out_num,
         VecByte {
             field_vec_u8_head: vec![1, 2, 3], // 13 got dropped
-            field_vec_u8_body: vec![10, 11], // 13 got dropped
+            field_vec_u8_body: vec![10, 11],  // 13 got dropped
             ..inp_num
         }
     );
@@ -94,7 +90,7 @@ struct VecNumerics {
     field_vec_u16_head: Vec<u16>, // will ser/des 3 u16 bytes
     #[byteserde(deplete(2), replace( vec![7_u32, 8, 13] ))] // 13 gets dropped
     field_vec_u32_body: Vec<u32>, // will ser/des 2 u32 bytes
-    field_vec_u64_tail: Vec<u64>, // will greadily ser/des all avail u64 bytes
+    field_vec_u64_tail: Vec<u64>, // will greedily ser/des all avail u64 bytes
 }
 impl Default for VecNumerics {
     fn default() -> Self {
@@ -133,8 +129,8 @@ fn vec_numeric() {
     assert_eq!(
         out_num,
         VecNumerics {
-            field_vec_u16_head: vec![1, 2, 3], // 13 was dropped
-            field_vec_u32_body: vec![7_u32, 8],  // 13 was dropped
+            field_vec_u16_head: vec![1, 2, 3],  // 13 was dropped
+            field_vec_u32_body: vec![7_u32, 8], // 13 was dropped
             ..inp_num
         }
     );
@@ -156,19 +152,17 @@ fn vec_numeric_len() {
 }
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
-        ByteSerializedLenOf, Debug, PartialEq, Default)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, Debug, PartialEq, Default)]
 struct Other(u8);
 
 #[rustfmt::skip]
-#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
-        ByteSerializedLenOf, Debug, PartialEq)]
+#[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, ByteSerializedLenOf, Debug, PartialEq)]
 struct VecOther {
     #[byteserde(deplete(3))]  // will only ser/des 3 Other Instances
     field_vec_other_head: Vec<Other>,
     #[byteserde(deplete(2), replace( vec![Other(10),Other(11), Other(13)] ))] // Other(13) will be dropped
     field_vec_other_body: Vec<Other>,
-    field_vec_other_tail: Vec<Other>, // will greadily ser/des all avail Other Instances
+    field_vec_other_tail: Vec<Other>, // will greedily ser/des all avail Other Instances
 }
 impl Default for VecOther {
     fn default() -> Self {

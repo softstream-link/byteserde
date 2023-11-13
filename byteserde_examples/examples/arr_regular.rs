@@ -2,10 +2,7 @@ mod unittest;
 use std::mem::size_of;
 
 use byteserde::prelude::*;
-use byteserde_derive::{
-    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
-    ByteSerializedSizeOf,
-};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf, ByteSerializedSizeOf};
 use log::info;
 use unittest::setup;
 
@@ -122,19 +119,13 @@ fn numerics() {
     let out_num: ArrNumerics = from_serializer_stack(&ser_stack).unwrap();
     info!("inp: {inp_num:?}");
     info!("out: {out_num:?}");
-    assert_eq!(
-        out_num,
-        ArrNumerics {
-            field_arr_relp: [10, 11],
-            ..inp_num
-        }
-    );
+    assert_eq!(out_num, ArrNumerics { field_arr_relp: [10, 11], ..inp_num });
 }
 #[test]
 fn test_numerics_size_len() {
     numerics_size_len()
 }
-fn numerics_size_len(){
+fn numerics_size_len() {
     setup::log::configure();
     let ln_of = ArrNumerics::default().byte_len();
     let sz_of = ArrNumerics::byte_size();
@@ -149,7 +140,6 @@ fn numerics_size_len(){
     assert_eq!(sz_of_aligned, 22);
 }
 
-
 #[rustfmt::skip]
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq, Copy, Clone)]
@@ -159,7 +149,6 @@ struct Other(u8);
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
         ByteSerializedSizeOf, ByteSerializedLenOf, Default, Debug, PartialEq, Copy, Clone)]
 struct OtherBreakAlignment(u16, u8);
-
 
 #[rustfmt::skip]
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, 
@@ -196,7 +185,7 @@ fn other() {
 
     // deserialize
     let out_other: ArrOther = from_serializer_stack(&ser_stack).unwrap();
-    info!("inp_other: {inp_other:?}");    
+    info!("inp_other: {inp_other:?}");
     info!("out_other: {out_other:?}");
     assert_eq!(
         out_other,
@@ -211,7 +200,7 @@ fn test_other_size_len() {
     other_size_len()
 }
 
-fn other_size_len(){
+fn other_size_len() {
     setup::log::configure();
     let ln_of = ArrOther::default().byte_len();
     let sz_of = ArrOther::byte_size();

@@ -1,9 +1,7 @@
 mod unittest;
 
 use byteserde::prelude::*;
-use byteserde_derive::{
-    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
-};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
 use log::info;
 use unittest::setup;
 

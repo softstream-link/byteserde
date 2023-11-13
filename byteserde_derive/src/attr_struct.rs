@@ -2,10 +2,7 @@ use quote::ToTokens;
 use quote::__private::TokenStream;
 use quote::{__private::Span, quote};
 use syn::parse::Parse;
-use syn::{
-    parenthesized, punctuated::Punctuated, token::Comma, Attribute, Expr, Ident, LitInt, LitStr,
-    Member, Token,
-};
+use syn::{parenthesized, punctuated::Punctuated, token::Comma, Attribute, Expr, Ident, LitInt, LitStr, Member, Token};
 pub fn ser_endian_method_xx(endian: &Endian) -> Ident {
     match endian {
         Endian::Big => Ident::new("serialize_be", Span::call_site()),
@@ -20,6 +17,8 @@ pub fn des_endian_method_xx(endian: &Endian) -> Ident {
         _ => Ident::new("deserialize_ne", Span::call_site()),
     }
 }
+
+#[derive(Debug)]
 pub enum MemberIdent<'a> {
     Named(&'a Ident),
     Unnamed(&'a Member),
@@ -52,11 +51,11 @@ pub enum Endian {
     NotSet,
 }
 
-pub fn endian_attr(struc_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
+pub fn endian_attr(struct_attrs: &[Attribute], fld_attrs: &[Attribute]) -> Endian {
     let (fld_endian, _, _, _, _, _, _) = get_attrs(fld_attrs);
     match fld_endian {
         Endian::NotSet => {
-            let (struct_endian, _, _, _, _, _, _) = get_attrs(struc_attrs);
+            let (struct_endian, _, _, _, _, _, _) = get_attrs(struct_attrs);
             struct_endian
         }
         _ => fld_endian,
@@ -96,10 +95,7 @@ impl ToTokens for From {
 }
 
 fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Peek, PeekEq, Bind, Vec<From>) {
-    let byteserde_attrs = attrs
-        .iter()
-        .filter(|atr| atr.meta.path().is_ident("byteserde"))
-        .collect::<Vec<_>>();
+    let byteserde_attrs = attrs.iter().filter(|atr| atr.meta.path().is_ident("byteserde")).collect::<Vec<_>>();
 
     let mut endian = Endian::NotSet;
     let mut deplete = Deplete::NotSet;
@@ -175,11 +171,7 @@ fn get_attrs(attrs: &[Attribute]) -> (Endian, Deplete, Replace, Peek, PeekEq, Bi
             Err(meta.error(format!("Unexpected attribute. {}", quote!(#attr))))
         });
         if res.is_err() {
-            panic!(
-                "Failed to process attributes.\nattr: `{}`\n{}",
-                attr.to_token_stream(),
-                res.unwrap_err()
-            );
+            panic!("Failed to process attributes.\nattr: `{}`\n{}", attr.to_token_stream(), res.unwrap_err());
         }
     }
 

@@ -22,8 +22,23 @@ pub fn byte_serialize_stack(input: TokenStream) -> TokenStream {
     // get struct name
     let struct_name = &ast.ident;
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
+
+    // TODO add Own Derive traits to any generic bounds so that T: .... is not necessary
+    // #[derive( ByteSerializeStack, ByteDeserializeSlice, ByteSerializedLenOf, PartialEq, Serialize, Deserialize, Debug, Clone, Copy)]
+    // pub struct TagValueElement<T: ByteSerializeStack+ByteDeserializeSlice<T>+ByteSerializedLenOf>( // TODO T: should not have bounds if generated code adds them in byteserde
+    //     #[serde(skip)] u8,
+    //     #[serde(skip)] u8,
+    //     T,
+    // );
+
+    // let name =format!("{}", struct_name);
+    // if  name == "TagValueElement"{
+    //     println!("name: {}", name);
+    //     println!("generics_declaration: {:#?}", &ast.generics.params);
+    // }
+
     let res = get_struct_tokens(&ast);
-    // grap just stack presets
+    // grab just stack presets
     let ser_vars = res.ser_vars();
     let ser_relp = res.ser_repl();
     let ser_uses_stck = res.ser_uses_stck();
@@ -64,7 +79,7 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
     let res = get_struct_tokens(&ast);
-    // grap just heap presets
+    // grab just heap presets
     let ser_vars = res.ser_vars();
     let ser_repl = res.ser_repl();
     let ser_uses_heap = res.ser_uses_heap();
@@ -99,28 +114,16 @@ pub fn byte_serialize_heap(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(ByteDeserializeSlice, attributes(byteserde))]
 pub fn byte_deserialize_slice(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
-    byte_deserialize_common(
-        ast,
-        quote!(::byteserde::prelude::ByteDeserializerSlice),
-        quote!(::byteserde::prelude::ByteDeserializeSlice),
-    )
+    byte_deserialize_common(ast, quote!(::byteserde::prelude::ByteDeserializerSlice), quote!(::byteserde::prelude::ByteDeserializeSlice))
 }
 
 #[proc_macro_derive(ByteDeserializeBytes, attributes(byteserde))]
 pub fn byte_deserialize_bytes(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).unwrap();
-    byte_deserialize_common(
-        ast,
-        quote!(::byteserde::prelude::ByteDeserializerBytes),
-        quote!(::byteserde::prelude::ByteDeserializeBytes),
-    )
+    byte_deserialize_common(ast, quote!(::byteserde::prelude::ByteDeserializerBytes), quote!(::byteserde::prelude::ByteDeserializeBytes))
 }
 
-fn byte_deserialize_common(
-    ast: DeriveInput,
-    _struct: quote::__private::TokenStream,
-    _trait: quote::__private::TokenStream,
-) -> TokenStream {
+fn byte_deserialize_common(ast: DeriveInput, _struct: quote::__private::TokenStream, _trait: quote::__private::TokenStream) -> TokenStream {
     // get struct name
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
@@ -205,7 +208,7 @@ pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
     let res = get_struct_tokens(&ast);
-    // grap just heap presets
+    // grab just heap presets
     res.size_validate();
     let size = res.size_of();
 
@@ -214,7 +217,7 @@ pub fn byte_serialized_size_of(input: TokenStream) -> TokenStream {
         #[automatically_derived]
         impl #generics_declaration ::byteserde::size::ByteSerializedSizeOf for #struct_name #generics_alias #where_clause{
             #[inline]
-            fn byte_size() -> usize{
+            fn byte_size() ->  usize{
                 # ( #size )+*
             }
         }
@@ -229,7 +232,7 @@ pub fn byte_serialized_len_of(input: TokenStream) -> TokenStream {
     let (generics_declaration, generics_alias, where_clause) = get_generics(&ast.generics);
     // get ser & des quote presets
     let res = get_struct_tokens(&ast);
-    // grap just heap presets
+    // grab just heap presets
     let len = res.len_of();
 
     // generate deserializer

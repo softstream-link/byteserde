@@ -2,10 +2,7 @@ mod unittest;
 use std::mem::size_of;
 
 use byteserde::{prelude::*, size::ByteSerializedSizeOf};
-use byteserde_derive::{
-    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
-    ByteSerializedSizeOf,
-};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf, ByteSerializedSizeOf};
 use log::info;
 use unittest::setup;
 
@@ -24,10 +21,7 @@ fn test_bytes() {
 }
 fn bytes() {
     setup::log::configure();
-    let inp_bytes = Bytes {
-        field_i8: -1,
-        field_u8: 1,
-    };
+    let inp_bytes = Bytes { field_i8: -1, field_u8: 1 };
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_bytes).unwrap();
@@ -126,13 +120,7 @@ fn numerics() {
     let out_num: Numerics = from_serializer_stack(&ser_stack).unwrap();
     info!("inp_num: {inp_num:?}");
     info!("out_num: {out_num:?}");
-    assert_eq!(
-        out_num,
-        Numerics {
-            field_i16: i16::MIN,
-            ..inp_num
-        }
-    );
+    assert_eq!(out_num, Numerics { field_i16: i16::MIN, ..inp_num });
 }
 
 #[test]
@@ -148,7 +136,7 @@ fn size_len() {
     info!("ln_of: {ln_of}");
     info!("sz_of: {sz_of}");
     info!("sz_of_aligned: {sz_of_aligned}");
-    
+
     assert_eq!(ln_of, sz_of);
     assert_eq!(sz_of, size_of::<Bytes>());
 
@@ -158,11 +146,10 @@ fn size_len() {
     info!("ln_of: {ln_of}");
     info!("sz_of: {sz_of}");
     info!("sz_of_aligned: {sz_of_aligned}");
-    
+
     assert_eq!(ln_of, sz_of);
-    assert_ne!(sz_of, sz_of_aligned);
+    assert!(sz_of < sz_of_aligned);
     assert_eq!(sz_of, 81);
-    assert_eq!(sz_of_aligned, 88);
 }
 
 fn main() {

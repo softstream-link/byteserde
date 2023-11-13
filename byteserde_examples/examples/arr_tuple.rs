@@ -2,10 +2,7 @@ mod unittest;
 use std::mem::size_of;
 
 use byteserde::prelude::*;
-use byteserde_derive::{
-    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
-    ByteSerializedSizeOf,
-};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf, ByteSerializedSizeOf};
 use log::info;
 use unittest::setup;
 
@@ -39,10 +36,7 @@ fn bytes() {
     let out_num: ArrBytes = from_serializer_stack(&ser_stack).unwrap();
     info!("inp: {inp_num:?}");
     info!("out: {out_num:?}");
-    assert_eq!(
-        out_num,
-        ArrBytes(inp_num.0, inp_num.1, [10, 11], [-10, -11],)
-    );
+    assert_eq!(out_num, ArrBytes(inp_num.0, inp_num.1, [10, 11], [-10, -11],));
 }
 #[test]
 fn test_bytes_size_len() {
@@ -100,17 +94,7 @@ fn numerics() {
     let out_num: ArrNumerics = from_serializer_stack(&ser_stack).unwrap();
     info!("inp: {inp_num:?}");
     info!("out: {out_num:?}");
-    assert_eq!(
-        out_num,
-        ArrNumerics(
-            inp_num.0,
-            inp_num.1,
-            inp_num.2,
-            inp_num.3,
-            [10, 11],
-            inp_num.5,
-        )
-    );
+    assert_eq!(out_num, ArrNumerics(inp_num.0, inp_num.1, inp_num.2, inp_num.3, [10, 11], inp_num.5,));
 }
 #[test]
 fn test_numerics_size_len() {
@@ -171,14 +155,14 @@ fn other() {
     let out_other: ArrOther = from_serializer_stack(&ser_stack).unwrap();
     info!("inp_other: {inp_other:?}");
     info!("out_other: {out_other:?}");
-    assert_eq!(out_other, ArrOther(inp_other.0, [Other(3), Other(4)], inp_other.2 ));
+    assert_eq!(out_other, ArrOther(inp_other.0, [Other(3), Other(4)], inp_other.2));
 }
 #[test]
 fn test_other_size_len() {
     other_size_len()
 }
 
-fn other_size_len(){
+fn other_size_len() {
     setup::log::configure();
     let ln_of = ArrOther::default().byte_len();
     let sz_of = ArrOther::byte_size();

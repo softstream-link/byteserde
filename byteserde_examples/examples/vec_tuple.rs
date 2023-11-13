@@ -4,11 +4,7 @@ use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeSta
 use log::info;
 use unittest::setup;
 #[derive(ByteSerializeStack, ByteSerializeHeap, ByteDeserializeSlice, Debug, PartialEq)]
-struct VecByte(
-    #[byteserde(deplete(3))] Vec<u8>,
-    #[byteserde(deplete(2), replace( vec![10,11] ))] Vec<u8>,
-    Vec<u8>,
-);
+struct VecByte(#[byteserde(deplete(3))] Vec<u8>, #[byteserde(deplete(2), replace( vec![10,11] ))] Vec<u8>, Vec<u8>);
 
 #[test]
 fn test_vec_u8() {
@@ -85,11 +81,7 @@ fn test_vec_other() {
 }
 fn vec_other() {
     setup::log::configure();
-    let inp_num = VecOther(
-        vec![Other(1), Other(2), Other(3)],
-        vec![],
-        vec![Other(4), Other(5), Other(6)],
-    );
+    let inp_num = VecOther(vec![Other(1), Other(2), Other(3)], vec![], vec![Other(4), Other(5), Other(6)]);
 
     // stack
     let ser_stack: ByteSerializerStack<128> = to_serializer_stack(&inp_num).unwrap();
@@ -104,10 +96,7 @@ fn vec_other() {
     let out_num: VecOther = from_serializer_stack(&ser_stack).unwrap();
     info!("inp: {inp_num:?}");
     info!("out: {out_num:?}");
-    assert_eq!(
-        out_num,
-        VecOther(inp_num.0, vec![Other(10), Other(11)], inp_num.2,)
-    );
+    assert_eq!(out_num, VecOther(inp_num.0, vec![Other(10), Other(11)], inp_num.2,));
 }
 
 fn main() {

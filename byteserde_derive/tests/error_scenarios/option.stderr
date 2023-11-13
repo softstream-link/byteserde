@@ -13,7 +13,7 @@ error: proc-macro derive panicked
    |          ^^^^^^^^^^^^^^^^^^^^
    |
    = help: message: struct `OptionalSectionMissingEqAnnotation` ByteDeserializeSlice error:
-           OptionalSectionMissingEqAnnotation.field1 is Option<T> type and hence requires `#[byteserde(eq( ... ))] attribute it that evalutes to a byte slice and complared with &[u8] of `#[byteserde(peek( start, len ))]` expression
+           OptionalSectionMissingEqAnnotation.field1 is Option<T> type and hence requires `#[byteserde(eq( ... ))] attribute it that evaluates to a byte slice and compared with &[u8] of `#[byteserde(peek( start, len ))]` expression
 
 error: proc-macro derive panicked
   --> tests/error_scenarios/option.rs:20:10

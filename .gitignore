@@ -10,7 +10,3 @@ Cargo.lock
 **/*.rs.bk
 # build artifacts
 */target/*
-# ide
-.vscode
-# only exists durig proc_macro development to run cargo expand 
-main.rs 

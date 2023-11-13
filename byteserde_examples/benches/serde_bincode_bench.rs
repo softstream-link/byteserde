@@ -1,6 +1,6 @@
 mod sample;
-use sample::Numbers;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use sample::Numbers;
 
 fn to_vec(c: &mut Criterion) {
     let inp = Numbers::default();

@@ -1,10 +1,7 @@
 mod unittest;
 
 use byteserde::prelude::*;
-use byteserde_derive::{
-    ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf,
-    ByteSerializedSizeOf,
-};
+use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf, ByteSerializedSizeOf};
 
 use log::info;
 use unittest::setup;
@@ -37,9 +34,9 @@ struct SomeStruct {
     anything_header: i8,
     #[byteserde(replace( optional_section.byte_len() ))]
     optional_section_length: u16,
-    #[byteserde(deplete( optional_section_length ))]
+    #[byteserde(deplete(optional_section_length))]
     optional_section: OptionalSection,
-    anything_foter: i8,
+    anything_footer: i8,
 }
 
 #[rustfmt::skip]
@@ -67,7 +64,7 @@ impl Default for SomeStruct {
             anything_header: -1,
             optional_section_length: 0,
             optional_section: Default::default(),
-            anything_foter: -1,
+            anything_footer: -1,
         }
     }
 }
@@ -97,7 +94,7 @@ fn optional_block() {
     info!("inp_opt2: {:?}", inp_opt2); // some / none
     info!("inp_opt3: {:?}", inp_opt3); // none / some
     info!("inp_opt4: {:?}", inp_opt4); // none / none
-    
+
     let ln_of_inp_opt = inp_opt1.optional_section.byte_len();
     let ln_of_opt1 = inp_opt1.optional_section.optional1.byte_len();
     let ln_of_opt2 = inp_opt1.optional_section.optional2.byte_len();
@@ -105,10 +102,9 @@ fn optional_block() {
     info!("ln_of_opt1: {:?}", ln_of_opt1);
     info!("ln_of_opt2: {:?}", ln_of_opt2);
     assert_eq!(ln_of_inp_opt, 10);
-    assert_eq!(ln_of_opt1, 4); // defaulted 
-    assert_eq!(ln_of_opt2, 6); // defaulted 
+    assert_eq!(ln_of_opt1, 4); // defaulted
+    assert_eq!(ln_of_opt2, 6); // defaulted
 
-    
     // stack
     let mut ser_stack: ByteSerializerStack<135> = to_serializer_stack(&inp_opt1).unwrap();
     // inp_opt.optional_section.optional1 = Some(Opt1(Opt1::tag(), 1_u16));
@@ -135,7 +131,7 @@ fn optional_block() {
     info!("out_opt2: {:?}", out_opt2);
     info!("out_opt3: {:?}", out_opt3);
     info!("out_opt4: {:?}", out_opt4);
-    
+
     info!("des: {:#x}", des);
     assert_eq!(
         out_opt1,

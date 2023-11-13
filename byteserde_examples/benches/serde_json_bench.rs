@@ -20,15 +20,12 @@ fn from_string(c: &mut Criterion) {
     c.bench_function("serde_json::from_str", |b| {
         b.iter(|| {
             black_box({
-                let _ : Numbers = serde_json::from_str(&json).unwrap();
+                let _: Numbers = serde_json::from_str(&json).unwrap();
             })
         })
     });
 }
 
-
-
- 
 criterion_group!(
     name = benches;
     config = Criterion::default().warm_up_time(std::time::Duration::from_secs(1));

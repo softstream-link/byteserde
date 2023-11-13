@@ -6,10 +6,7 @@ use crate::{prelude::*, utils::hex::to_hex_line};
 /// * first `usize` bytes to store the length of the string
 /// * remaining bytes to store the string
 impl ByteSerializeStack for String {
-    fn byte_serialize_stack<const CAP: usize>(
-        &self,
-        serializer: &mut ByteSerializerStack<CAP>,
-    ) -> crate::error::Result<()> {
+    fn byte_serialize_stack<const CAP: usize>(&self, serializer: &mut ByteSerializerStack<CAP>) -> crate::error::Result<()> {
         let len = self.len();
         serializer.serialize_bytes_slice(&len.to_be_bytes())?;
         serializer.serialize_bytes_slice(self.as_bytes())?;
@@ -43,10 +40,7 @@ impl ByteDeserializeSlice<String> for String {
         match String::from_utf8(bytes.to_vec()) {
             Ok(s) => Ok(s),
             Err(_) => Err(SerDesError {
-                message: format!(
-                    "bytes slice is not a valid utf8 string bytes: {}",
-                    to_hex_line(bytes)
-                ),
+                message: format!("bytes slice is not a valid utf8 string bytes: {}", to_hex_line(bytes)),
             }),
         }
     }
@@ -59,20 +53,14 @@ impl ByteDeserializeBytes<String> for String {
         match String::from_utf8(bytes.to_vec()) {
             Ok(s) => Ok(s),
             Err(_) => Err(SerDesError {
-                message: format!(
-                    "bytes slice is not a valid utf8 string bytes: {}",
-                    to_hex_line(bytes)
-                ),
+                message: format!("bytes slice is not a valid utf8 string bytes: {}", to_hex_line(bytes)),
             }),
         }
     }
 }
 
 impl ByteSerializeStack for char {
-    fn byte_serialize_stack<const CAP: usize>(
-        &self,
-        serializer: &mut ByteSerializerStack<CAP>,
-    ) -> crate::error::Result<()> {
+    fn byte_serialize_stack<const CAP: usize>(&self, serializer: &mut ByteSerializerStack<CAP>) -> crate::error::Result<()> {
         let len = self.len_utf8(); // max len is 4 bytes for valid utf8
         serializer.serialize_bytes_slice(&[len as u8])?;
         let mut bytes = [0_u8; 4];
@@ -105,10 +93,7 @@ impl ByteDeserializeSlice<char> for char {
         match String::from_utf8(bytes.to_vec()) {
             Ok(s) => Ok(s.chars().next().unwrap()), // unwrap should not panic
             Err(_) => Err(SerDesError {
-                message: format!(
-                    "byte slice is not a valid utf8 char. bytes: {}",
-                    to_hex_line(bytes)
-                ),
+                message: format!("byte slice is not a valid utf8 char. bytes: {}", to_hex_line(bytes)),
             }),
         }
     }
@@ -127,10 +112,7 @@ impl ByteDeserializeBytes<char> for char {
         match String::from_utf8(bytes.to_vec()) {
             Ok(s) => Ok(s.chars().next().unwrap()), // unwrap should not panic
             Err(_) => Err(SerDesError {
-                message: format!(
-                    "byte slice is not a valid utf8 char. bytes: {}",
-                    to_hex_line(bytes)
-                ),
+                message: format!("byte slice is not a valid utf8 char. bytes: {}", to_hex_line(bytes)),
             }),
         }
     }

@@ -47,9 +47,7 @@ fn test_serialize_string_too_short_and_not_utf8() {
     //  create invalid utf8
     let ser = &mut ByteSerializerStack::<128>::default();
     let _ = ser.serialize_bytes_slice(&8_usize.to_be_bytes());
-    let _ = ser.serialize_bytes_slice(&[
-        0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8,
-    ]);
+    let _ = ser.serialize_bytes_slice(&[0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8, 0xFF_u8]);
     info!("ser: {ser:#x}");
     let mut des = ByteDeserializerBytes::new(ser.as_slice().to_vec().into());
     let out = des.deserialize::<String>();
@@ -90,10 +88,7 @@ fn test_deserialize_char_too_long_and_not_utf8() {
     info!("des: {des:#x}");
     info!("out: {out:?}");
     assert!(out.is_err());
-    assert_eq!(
-        out.unwrap_err().message,
-        "max char len supported 4 but encountered 5"
-    );
+    assert_eq!(out.unwrap_err().message, "max char len supported 4 but encountered 5");
 
     // create invalid utf8
     let ser = &mut ByteSerializerStack::<128>::default();
@@ -105,8 +100,5 @@ fn test_deserialize_char_too_long_and_not_utf8() {
     info!("des: {des:#x}");
     info!("out: {out:?}");
     assert!(out.is_err());
-    assert_eq!(
-        out.unwrap_err().message,
-        "byte slice is not a valid utf8 char. bytes: 0000: ff  | ÿ "
-    );
+    assert_eq!(out.unwrap_err().message, "byte slice is not a valid utf8 char. bytes: 0000: ff  | ÿ ");
 }

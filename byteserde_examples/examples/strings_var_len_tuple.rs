@@ -1,11 +1,11 @@
 mod unittest;
 use byteserde::prelude::*;
 use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf};
-use byteserde_types::{prelude::*, const_char_ascii};
+use byteserde_types::{const_char_ascii, prelude::*};
 use log::info;
 use unittest::setup;
 
-const_char_ascii!(Plus, b'+', ByteSerializeStack, ByteSerializeHeap, ByteSerializedLenOf, PartialEq);
+const_char_ascii!(Plus, b'+', #[derive(ByteSerializeStack, ByteSerializeHeap, ByteSerializedLenOf, PartialEq)]);
 
 #[derive(ByteDeserializeSlice, ByteSerializeStack, ByteSerializeHeap, Debug, PartialEq)]
 #[byteserde(endian = "be")]

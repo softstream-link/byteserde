@@ -25,11 +25,7 @@ fn test_serializer_stack_primitive() {
 
     let inp = &[1_u8, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-    let ser = ser
-        .serialize_bytes_slice(inp)
-        .unwrap()
-        .serialize_bytes_slice(inp)
-        .unwrap();
+    let ser = ser.serialize_bytes_slice(inp).unwrap().serialize_bytes_slice(inp).unwrap();
     info!("ser: {ser:#x}");
     assert_eq!(ser.len(), CAP_22 - 2);
     assert_eq!(ser.avail(), 2);
@@ -38,7 +34,10 @@ fn test_serializer_stack_primitive() {
 
     info!("res_err: {res_err:#?}");
     assert!(res_err.is_err());
-    assert!(res_err.unwrap_err().message.starts_with("Failed to add a slice size: 10 into ByteSerializerStack<22> { len: 20, cap: 22, bytes: 0000:"));
+    assert!(res_err
+        .unwrap_err()
+        .message
+        .starts_with("Failed to add a slice size: 10 into ByteSerializerStack<22> { len: 20, cap: 22, bytes: 0000:"));
     assert_eq!(ser.len(), CAP_22 - 2);
     assert_eq!(ser.avail(), 2);
 }
@@ -54,10 +53,7 @@ fn test_serializer_stack_chained_impl() {
         e: u128,
     }
     impl ByteSerializeStack for Numerics {
-        fn byte_serialize_stack<const CAP: usize>(
-            &self,
-            serializer: &mut ByteSerializerStack<CAP>,
-        ) -> byteserde::error::Result<()> {
+        fn byte_serialize_stack<const CAP: usize>(&self, serializer: &mut ByteSerializerStack<CAP>) -> byteserde::error::Result<()> {
             serializer
                 .serialize_bytes_slice(&[self.a])?
                 .serialize_be(self.b)?
@@ -67,13 +63,7 @@ fn test_serializer_stack_chained_impl() {
             Ok(())
         }
     }
-    let x = Numerics {
-        a: 1,
-        b: 2,
-        c: 3,
-        d: 4,
-        e: 5,
-    };
+    let x = Numerics { a: 1, b: 2, c: 3, d: 4, e: 5 };
     const TOO_SHORT: usize = 1;
     let err = to_serializer_stack::<TOO_SHORT, Numerics>(&x);
     info!("err {err:#?}");

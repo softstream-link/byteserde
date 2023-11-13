@@ -92,11 +92,7 @@ mod tests {
         info! {"inp: {inp}"}
         info!("inp: {inp}, inp:x {inp:#06x}, inp:b {inp:016b}");
         info!("out: {out}, out:x {out:#06x}, inp:b {out:016b}");
-        info!(
-            "byt:x 0x{byt0:02x}{byt1:02x}, out:b {byt0:08b}{byt1:08b}",
-            byt0 = byt[0],
-            byt1 = byt[1]
-        );
+        info!("byt:x 0x{byt0:02x}{byt1:02x}, out:b {byt0:08b}{byt1:08b}", byt0 = byt[0], byt1 = byt[1]);
         assert_eq!(byt, [0x00_u8, 0xAA_u8]);
         assert_eq!(inp, out);
     }

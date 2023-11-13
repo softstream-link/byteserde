@@ -1,13 +1,15 @@
 # samples https://github.com/actions/starter-workflows/blob/main/ci/rust.yml
-name: Test Pull Request
+name: Pull Request Build On Stable
 on:
   pull_request:
 jobs:
-  pull-request:
+  push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
       - uses: taiki-e/install-action@nextest
       - name: Toolchain Info
         run: |
@@ -15,8 +17,10 @@ jobs:
           rustc --version
       - name: Test
         run: |
-          cargo nextest run --success-output final
-          cargo nextest run --examples --success-output final
+          cargo nextest run # --success-output final
+          cargo nextest run --examples # --success-output final
+          cargo test --doc #  NOTE: docs are not supported by nextest
+          cargo doc --all-features # TODO how to fail on warnings?
       - name: Benchmark
         run: cargo bench
       - name: Clippy Deny Warnings
@@ -31,10 +35,3 @@ jobs:
           pushd byteserde_derive
           cargo publish --dry-run
           popd
-
-
-    
-    
-
-
-
