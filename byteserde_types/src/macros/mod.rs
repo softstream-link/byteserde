@@ -6,12 +6,12 @@
 /// * `LEN` - length of the buffer that will contain ascii string in bytes
 /// * `PADDING` - padding byte to be used when creating string
 /// * `RIGHT_ALIGN` - boolean flag to indicate if string should be right aligned or left aligned
+/// * `true` - Optional boolean flag to indicate if serde json should be derived or not interpreting buffer as a lossy utf-8 string
 /// * `#[derive(...)]` -- list of traits to derive for the struct, must be valid rust traits
 ///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
-/// * [std::fmt::Debug] & [std::fmt::Display] - provides a human readable sting view of the `[u8; LEN]` byte buffer as a utf-8 string
-/// * [serde::Serialize] & [serde::Deserialize] - provides json style serialization of the internal byte array representing ascii from & into [String]
+/// * [std::fmt::Debug] & [std::fmt::Display] - provides a human readable sting view of the `[u8; LEN]` byte buffer as a lossy utf-8 string
 ///
 /// # From
 /// Note that provided implementation already includes the following `From` implementations.
@@ -22,15 +22,15 @@
 /// ```
 /// # #[macro_use] extern crate byteserde_types; fn main() {
 /// // Align=Left / Len=10 / Padding=Minus
-/// string_ascii_fixed!(Password, 10, b'-', false);
+/// string_ascii_fixed!(Password, 10, b'-', false, #[derive(PartialEq)]);
 /// let inp_pwd = Password::new(*b"1234567890");
 ///
 /// let inp_pwd: Password = b"12345".as_slice().into(); // from slice
 /// println!("inp_pwd: {:?}, {}", inp_pwd, inp_pwd);
 /// assert_eq!(inp_pwd.value(), b"12345-----");
 ///
-/// // Align=Right / Len=10 / Padding=Space
-/// string_ascii_fixed!(Username, 10, b' ', true, #[derive(PartialEq)]);
+/// // Align=Right / Len=10 / Padding=Space + serde json
+/// string_ascii_fixed!(Username, 10, b' ', true, true, #[derive(PartialEq)]);
 /// let inp_usr1: Username = b"12345".as_slice().into(); // from slice
 /// let inp_usr2: Username = b"     12345".into(); // from array of matching len
 /// println!("inp_usr1: {:?}, {}", inp_usr1, inp_usr1);
@@ -38,13 +38,22 @@
 /// assert_eq!(inp_usr1.value(), b"     12345");
 /// assert_eq!(inp_usr2.value(), b"     12345");
 /// assert_eq!(inp_usr1, inp_usr2);
+/// 
+/// let json = serde_json::to_string(&inp_usr1).unwrap();
+/// println!("json: {}", json);
+/// assert_eq!(json, r#""12345""#);
+/// let out_usr: Username = serde_json::from_str(&json).unwrap();
+/// println!("out_usr: {:?}, {}", out_usr, out_usr);
+/// assert_eq!(out_usr, inp_usr1);
 /// # }
 /// ```
 #[macro_export]
 macro_rules! string_ascii_fixed {
-    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN: literal ) => {
+    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN: literal, true, $(#[$STRUCT_META:meta]),* ) => {
+        $(#[$STRUCT_META])*
         pub struct $NAME([u8; $LEN]);
         $crate::_common_string_ascii_fixed!($NAME, $LEN, $PADDING, $RIGHT_ALIGN);
+        $crate::_common_string_ascii_fixed_serde!($NAME, $LEN);
     };
     ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN: literal, $(#[$STRUCT_META:meta]),* ) => {
         $(#[$STRUCT_META])*
@@ -53,19 +62,8 @@ macro_rules! string_ascii_fixed {
     };
 }
 #[macro_export]
-macro_rules! _common_string_ascii_fixed {
-    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN:literal ) => {
-        impl $NAME {
-            pub fn value(&self) -> &[u8; $LEN] {
-                &self.0
-            }
-            pub fn as_slice(&self) -> &[u8] {
-                &self.0[..]
-            }
-            pub fn new(value: [u8; $LEN]) -> Self {
-                $NAME(value)
-            }
-        }
+macro_rules! _common_string_ascii_fixed_serde {
+    ($NAME:ident, $LEN:literal ) => {
         impl serde::Serialize for $NAME {
             fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
             where S: serde::Serializer {
@@ -88,6 +86,22 @@ macro_rules! _common_string_ascii_fixed {
                     );
                     Err(serde::de::Error::custom(msg))
                 }
+            }
+        }
+    };
+}
+#[macro_export]
+macro_rules! _common_string_ascii_fixed {
+    ($NAME:ident, $LEN:literal, $PADDING:literal, $RIGHT_ALIGN:literal ) => {
+        impl $NAME {
+            pub fn value(&self) -> &[u8; $LEN] {
+                &self.0
+            }
+            pub fn as_slice(&self) -> &[u8] {
+                &self.0[..]
+            }
+            pub fn new(value: [u8; $LEN]) -> Self {
+                $NAME(value)
             }
         }
         impl From<&[u8]> for $NAME {
@@ -150,12 +164,14 @@ macro_rules! _common_string_ascii_fixed {
 /// println!("inp_char: {:?}, {}", inp_char, inp_char);
 /// assert_eq!(inp_char.value(), b'1');
 /// 
-/// use serde_json;
 /// char_ascii!(CharJson, true, #[derive(PartialEq)]);
 /// let inp_char: CharJson = b'A'.into(); // from u8
 /// let json_out = serde_json::to_string(&inp_char).unwrap();
 /// println!("json_out: {}", json_out);
 /// assert_eq!(json_out, r#""A""#);
+/// let out_char: CharJson = serde_json::from_str(&json_out).unwrap();
+/// println!("out_char: {:?}, {}", out_char, out_char);
+/// assert_eq!(out_char, inp_char);
 /// # }
 /// ```
 #[macro_export]
@@ -246,13 +262,13 @@ macro_rules! _common_char_ascii {
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
 /// * `CONST` - `u8` byte value to be used as the value behind this struct
+/// * `true` - Optional boolean flag to indicate if serde json should be derived or not interpreting buffer as a lossy utf-8 string
 /// * `#[derive(...)]` -- list of traits to derive for the struct
 ///
 /// # Derives
 /// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
 /// * [std::fmt::Debug] & [std::fmt::Display] - provides a human readable sting view of the `u8` byte as utf-8 char
 /// * [byteserde::prelude::ByteDeserializeSlice]- provides an implementation for deserializing from a byte stream, which returns [byteserde::prelude::SerDesError] if value on the
-/// * [serde::Serialize] & [serde::Deserialize] - provides json style serialization of the internal CONST representing ascii from & into [String] with one char
 /// stream does `not` match the `CONST` value.
 ///
 /// # Examples
@@ -267,14 +283,44 @@ macro_rules! _common_char_ascii {
 /// ```
 #[macro_export]
 macro_rules! const_char_ascii {
-    ($NAME:ident, $CONST:literal) => {
+    ($NAME:ident, $CONST:literal, true, $(#[$STRUCT_META:meta]),*) => {
+        $(#[$STRUCT_META])*
         pub struct $NAME(u8);
         $crate::_common_const_char_ascii!($NAME, $CONST);
+        $crate::_common_const_char_ascii_serde!($NAME, $CONST);
     };
     ($NAME:ident, $CONST:literal, $(#[$STRUCT_META:meta]),*) => {
         $(#[$STRUCT_META])*
         pub struct $NAME(u8);
         $crate::_common_const_char_ascii!($NAME, $CONST);
+    };
+}
+#[macro_export]
+macro_rules! _common_const_char_ascii_serde {
+    ($NAME:ident, $CONST:literal) => {
+        impl serde::Serialize for $NAME {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where S: serde::Serializer {
+                String::from_utf8_lossy(&[self.0]).serialize(serializer)
+            }
+        }
+        impl<'de> serde::Deserialize<'de> for $NAME {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where D: serde::Deserializer<'de> {
+                let ascii_str = String::deserialize(deserializer)?;
+                if ascii_str == Self::to_char().to_string() {
+                    Ok($NAME::default())
+                } else {
+                    let msg = format!(
+                        "{} being constructed from '{}' whose value does not match expected const: '{}' of the tuple struct",
+                        stringify!($NAME),
+                        ascii_str,
+                        Self::to_char(),
+                    );
+                    Err(serde::de::Error::custom(msg))
+                }
+            }
+        }
     };
 }
 #[macro_export]
@@ -305,29 +351,6 @@ macro_rules! _common_const_char_ascii {
         impl std::fmt::Display for $NAME {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", &char::from_u32(u32::from($CONST)).ok_or(std::fmt::Error)?)
-            }
-        }
-        impl serde::Serialize for $NAME {
-            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-            where S: serde::Serializer {
-                String::from_utf8_lossy(&[self.0]).serialize(serializer)
-            }
-        }
-        impl<'de> serde::Deserialize<'de> for $NAME {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-            where D: serde::Deserializer<'de> {
-                let ascii_str = String::deserialize(deserializer)?;
-                if ascii_str == Self::to_char().to_string() {
-                    Ok($NAME::default())
-                } else {
-                    let msg = format!(
-                        "{} being constructed from '{}' whose value does not match expected const: '{}' of the tuple struct",
-                        stringify!($NAME),
-                        ascii_str,
-                        Self::to_char(),
-                    );
-                    Err(serde::de::Error::custom(msg))
-                }
             }
         }
         impl ::byteserde::prelude::ByteDeserializeSlice<$NAME> for $NAME {
