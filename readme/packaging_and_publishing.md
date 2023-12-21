@@ -1,49 +1,19 @@
-# Local build
-```shell
-cargo nextest run --all-features
-cargo nextest run --examples
-cargo test --doc
-cargo doc
-cargo clippy --all-features -- --deny warnings
-```
-
-# Steps
-## bench
+# bench
 ```shell
 cargo bench
 ```
 
-## test
+# local build
 ```shell
-cargo test
-cargo test --examples
+cargo nextest run --all-features ; \
+cargo nextest run --examples ; \
+cargo test --doc ; \
+cargo doc ; \
+cargo clippy --all-features -- --deny warnings
 ```
 
-## clippy
-```shell
-cargo clippy
-```
 
-## Package - on branch then master
-### byteserde
-```shell
-pushd ./byteserde 
-cargo package
-popd
-```
-### byteserde_derive
-```shell
-pushd ./byteserde_derive 
-cargo package
-popd
-```
-
-### byteserde_types - will potentially fail until byteserde & byteserde_derive are published
-```shell
-pushd ./byteserde_types 
-cargo package
-popd
-```
+# byteserde_types - will potentially fail until byteserde & byteserde_derive are published
 
 ## Publish --dry-run
 ```shell

@@ -327,6 +327,9 @@ macro_rules! _common_const_char_ascii_serde {
 macro_rules! _common_const_char_ascii {
     ($NAME:ident, $CONST:literal) => {
         impl $NAME {
+            pub const fn new() -> Self {
+                $NAME($CONST)
+            }
             pub fn to_char() -> char {
                 char::from_u32($CONST as u32).ok_or(std::fmt::Error).unwrap()
             }
@@ -482,7 +485,7 @@ macro_rules! const_numeric {
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
 /// * `CONST` - `u16` byte value to be used as the value behind this struct
-/// * `ENDIAN` - endianess of the numeric type, must be either `le`, `be`, or `ne`, this will be passed directly to the `byteserde` attribute as #[byteserde(endian = "xx" )]
+/// * `ENDIAN` - endianness of the numeric type, must be either `le`, `be`, or `ne`, this will be passed directly to the `byteserde` attribute as #[byteserde(endian = "xx" )]
 /// * `derive(...)` -- `must include one of` the following `ByteSerializeStack`, `ByteSerializeHeap`, or `ByteDeserializeSlice` other wise the `#[byteserde(endian = $ENDIAN)]` attribute will fail to compile.
 /// Plus list of additional valid rust derive traits
 ///
@@ -588,7 +591,7 @@ macro_rules! numeric_tuple {
 ///
 /// # Arguments
 /// * `NAME` - name of the struct to be generated
-/// * `ENDIAN` - endianess of the numeric type, must be either `le`, `be`, or `ne`, this will be passed directly to the `byteserde` attribute as #[byteserde(endian = "xx" )]
+/// * `ENDIAN` - endianness of the numeric type, must be either `le`, `be`, or `ne`, this will be passed directly to the `byteserde` attribute as #[byteserde(endian = "xx" )]
 /// * `#[derive(...)]` -- `must include one of` the following `ByteSerializeStack`, `ByteSerializeHeap`, or `ByteDeserializeSlice` other wise the `#[byteserde(endian = $ENDIAN)]` attribute will fail to compile.
 /// Plus list of additional valid rust derive traits
 ///

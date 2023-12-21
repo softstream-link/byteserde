@@ -9,7 +9,7 @@ resolver = "2"
 
 [workspace.package]
 # NOTE remember to update this and below [workspace.dependencies] for byteserde and byteserde_derive for the release
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Softstream <softstream.link@gmail.com>"]
 readme = "readme.md"
 license-file = "LICENSE"
@@ -25,8 +25,8 @@ bytes = "1.4"
 syn = { version = "2.0", features = ["full", "extra-traits"] }
 quote = "1.0"
 
-byteserde_derive = { path = "./byteserde_derive", version = "0.5.0" }
-byteserde = { path = "./byteserde", version = "0.5.0" }
+byteserde_derive = { path = "./byteserde_derive" }
+byteserde = { path = "./byteserde" }
 
 # unit testing
 text-diff = "0.4"
