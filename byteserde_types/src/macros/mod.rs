@@ -103,9 +103,12 @@ macro_rules! _common_string_ascii_fixed {
             pub fn new(value: [u8; $LEN]) -> Self {
                 $NAME(value)
             }
+            pub const fn len() -> usize {
+                $LEN
+            }
         }
         impl From<&[u8]> for $NAME {
-            ///  Runt time check for capacity, Takes defensively and up to `LEN`, never overflows.
+            ///  Runtime check for capacity, Takes defensively and up to `LEN`, never overflows.
             fn from(bytes: &[u8]) -> Self {
                 let mut new = $NAME([$PADDING; $LEN]);
                 let take_len = core::cmp::min($LEN, bytes.len());
@@ -121,6 +124,14 @@ macro_rules! _common_string_ascii_fixed {
             /// Compiler time check for capacity, bytes array must be same length as [StringAsciiFixed::LEN]
             fn from(bytes: &[u8; $LEN]) -> Self {
                 bytes[0..].into()
+            }
+        }
+        impl From<&str> for $NAME {
+            /// Will panic if `&str` is not ascii or exceeds max length of [`Self::len`]
+            fn from(v: &str) -> Self {
+                assert!(v.is_ascii(), "`{}` contains non ASCII characters", v);
+                assert!(v.len() <= Self::len(), "`{}` exceeds max length of {}", v, Self::len());
+                v.as_bytes().into()
             }
         }
         impl std::fmt::Debug for $NAME {
