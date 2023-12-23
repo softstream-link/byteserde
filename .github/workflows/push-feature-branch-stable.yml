@@ -14,10 +14,25 @@ jobs:
         with:
           components: clippy
       - uses: taiki-e/install-action@nextest
+      - name: Toolchain Info
+        run: |
+          which cargo
+          cargo --version --verbose
+          rustc --version
+          pwd
+          ls -la
+          env
   test:
     needs: setup
     runs-on: ubuntu-latest
     steps:
+      - name: Env Info
+        run: |
+          which cargo
+          cargo --version --verbose
+          pwd
+          ls -la
+          env
       - name: Test
         run: |
           cargo nextest run --all-features
