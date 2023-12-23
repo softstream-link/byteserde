@@ -6,7 +6,7 @@ on:
       - '*'
       - '!master'
 jobs:
-  push:
+  setup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -14,27 +14,25 @@ jobs:
         with:
           components: clippy
       - uses: taiki-e/install-action@nextest
-      - name: Toolchain Info
-        run: |
-          cargo --version --verbose
-          rustc --version
+  test:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
       - name: Test
         run: |
-          cargo nextest run # --success-output final
-          cargo nextest run --examples # --success-output final
-          cargo test --doc #  NOTE: docs are not supported by nextest
-          cargo doc --all-features # TODO how to fail on warnings?
+          cargo nextest run --all-features
+          cargo nextest run --examples --all-features
+          cargo test --doc --all-features
+          cargo doc --all-features
+  clippy:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clippy
+        run: cargo clippy --all-features -- --deny warnings
+  bench:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
       - name: Benchmark
         run: cargo bench
-      - name: Clippy Deny Warnings
-        run: cargo clippy --all-features -- --deny warnings
-      - name: Publish Dry Run to crates.io
-        run: |
-          pwd
-          ls -la
-          pushd byteserde
-          cargo publish --dry-run
-          popd
-          pushd byteserde_derive
-          cargo publish --dry-run
-          popd
