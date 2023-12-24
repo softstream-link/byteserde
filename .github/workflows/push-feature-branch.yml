@@ -1,0 +1,13 @@
+name: Feature Branch
+on:
+  push:
+     branches:
+      - '*'
+      - '!master'
+jobs:
+  test-matrix:
+    uses: softstream-link/workflows/.github/workflows/rust-test-matrix-toolchain-os.yml@v1
+  clippy:
+    uses: softstream-link/workflows/.github/workflows/rust-clippy-toolchain.yml@v1
+  bench-matrix:
+    uses: softstream-link/workflows/.github/workflows/rust-test-matrix-toolchain-os.yml@v1
