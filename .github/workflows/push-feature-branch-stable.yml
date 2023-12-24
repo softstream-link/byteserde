@@ -11,6 +11,16 @@ jobs:
     with: 
       toolchain: stable
       chosen-os: ubuntu-latest
+  test-stable-macos:
+      uses: ./.github/workflows/workflow-test.yml
+      with: 
+        toolchain: stable
+        chosen-os: macos-latest
+  test-stable-windows:
+    uses: ./.github/workflows/workflow-test.yml
+    with: 
+      toolchain: stable
+      chosen-os: windows-latest
 
   # setup:
   #   runs-on: ubuntu-latest
