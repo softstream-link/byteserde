@@ -9,11 +9,10 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy
-      - uses: taiki-e/install-action@nextest
+          components: clippy, nextest
+      # - uses: taiki-e/install-action@nextest
       - name: Toolchain Info
         run: |
           which cargo
@@ -26,6 +25,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Env Info
         run: |
           which cargo
@@ -40,14 +40,16 @@ jobs:
           cargo test --doc --all-features
           cargo doc --all-features
   clippy:
-    needs: setup
+    needs: setup    
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Clippy
         run: cargo clippy --all-features -- --deny warnings
   bench:
     needs: setup
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Benchmark
         run: cargo bench
