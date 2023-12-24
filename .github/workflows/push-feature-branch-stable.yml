@@ -8,6 +8,8 @@ on:
 jobs:
   test-all-os:
     uses: softstream-link/workflows/.github/workflows/rust-test-toolchain-all-os.yml@v1
+    with:
+      toolchain: stable
   # test-stable-ubuntu:
   #   uses: ./.github/workflows/workflow-test.yml
   #   with: 
