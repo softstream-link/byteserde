@@ -6,35 +6,41 @@ on:
       - '*'
       - '!master'
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-  test:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: taiki-e/install-action@nextest
-      - name: Test
-        run: |
-          cargo nextest run --all-features
-          cargo nextest run --examples --all-features
-          cargo test --doc --all-features
-          cargo doc --all-features
-  clippy:
-    needs: setup    
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Clippy
-        run: cargo clippy --all-features -- --deny warnings
-  bench:
-    needs: setup
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Benchmark
-        run: cargo bench
+  test-stable-ubuntu:
+    uses: ./.github/workflows/workflow-test.yml
+    with: 
+      chosen-on: ubuntu-latest
+      toolchain: stable
+
+  # setup:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         components: clippy
+  # test:
+  #   needs: setup
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: taiki-e/install-action@nextest
+  #     - name: Test
+  #       run: |
+  #         cargo nextest run --all-features
+  #         cargo nextest run --examples --all-features
+  #         cargo test --doc --all-features
+  #         cargo doc --all-features
+  # clippy:
+  #   needs: setup    
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Clippy
+  #       run: cargo clippy --all-features -- --deny warnings
+  # bench:
+  #   needs: setup
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Benchmark
+  #       run: cargo bench

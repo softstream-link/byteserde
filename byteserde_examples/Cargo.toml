@@ -13,9 +13,9 @@ categories.workspace = true
 publish = false
 
 [dependencies]
-byteserde = { path = "./../byteserde" }
-byteserde_derive = { path = "./../byteserde_derive" }
-byteserde_types = { path = "./../byteserde_types" }
+byteserde = { workspace = true }
+byteserde_derive = { workspace = true }
+byteserde_types = { workspace = true }
 
 
 [[bench]]
