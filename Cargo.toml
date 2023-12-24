@@ -21,9 +21,9 @@ categories = ["encoding"]
 
 [workspace.dependencies]
 # workspace members
-byteserde = { path = "./byteserde" }
-byteserde_derive = { path = "./byteserde_derive" }
-byteserde_types = { path = "./byteserde_types" }
+byteserde = { version = "0.6.0", path = "./byteserde" }
+byteserde_derive = { version = "0.6.0", path = "./byteserde_derive" }
+byteserde_types = { version = "0.6.0", path = "./byteserde_types" }
 
 
 bytes = "1.4"
