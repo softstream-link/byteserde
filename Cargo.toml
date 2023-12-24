@@ -9,7 +9,7 @@ resolver = "2"
 
 [workspace.package]
 # NOTE remember to update this and below [workspace.dependencies] for byteserde and byteserde_derive for the release
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Softstream <softstream.link@gmail.com>"]
 readme = "readme.md"
 license-file = "LICENSE"

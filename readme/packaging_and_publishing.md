@@ -13,13 +13,11 @@ cargo clippy --all-features -- --deny warnings
 ```
 
 
-# byteserde_types - will potentially fail until byteserde & byteserde_derive are published
+# release
 
 ## Publish --dry-run
 ```shell
-pushd ./byteserde 
-cargo publish --dry-run
-popd
+cargo release version minor #--execute
 ```
 
 ```shell
