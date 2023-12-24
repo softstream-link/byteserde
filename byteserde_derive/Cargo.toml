@@ -20,7 +20,7 @@ syn = { workspace = true }
 quote = { workspace = true }
 
 [dev-dependencies]
-byteserde = { path = "../byteserde" }
+byteserde = { workspace = true }
 trybuild = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }

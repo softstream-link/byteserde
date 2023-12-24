@@ -9,7 +9,7 @@ resolver = "2"
 
 [workspace.package]
 # NOTE remember to update this and below [workspace.dependencies] for byteserde and byteserde_derive for the release
-version = "0.6.0"
+version = "0.5.0"
 authors = ["Softstream <softstream.link@gmail.com>"]
 readme = "readme.md"
 license-file = "LICENSE"
@@ -20,21 +20,26 @@ keywords = ["serde", "bytes", "serialization", "derive"]
 categories = ["encoding"]
 
 [workspace.dependencies]
-bytes = "1.4"
-# byteserde_derive
-syn = { version = "2.0", features = ["full", "extra-traits"] }
-quote = "1.0"
-
+# workspace members
 byteserde = { path = "./byteserde" }
 byteserde_derive = { path = "./byteserde_derive" }
 byteserde_types = { path = "./byteserde_types" }
+
+
+bytes = "1.4"
+
+syn = { version = "2.0", features = [
+    "full",
+    "extra-traits",
+] } # byteserde_derive
+quote = "1.0" # byteserde_derive
 
 # unit testing
 text-diff = "0.4"
 env_logger = "0.10"
 log = "0.4"
-serde = "1.0" # macros some macros in byte_types spit out custom serde json serialization
-serde_json = "1.0" # macros some macros in byte_types spit out custom serde json serialization
+serde = "1.0"       # macros some macros in byte_types spit out custom serde json serialization
+serde_json = "1.0"  # macros some macros in byte_types spit out custom serde json serialization
 
 # used in benchmarking
 serde_derive = "1.0"
@@ -43,4 +48,3 @@ bincode = "1.3"
 
 # byteserde_derive
 trybuild = { version = "1.0", features = ["diff"] }
-

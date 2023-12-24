@@ -10,7 +10,7 @@ repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
-publish = false
+publish = false # DON'T PUBLISH THIS CRATE TO CRAETE.IO
 
 [dependencies]
 byteserde = { workspace = true }
