@@ -10,6 +10,9 @@ jobs:
     uses: softstream-link/workflows/.github/workflows/rust-test-toolchain-all-os.yml@v1
     with:
       toolchain: stable
+  clippy:
+    uses: softstream-link/workflows/.github/workflows/rust-clippy.yml@v1
+
   # test-stable-ubuntu:
   #   uses: ./.github/workflows/workflow-test.yml
   #   with: 
