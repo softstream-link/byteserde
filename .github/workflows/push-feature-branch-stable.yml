@@ -9,8 +9,8 @@ jobs:
   test-stable-ubuntu:
     uses: ./.github/workflows/workflow-test.yml
     with: 
-      chosen-on: ubuntu-latest
       toolchain: stable
+      chosen-os: ubuntu-latest
 
   # setup:
   #   runs-on: ubuntu-latest

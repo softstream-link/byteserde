@@ -3,21 +3,14 @@ name: Rust Test
 on:
   workflow_call:
     inputs:
-      chosen-os:
-        description: 'The OS to use for testing'
-        required: true
-        type: choice
-        options:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
       toolchain:
         description: 'The toolchain to use for testing'
         required: true
-        type: choice
-        options:
-          - stable
-          - nightly
+        type: string
+      chosen-os:
+        description: 'The OS to use for testing'
+        required: true
+        type: string
 
 jobs:
   test:
