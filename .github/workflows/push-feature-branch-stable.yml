@@ -7,7 +7,7 @@ on:
       - '!master'
 jobs:
   test-all-os:
-    uses: softstream-link/workflows/.github/workflows/rust-test-toolchain-all-os.yml
+    uses: softstream-link/workflows/.github/workflows/rust-test-toolchain-all-os.yml@v1
   # test-stable-ubuntu:
   #   uses: ./.github/workflows/workflow-test.yml
   #   with: 
