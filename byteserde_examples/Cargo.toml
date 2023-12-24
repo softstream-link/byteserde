@@ -10,12 +10,12 @@ repository.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
-publish = false
+publish = false # DON'T PUBLISH THIS CRATE TO CRAETE.IO
 
 [dependencies]
-byteserde = { path = "./../byteserde" }
-byteserde_derive = { path = "./../byteserde_derive" }
-byteserde_types = { path = "./../byteserde_types" }
+byteserde = { workspace = true }
+byteserde_derive = { workspace = true }
+byteserde_types = { workspace = true }
 
 
 [[bench]]
