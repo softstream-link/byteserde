@@ -6,6 +6,7 @@
         "bytestream",
         "clippy",
         "endianess",
+        "endianness",
         "flds",
         "nextest",
         "nonoverlapping",
