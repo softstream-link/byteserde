@@ -2,6 +2,7 @@ use byteserde::error::Result;
 use byteserde::prelude::*;
 use byteserde::utils::hex::{to_hex_line, to_hex_pretty};
 use byteserde_derive::{ByteDeserializeSlice, ByteSerializeHeap, ByteSerializeStack, ByteSerializedLenOf, ByteSerializedSizeOf};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::any::type_name;
 use std::cmp::min;
 use std::fmt;
@@ -46,6 +47,17 @@ impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> StringAsciiFi
     }
     pub fn bytes(&self) -> &[u8] {
         &self.0[0..]
+    }
+}
+impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> Serialize for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.to_string().as_str())
+    }
+}
+impl<'de, const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> Deserialize<'de> for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
+        let ascii_str = String::deserialize(deserializer)?;
+        Ok(Self::from(ascii_str.as_bytes()))
     }
 }
 impl<const LEN: usize, const PADDING: u8, const RIGHT_ALIGN: bool> Default for StringAsciiFixed<LEN, PADDING, RIGHT_ALIGN> {
@@ -125,6 +137,7 @@ mod test_string_ascii_fixed {
     use crate::unittest::setup;
     use byteserde::prelude::*;
     use log::info;
+    use serde_json::{to_string, from_str};
 
     #[test]
     fn test_take() {
@@ -186,6 +199,18 @@ mod test_string_ascii_fixed {
     #[should_panic]
     fn test_from_u16_fail() {
         let _: StringAsciiFixed<4, b'0', true> = u16::MAX.into();
+    }
+    #[test]
+    fn test_json(){
+        setup::log::configure();
+        let inp_str: StringAsciiFixed<5, b'0', true> = 12345_u16.into();
+        info!("inp_str:? {:?}", inp_str);
+        let out_json = to_string(&inp_str).unwrap();
+        info!("out_json: {}", out_json);
+        assert_eq!(out_json, r#""12345""#);
+        let out_str: StringAsciiFixed<5, b'0', true> = from_str(&out_json).unwrap();
+        info!("out_str:? {:?}", out_str);
+        assert_eq!(out_str, inp_str);
     }
 }
 
@@ -265,13 +290,17 @@ impl fmt::Display for StringAscii {
 }
 impl serde::Serialize for StringAscii {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where S: serde::Serializer {
+    where
+        S: serde::Serializer,
+    {
         String::from_utf8_lossy(&self.0).serialize(serializer)
     }
 }
 impl<'de> serde::Deserialize<'de> for StringAscii {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where D: serde::Deserializer<'de> {
+    where
+        D: serde::Deserializer<'de>,
+    {
         let ascii_str = String::deserialize(deserializer)?;
         Ok(Self::from(ascii_str.as_bytes()))
     }
@@ -436,6 +465,20 @@ impl<const CHAR: u8> ByteDeserializeSlice<ConstCharAscii<CHAR>> for ConstCharAsc
         }
     }
 }
+impl<const CHAR: u8> Serialize for ConstCharAscii<CHAR> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.to_string().as_str())
+    }
+}
+impl<'de, const CHAR: u8> Deserialize<'de> for ConstCharAscii<CHAR> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> std::result::Result<Self, D::Error> {
+        let c = char::deserialize(deserializer)?;
+        match c == Self::to_char() {
+            true => Ok(Default::default()),
+            false => Err(serde::de::Error::custom(format!("Type {:?} expected: 0x{:02x} actual: 0x{:02x}", type_name::<Self>(), CHAR, c as u8))),
+        }
+    }
+}
 impl<const CHAR: u8> Default for ConstCharAscii<CHAR> {
     fn default() -> Self {
         Self(CHAR)
@@ -468,6 +511,7 @@ mod test_const_char_ascii {
     use byteserde::prelude::*;
     use byteserde_derive::ByteSerializeStack;
     use log::info;
+    use serde_json::{from_str, to_string};
 
     #[test]
     fn test_const_char_ascii() {
@@ -485,5 +529,12 @@ mod test_const_char_ascii {
         let out_res: byteserde::error::Result<ConstCharAscii<b'+'>> = des.deserialize();
         info!("out_res: {:?}", out_res);
         assert!(out_res.is_err());
+
+        let out_json = to_string(&out_plus).unwrap();
+        info!("out_json: {}", out_json);
+        assert_eq!(out_json, r#""+""#);
+        let out_plus: ConstCharAscii<b'+'> = from_str(&out_json).unwrap();
+        info!("out_plus: {}", out_plus);
+        assert_eq!(out_plus, ConstCharAscii::<b'+'>::default());
     }
 }
