@@ -10,3 +10,4 @@ Cargo.lock
 **/*.rs.bk
 # build artifacts
 */target/*
+**/.DS_Store
