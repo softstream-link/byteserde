@@ -598,6 +598,88 @@ macro_rules! numeric_tuple {
     };
 }
 
+#[macro_export]
+macro_rules! byte_tuple {
+    ($NAME:ident, $TYPE:ty, $(#[$STRUCT_META:meta]),* ) => {
+        $(#[$STRUCT_META])*
+        pub struct $NAME($TYPE);
+        impl $NAME {
+            pub fn value(&self) -> $TYPE {
+                self.0
+            }
+            pub fn new(value: $TYPE) -> Self {
+                $NAME(value)
+            }
+        }
+        impl From<$TYPE> for $NAME {
+            #[inline(always)]
+            fn from(v: $TYPE) -> Self {
+                $NAME(v)
+            }
+        }
+        impl From<$NAME> for $TYPE {
+            #[inline(always)]
+            fn from(v: $NAME) -> Self {
+                v.0
+            }
+        }
+        impl std::fmt::Display for $NAME {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", &self.0)
+            }
+        }
+    };
+}
+
+/// Generates a `tuple` `struct` with a given name for managing a Byte type `u8` allocated on `stack`.
+///
+/// # Arguments
+/// * `NAME` - name of the struct to be generated
+/// * `#[derive(...)]` -- list of additional valid rust derive traits
+///
+/// # Derives
+/// Note that provided implementation already includes several traits which `SHOULD NOT` be included in the derive list.
+/// * `Display` - provides a human readable sting view of the `u8` value
+///
+/// # From
+/// Note that provided implementation already includes the following `From` implementations.
+/// * `From<u8>` - will take the `u8` and return tuple struct with type of `NAME` argument.
+/// * `From<Name>` - will take the `struct` type from the `NAME` argument and return the `u8` value.
+///
+/// # Examples
+/// ```
+/// # #[macro_use] extern crate byteserde_types; fn main() {
+/// use byteserde_derive::ByteSerializeStack;
+/// u8_tuple!(Byte, #[derive(ByteSerializeStack, PartialEq, Debug)]);
+///
+/// let inp_num: Byte = 1_u8.into(); // from u8
+/// println!("inp_num: {:?}, {}", inp_num, inp_num);
+/// assert_eq!(inp_num.value(), 1_u8);
+///
+/// let inp_num: Byte = Byte::new(2); // using new
+/// println!("inp_num: {:?}, {}", inp_num, inp_num);
+/// assert_eq!(inp_num.value(), 2_u8);
+///
+/// let inp_num: u8 = inp_num.into(); // to u8
+/// assert_eq!(inp_num, 2_u8);
+/// # }
+/// ```
+#[macro_export]
+macro_rules! u8_tuple {
+    ($NAME:ident, $(#[$STRUCT_META:meta]),*) => {
+        $crate::byte_tuple!($NAME, u8, $(#[$STRUCT_META])*);
+    };
+}
+
+/// see [u8_tuple] for more details and examples.
+#[macro_export]
+macro_rules! i8_tuple {
+    ($NAME:ident, $(#[$STRUCT_META:meta]),*) => {
+        $crate::byte_tuple!($NAME, i8, $(#[$STRUCT_META])*);
+    };
+}
+
+
 /// Generates a `tuple` `struct` with a given name for managing a Numeric type `u16` allocated on `stack`.
 ///
 /// # Arguments
